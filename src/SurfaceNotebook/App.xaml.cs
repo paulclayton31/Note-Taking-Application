@@ -1,4 +1,5 @@
 using System.Windows;
+using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -6,22 +7,25 @@ namespace SurfaceNotebook;
 
 public partial class App : Application
 {
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         if (e.Args.Contains("--verify-startup", StringComparer.Ordinal))
         {
             // Exercise resources, WPF layout, and rendering in the published bundle.
             // This mode exits without displaying a window or changing user files.
+            var directory = Path.Combine(Path.GetTempPath(), "SurfaceNotebook-startup-" + Guid.NewGuid().ToString("N"));
             try
             {
-                var window = new MainWindow();
+                var window = new MainWindow(directory);
+                await window.InitializeLibraryAsync();
                 var content = (FrameworkElement)window.Content;
                 content.Measure(new Size(1180, 900));
                 content.Arrange(new Rect(0, 0, 1180, 900));
                 content.UpdateLayout();
                 var bitmap = new RenderTargetBitmap(1180, 900, 96, 96, PixelFormats.Pbgra32);
                 bitmap.Render(content);
+                if (!await window.ShutdownLibraryAsync()) throw new IOException("Notebook startup verification could not flush storage.");
                 Shutdown(0);
             }
             catch (Exception ex)
@@ -29,6 +33,7 @@ public partial class App : Application
                 Console.Error.WriteLine(ex);
                 Shutdown(1);
             }
+            finally { try { if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true); } catch (IOException) { } }
             return;
         }
         new MainWindow().Show();

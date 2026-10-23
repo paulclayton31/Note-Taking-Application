@@ -1,5 +1,7 @@
 # Pen prototype
 
+This document records the original **v0.1** prototype. For the current app, see [v0.2 notebooks, autosave, recovery, and touch navigation](v0.2-notebooks.md).
+
 ## Scope
 
 The first prototype is a single ruled page built with C#/.NET 10 and WPF. It has pressure-sensitive ink, four pen colors, a width slider, whole-stroke erasing (including inverted-tip erasing), a bounded undo/redo history, and manual save/open of editable `.stempage` files.

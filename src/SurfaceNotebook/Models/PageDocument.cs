@@ -14,13 +14,13 @@ public sealed record PageDocument(int Version, double Width, double Height,
     public const double DefaultWidth = 816;
     public const double DefaultHeight = 1056;
 
-    public void Validate()
+    public void Validate(bool enforceSizeLimits = true)
     {
         if (Version != CurrentVersion)
             throw new InvalidDataException($"Unsupported page version: {Version}.");
         if (Width != DefaultWidth || Height != DefaultHeight)
             throw new InvalidDataException("This prototype supports a single 816 × 1056 page size.");
-        if (Strokes is null || Strokes.Count > 20_000)
+        if (Strokes is null || (enforceSizeLimits && Strokes.Count > 20_000))
             throw new InvalidDataException("Invalid stroke collection.");
         var ids = new HashSet<Guid>();
         long totalPoints = 0;
@@ -34,7 +34,7 @@ public sealed record PageDocument(int Version, double Width, double Height,
                 stroke.Points is null || stroke.Points.Count == 0)
                 throw new InvalidDataException("Invalid ink stroke.");
             totalPoints += stroke.Points.Count;
-            if (totalPoints > 2_000_000)
+            if (enforceSizeLimits && totalPoints > 2_000_000)
                 throw new InvalidDataException("Page contains too many ink points.");
             foreach (var point in stroke.Points)
                 if (point is null || !double.IsFinite(point.X) || !double.IsFinite(point.Y) ||

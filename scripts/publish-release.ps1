@@ -19,7 +19,7 @@ if ($LASTEXITCODE -eq 0) {
     if ($releaseState.targetCommitish -ne $env:RELEASE_COMMIT) { throw 'Existing draft targets a different commit' }
 }
 else {
-    gh release create $releaseTag --target $env:RELEASE_COMMIT --title "Surface Notebook $releaseTag - Pen prototype" --notes-file $releaseNotes --draft
+    gh release create $releaseTag --target $env:RELEASE_COMMIT --title "Surface Notebook $releaseTag" --notes-file $releaseNotes --draft
     if ($LASTEXITCODE -ne 0) { throw 'Could not create draft release' }
 }
 

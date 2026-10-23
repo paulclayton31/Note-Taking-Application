@@ -17,9 +17,9 @@ The automatically generated **Source code** downloads contain the project files.
 
 ## Project status
 
-The repository now contains an early **C# / .NET 10 / WPF pen prototype**. It supports a single ruled page, pressure-sensitive ink, pen colors and width, whole-stroke erasing, undo/redo, and manual save/open of editable pages. Surface hardware validation is still required.
+**v0.2** is a **C# / .NET 10 / WPF notebook app** with multiple notebooks and pages, automatic local saving, recovery of committed notes after unexpected shutdown, and touch navigation. Writing is strictly pen-only: one finger moves the page and two fingers zoom. Pressure-sensitive ink, curve fitting, pen colors/width, whole-stroke erasing, and undo/redo are retained.
 
-The capabilities below describe the broader intended product. Autosave, multi-page notebooks, PDF annotation, STEM objects, and AI are not implemented yet.
+The capabilities below describe the broader intended product. PDF annotation, STEM objects, AI, and cloud sync are future work. Physical pen/palm/touch validation is still required on each Surface model.
 
 To start with the .NET 10 SDK installed:
 
@@ -27,7 +27,7 @@ To start with the .NET 10 SDK installed:
 dotnet run --project src/SurfaceNotebook
 ```
 
-See [prototype setup, architecture, and Surface test checklist](docs/pen-prototype.md).
+See [v0.2 usage, saving/recovery, architecture, and Surface test checklist](docs/v0.2-notebooks.md). Import existing v0.1 `.stempage` files using **Import page**. Notebook edits save automatically; wait for **Saved locally** before a forced shutdown. Portable editable copies are available through **Export page**.
 
 ## Vision
 
@@ -85,4 +85,4 @@ dotnet build SurfaceNotebook.slnx --configuration Release
 dotnet run --project tests/SurfaceNotebook.Checks --configuration Release --no-build
 ```
 
-GitHub Actions builds and checks the application on Windows and publishes a self-contained x64 prototype artifact. The intended stack is C#/.NET 10, WPF, and SQLite for the later notebook persistence layer. The prototype currently uses versioned JSON page files to validate editable ink round-tripping before adding the notebook database.
+GitHub Actions builds and checks the application on Windows. The release pipeline publishes self-contained single-file x64 and ARM64 executables after the automated checks and x64 bundled startup check pass. The stack is C#/.NET 10, WPF, and SQLite (`Microsoft.Data.Sqlite`). Versioned `.stempage` JSON files remain supported for portable page import/export.

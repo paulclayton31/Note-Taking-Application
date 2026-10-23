@@ -9,6 +9,12 @@ public static class InkMapper
 {
     private static readonly Guid IdProperty = new("61b0dd7d-4434-4e41-9ace-a7553ac4d137");
 
+    public static Guid Identity(Stroke stroke)
+    {
+        if (!stroke.ContainsPropertyData(IdProperty)) stroke.AddPropertyData(IdProperty, Guid.NewGuid().ToString());
+        return Guid.Parse((string)stroke.GetPropertyData(IdProperty));
+    }
+
     public static void EnsureIdentities(StrokeCollection strokes)
     {
         foreach (var stroke in strokes)
