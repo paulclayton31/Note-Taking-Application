@@ -6,7 +6,17 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Project status
 
-This project is in the product definition stage. The features below describe the intended product, rather than functionality that is already implemented. The technology stack, application architecture, and build instructions have not yet been established.
+The repository now contains an early **C# / .NET 10 / WPF pen prototype**. It supports a single ruled page, pressure-sensitive ink, pen colors and width, whole-stroke erasing, undo/redo, and manual save/open of editable pages. Surface hardware validation is still required.
+
+The capabilities below describe the broader intended product. Autosave, multi-page notebooks, PDF annotation, STEM objects, and AI are not implemented yet.
+
+To start with the .NET 10 SDK installed:
+
+```powershell
+dotnet run --project src/SurfaceNotebook
+```
+
+See [prototype setup, architecture, and Surface test checklist](docs/pen-prototype.md).
 
 ## Vision
 
@@ -57,6 +67,11 @@ This sequence is a starting point for planning and may change as the interaction
 
 ## Development
 
-Implementation has not started in this repository. Setup, build, and testing instructions will be added when the initial application scaffold and technology choices are in place.
+Build the solution and run the verification harness:
 
-Early technical decisions include the Windows UI framework, digital ink pipeline, document model, local storage format, computational tools, and AI integration.
+```powershell
+dotnet build SurfaceNotebook.slnx --configuration Release
+dotnet run --project tests/SurfaceNotebook.Checks --configuration Release --no-build
+```
+
+GitHub Actions builds and checks the application on Windows and publishes a self-contained x64 prototype artifact. The intended stack is C#/.NET 10, WPF, and SQLite for the later notebook persistence layer. The prototype currently uses versioned JSON page files to validate editable ink round-tripping before adding the notebook database.

@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/SurfaceNotebook/SurfaceNotebook.csproj" />
+  <Project Path="tests/SurfaceNotebook.Checks/SurfaceNotebook.Checks.csproj" />
+</Solution>
