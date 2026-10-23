@@ -1,0 +1,81 @@
+name: Publish Windows release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - release-version.txt
+      - .github/workflows/release.yml
+      - scripts/publish-release.ps1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-windows-release
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and check the application
+        shell: pwsh
+        run: |
+          dotnet build SurfaceNotebook.slnx -c Release
+          if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
+          dotnet run --project tests/SurfaceNotebook.Checks -c Release --no-build
+          if ($LASTEXITCODE -ne 0) { throw 'Application checks failed' }
+      - name: Package standalone executables
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path release-assets -Force | Out-Null
+          foreach ($architecture in @('x64', 'arm64')) {
+            dotnet publish src/SurfaceNotebook -c Release -r "win-$architecture" --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false -o "artifacts/release-$architecture"
+            if ($LASTEXITCODE -ne 0) { throw "Publish failed for $architecture" }
+            Copy-Item -LiteralPath "artifacts/release-$architecture/SurfaceNotebook.exe" -Destination "release-assets/SurfaceNotebook-windows-$architecture.exe"
+          }
+          $checksums = Get-ChildItem release-assets/*.exe | Sort-Object Name | ForEach-Object {
+            $digest = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$digest  $($_.Name)"
+          }
+          $checksums | Set-Content release-assets/SHA256SUMS.txt -Encoding ascii
+      - name: Verify standalone x64 startup
+        shell: pwsh
+        run: |
+          $executable = (Resolve-Path release-assets/SurfaceNotebook-windows-x64.exe).Path
+          $appProcess = Start-Process -FilePath $executable -ArgumentList '--verify-startup' -WindowStyle Hidden -PassThru
+          if (-not $appProcess.WaitForExit(60000)) {
+            $appProcess.Kill()
+            throw 'Published application startup timed out'
+          }
+          if ($appProcess.ExitCode -ne 0) { throw "Published application startup failed: $($appProcess.ExitCode)" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Windows-release-assets
+          path: release-assets/
+          if-no-files-found: error
+
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Windows-release-assets
+          path: release-assets
+      - name: Publish GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_COMMIT: ${{ github.sha }}
+        run: ./scripts/publish-release.ps1

@@ -4,6 +4,17 @@ A Windows-native, handwriting-first notebook and intelligent workspace for STEM 
 
 Inspired by the natural handwriting and document organization experience of Goodnotes, this project brings lecture notes, annotated course materials, mathematical tools, engineering diagrams, programming, and context-aware AI into one workspace.
 
+## Download and run
+
+**[Download the latest Windows app](https://github.com/paulclayton31/Note-Taking-Application/releases/latest)** from the repository's **Releases** section.
+
+- [Windows x64 executable](https://github.com/paulclayton31/Note-Taking-Application/releases/latest/download/SurfaceNotebook-windows-x64.exe) for Intel/AMD devices.
+- [Windows ARM64 executable](https://github.com/paulclayton31/Note-Taking-Application/releases/latest/download/SurfaceNotebook-windows-arm64.exe) for Snapdragon/ARM devices.
+
+Download the matching `.exe` and double-click it. No ZIP extraction or separate .NET installation is needed. Windows may show the filename without `.exe`; its Type is **Application**. Check Windows **Settings > System > About > System type** if you are unsure which download to use.
+
+The automatically generated **Source code** downloads contain the project files. Use one of the named `.exe` assets to run the app.
+
 ## Project status
 
 The repository now contains an early **C# / .NET 10 / WPF pen prototype**. It supports a single ruled page, pressure-sensitive ink, pen colors and width, whole-stroke erasing, undo/redo, and manual save/open of editable pages. Surface hardware validation is still required.
