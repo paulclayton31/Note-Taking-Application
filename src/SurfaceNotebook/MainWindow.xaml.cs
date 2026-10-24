@@ -58,7 +58,7 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = model;
         NotebookPicker.ItemsSource = notebooks;
-        DocumentTabs.ItemsSource = openPages;
+        DocumentTabs.ItemsSource = openNotebooks;
         InkSurface.Strokes.StrokesChanged += Strokes_Changed;
         PreviewKeyDown += Window_KeyDown;
         Viewport.ViewChanged += () => ZoomLabel.Text = $"{Viewport.View.Zoom:P0}";
@@ -85,13 +85,12 @@ public partial class MainWindow : Window
         pages.AddRange(library.Pages);
         foreach (var page in pages) if (page.View is not null) views[page.Id] = page.View;
         preferences = library.Preferences ?? new();
-        foreach (var id in preferences.OpenPages ?? [])
-            if (pages.FirstOrDefault(p => p.Id == id) is { } page && openPages.All(p => p.Id != id) && openPages.Count < 12) openPages.Add(page);
+        RestoreNotebookTabs();
         favorites.UnionWith((preferences.Favorites ?? []).Where(id => pages.Any(p => p.Id == id)));
         WorkspaceTheme.Apply(preferences.Dark);
         ThemeIcon.Kind = preferences.Dark ? "Sun" : "Moon";
         NavigationPanel.Visibility = preferences.Sidebar ? Visibility.Visible : Visibility.Collapsed;
-        SetToolbarDock(preferences.ToolbarBottom);
+        RestoreToolbarPosition();
         RecoveryBanner.Visibility = library.RecoveredSession ? Visibility.Visible : Visibility.Collapsed;
         ready = true;
         try { await ActivatePageAsync(library.LastPageId); }
@@ -209,13 +208,15 @@ public partial class MainWindow : Window
                 next = new PageSession(InkMapper.Restore(document), document.Paper, document.Texts);
                 sessions[id] = next;
             }
+            var page = pages.First(p => p.Id == id);
+            if (pages.FirstOrDefault(p => p.Id == currentPageId)?.NotebookId != page.NotebookId) ResetPageFilters();
             currentPageId = id; session = next; next.Visited = ++visitCounter;
             SetStrokes(next.Strokes); RenderTexts(); ConfigurePaper();
             Viewport.SetPenPresence(false);
             if (views.TryGetValue(id, out var view)) Viewport.SetView(view); else Viewport.FitPage();
             writer.Write(db => db.SelectPage(id));
-            if (openPages.All(p => p.Id != id)) openPages.Add(pages.First(p => p.Id == id));
-            if (openPages.Count > 12) openPages.RemoveAt(0);
+            notebookPages[page.NotebookId] = id;
+            if (openNotebooks.All(n => n.Id != page.NotebookId)) openNotebooks.Add(notebooks.First(n => n.Id == page.NotebookId));
             BindNavigation(); SavePreferences();
             if (ContextPanel.Visibility == Visibility.Visible) PaperSettingsEditor.Load(next.Paper);
             foreach (var stale in sessions.Where(pair => pair.Key != id).OrderByDescending(pair => pair.Value.Visited).Skip(4).ToArray())
@@ -234,7 +235,7 @@ public partial class MainWindow : Window
         {
             NotebookPicker.SelectedItem = notebook;
             BindPageList();
-            DocumentTabs.SelectedItem = openPages.FirstOrDefault(p => p.Id == id);
+            DocumentTabs.SelectedItem = openNotebooks.FirstOrDefault(n => n.Id == page.NotebookId);
             PageCaption.Text = page.Name;
             PaperCaption.Text = $"{notebook.Name}  /  {(session?.Paper ?? PaperSettings.Default).Label}";
             var siblings = pages.Where(p => p.NotebookId == page.NotebookId).OrderBy(p => p.Position).ToList();
@@ -272,9 +273,7 @@ public partial class MainWindow : Window
     private async void Notebook_Changed(object sender, SelectionChangedEventArgs e)
     {
         if (bindingSelection || busy || NotebookPicker.SelectedItem is not NotebookSummary notebook) return;
-        var page = pages.Where(p => p.NotebookId == notebook.Id).OrderByDescending(p => sessions.GetValueOrDefault(p.Id)?.Visited ?? 0)
-            .ThenBy(p => p.Position).First();
-        try { await ActivatePageAsync(page.Id); }
+        try { await ActivateNotebookAsync(notebook.Id); }
         catch (Exception ex) { BindNavigation(); ShowError(ex); }
     }
     public async Task<Guid> CreateNotebookAsync(string name)
@@ -316,6 +315,7 @@ public partial class MainWindow : Window
         if (name is null) return;
         bindingSelection = true;
         notebooks[notebooks.IndexOf(notebook)] = notebook with { Name = name };
+        UpdateNotebookTab(notebook with { Name = name });
         bindingSelection = false;
         writer.Write(db => db.RenameNotebook(notebook.Id, name));
         BindNavigation();
@@ -327,8 +327,6 @@ public partial class MainWindow : Window
         if (name is null) return;
         var updated = page with { Name = name };
         pages[pages.IndexOf(page)] = updated;
-        var tab = openPages.FirstOrDefault(p => p.Id == page.Id);
-        if (tab is not null) openPages[openPages.IndexOf(tab)] = updated;
         writer.Write(db => db.RenamePage(page.Id, name));
         BindNavigation();
     }

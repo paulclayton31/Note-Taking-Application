@@ -6,9 +6,9 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Download and run
 
-**New: [Try the v0.3 workspace preview](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.0-preview.1)** — floating tools, real paper sizes and templates, light/dark themes, tabs, thumbnails, typed text, and focus mode. Download the named x64 or ARM64 executable from that release. [Preview guide and shortcuts](docs/v0.3-workspace.md).
+**New: [Try the v0.3 workspace preview](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.0-preview.2)** — movable tools with saved placement, notebook tabs, real paper sizes and templates, light/dark themes, thumbnails, typed text, and focus mode. Download the named x64 or ARM64 executable from that release. [Preview guide and shortcuts](docs/v0.3-workspace.md).
 
-![v0.3 paper-first workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0-preview.1/workspace-light.png)
+![v0.3 paper-first workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0-preview.2/workspace-light.png)
 
 The stable v0.2 release remains available below.
 
@@ -23,7 +23,7 @@ The automatically generated **Source code** downloads contain the project files.
 
 ## Project status
 
-**v0.3.0-preview.1** adds the first functional redesign to the **C# / .NET 10 / WPF notebook app**. The new workspace retains v0.2's multiple notebooks/pages, ordered background autosave, committed-note recovery, and strictly pen-only writing. Fingers pan and zoom in every tool. The default pressure/curve settings remain intact.
+**v0.3.0-preview.2** refines the paper-first design of the **C# / .NET 10 / WPF notebook app**. The workspace retains v0.2's multiple notebooks/pages, ordered background autosave, committed-note recovery, and strictly pen-only writing. Fingers pan and zoom in every tool. The default pressure/curve settings remain intact.
 
 The preview supports pen/highlighter, stroke/precision erasing, native lasso transforms, geometric ink shapes, typed text, a draggable/dockable palette, paper customization, tabs, search, favorites, and focus mode. It migrates a v0.2 library with a pre-upgrade SQLite backup; v0.2 cannot directly open the upgraded library.
 

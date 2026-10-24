@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Ink;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -21,12 +20,11 @@ public partial class MainWindow
     private PageText? textBeforeEdit;
     private Guid? selectedTextId;
     private readonly DispatcherTimer textTimer = new() { Interval = TimeSpan.FromMilliseconds(350) };
-    private readonly TranslateTransform toolbarTranslation = new();
     private bool toolbarHidden;
 
     private void InitializeTools()
     {
-        ToolbarFrame.RenderTransform = toolbarTranslation;
+        InitializeToolbarMovement();
         InkSurface.StrokeCollected += (_, e) =>
         {
             if (toolName != "Shape" || session is null) return;
@@ -163,17 +161,6 @@ public partial class MainWindow
         foreach (ComboBoxItem item in ColorPicker.Items) if ((string)item.Tag == hex) ColorPicker.SelectedItem = item;
     }
     private void ToolProperties_Click(object sender, RoutedEventArgs e) => ToolPopup.IsOpen = !ToolPopup.IsOpen;
-    private void DockToolbar_Click(object sender, RoutedEventArgs e)
-    {
-        SetToolbarDock(!preferences.ToolbarBottom); SavePreferences(); ToolPopup.IsOpen = false;
-    }
-    private void SetToolbarDock(bool bottom)
-    {
-        preferences = preferences with { ToolbarBottom = bottom };
-        ToolbarFrame.VerticalAlignment = bottom ? VerticalAlignment.Bottom : VerticalAlignment.Top;
-        ToolbarFrame.Margin = bottom ? new Thickness(16, 0, 16, 16) : new Thickness(16, 14, 16, 0);
-        toolbarTranslation.X = 0; toolbarTranslation.Y = 0;
-    }
     private void HideToolbar_Click(object sender, RoutedEventArgs e)
     {
         toolbarHidden = !toolbarHidden;
@@ -181,16 +168,6 @@ public partial class MainWindow
         RevealToolbar.Visibility = toolbarHidden ? Visibility.Visible : Visibility.Collapsed;
         ToolPopup.IsOpen = false;
     }
-    private void Toolbar_DragDelta(object sender, DragDeltaEventArgs e)
-    {
-        var halfSpace = Math.Max(0, (MainStage.ActualWidth - ToolbarFrame.ActualWidth) / 2 - 16);
-        toolbarTranslation.X = Math.Clamp(toolbarTranslation.X + e.HorizontalChange, -halfSpace, halfSpace);
-        var height = Math.Max(0, MainStage.ActualHeight - ToolbarFrame.ActualHeight - 32);
-        toolbarTranslation.Y = preferences.ToolbarBottom
-            ? Math.Clamp(toolbarTranslation.Y + e.VerticalChange, -height, 0)
-            : Math.Clamp(toolbarTranslation.Y + e.VerticalChange, 0, height);
-    }
-    private void Toolbar_DragCompleted(object sender, DragCompletedEventArgs e) => ToolPopup.IsOpen = false;
 
     private void TextCanvas_Down(object sender, MouseButtonEventArgs e)
     {

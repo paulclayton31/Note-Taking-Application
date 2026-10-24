@@ -15,7 +15,8 @@ namespace SurfaceNotebook;
 
 public partial class MainWindow
 {
-    private readonly ObservableCollection<PageSummary> openPages = [];
+    private readonly ObservableCollection<NotebookSummary> openNotebooks = [];
+    private readonly Dictionary<Guid, Guid> notebookPages = [];
     private readonly HashSet<Guid> favorites = [];
     private readonly Dictionary<Guid, NavigationPage> navigationPages = [];
     private readonly Dictionary<Guid, ImageSource> thumbnails = [];
@@ -29,6 +30,32 @@ public partial class MainWindow
     private bool compact;
     private WindowState stateBeforeFocus;
 
+    private void RestoreNotebookTabs()
+    {
+        foreach (var (book, page) in preferences.NotebookPages ?? [])
+            if (pages.Any(p => p.Id == page && p.NotebookId == book)) notebookPages[book] = page;
+        // Collapse page tabs from preview.1 into one tab per notebook.
+        var legacyBooks = new List<Guid>();
+        foreach (var id in preferences.OpenPages ?? [])
+            if (pages.FirstOrDefault(p => p.Id == id) is { } page)
+            { legacyBooks.Add(page.NotebookId); notebookPages.TryAdd(page.NotebookId, page.Id); }
+        foreach (var id in (preferences.OpenNotebooks ?? legacyBooks).Distinct())
+            if (notebooks.FirstOrDefault(n => n.Id == id) is { } book) openNotebooks.Add(book);
+    }
+    private void UpdateNotebookTab(NotebookSummary notebook)
+    {
+        var tab = openNotebooks.FirstOrDefault(n => n.Id == notebook.Id);
+        if (tab is not null) openNotebooks[openNotebooks.IndexOf(tab)] = notebook;
+    }
+    private void ResetPageFilters()
+    {
+        var wasBinding = bindingSelection; bindingSelection = true;
+        try
+        {
+            SearchBox.Clear(); favoritesOnly = false; FavoriteFilterButton.Background = Brushes.Transparent;
+        }
+        finally { bindingSelection = wasBinding; }
+    }
     private void BindPageList()
     {
         if (NotebookPicker.SelectedItem is not NotebookSummary book) return;
@@ -51,7 +78,7 @@ public partial class MainWindow
     }
     private void Search_Changed(object sender, TextChangedEventArgs e)
     {
-        if (PageList is null || !ready) return;
+        if (PageList is null || !ready || bindingSelection) return;
         bindingSelection = true;
         try { BindPageList(); }
         finally { bindingSelection = false; }
@@ -70,29 +97,46 @@ public partial class MainWindow
     }
     private async void Tab_Changed(object sender, SelectionChangedEventArgs e)
     {
-        if (bindingSelection || busy || DocumentTabs.SelectedItem is not PageSummary tab || tab.Id == currentPageId) return;
-        try { await ActivatePageAsync(tab.Id); } catch (Exception ex) { BindNavigation(); ShowError(ex); }
+        if (bindingSelection || busy || DocumentTabs.SelectedItem is not NotebookSummary tab ||
+            pages.FirstOrDefault(p => p.Id == currentPageId)?.NotebookId == tab.Id) return;
+        try { await ActivateNotebookAsync(tab.Id); } catch (Exception ex) { BindNavigation(); ShowError(ex); }
+    }
+    public Task ActivateNotebookAsync(Guid notebookId)
+    {
+        var page = notebookPages.TryGetValue(notebookId, out var remembered)
+            ? pages.FirstOrDefault(p => p.Id == remembered && p.NotebookId == notebookId) : null;
+        page ??= pages.Where(p => p.NotebookId == notebookId).OrderBy(p => p.Position).FirstOrDefault();
+        return page is null ? Task.CompletedTask : ActivatePageAsync(page.Id);
     }
     private async void CloseTab_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button button || button.Tag is not Guid id || busy) return;
         e.Handled = true;
-        var tab = openPages.FirstOrDefault(p => p.Id == id); if (tab is null) return;
-        if (openPages.Count == 1)
+        try { await CloseNotebookTabAsync(id); } catch (Exception ex) { BindNavigation(); ShowError(ex); }
+    }
+    public async Task CloseNotebookTabAsync(Guid notebookId)
+    {
+        if (busy || openNotebooks.Count <= 1) return;
+        var tab = openNotebooks.FirstOrDefault(n => n.Id == notebookId); if (tab is null) return;
+        var index = openNotebooks.IndexOf(tab);
+        if (pages.FirstOrDefault(p => p.Id == currentPageId)?.NotebookId == notebookId)
         {
-            // The current document always has one tab; closing a tab never deletes notes.
-            model.Status = "This is your only open page"; return;
+            var neighbor = openNotebooks[index == openNotebooks.Count - 1 ? index - 1 : index + 1];
+            // Finish opening the neighbor before closing, so a failed read leaves the tab intact.
+            await ActivateNotebookAsync(neighbor.Id);
         }
-        var index = openPages.IndexOf(tab);
-        bindingSelection = true; openPages.Remove(tab); bindingSelection = false;
-        if (id == currentPageId)
-            try { await ActivatePageAsync(openPages[Math.Min(index, openPages.Count - 1)].Id); } catch (Exception ex) { ShowError(ex); }
+        bindingSelection = true;
+        try { openNotebooks.Remove(tab); }
+        finally { bindingSelection = false; }
+        BindNavigation();
         SavePreferences();
     }
     private void SavePreferences()
     {
         if (!ready || writer is null) return;
-        preferences = preferences with { OpenPages = openPages.Select(p => p.Id).ToList(), Favorites = favorites.ToList(),
+        preferences = preferences with { OpenPages = null, OpenNotebooks = openNotebooks.Select(n => n.Id).ToList(),
+            NotebookPages = new Dictionary<Guid, Guid>(notebookPages), ToolbarPosition = toolbarPosition,
+            Favorites = favorites.ToList(),
             Sidebar = focusMode ? sidebarBeforeFocus : NavigationPanel.Visibility == Visibility.Visible };
         var snapshot = preferences;
         writer.Write(db => db.SavePreferences(snapshot));
@@ -135,7 +179,7 @@ public partial class MainWindow
             TabStrip.Visibility = Visibility.Visible; PageHeader.Visibility = Visibility.Visible;
             FocusButton.Background = Brushes.Transparent;
         }
-        Dispatcher.BeginInvoke(() => { toolbarTranslation.X = 0; toolbarTranslation.Y = 0; Viewport.FitPage(); }, DispatcherPriority.Loaded);
+        Dispatcher.BeginInvoke(() => { ApplyToolbarPosition(); Viewport.FitPage(); }, DispatcherPriority.Loaded);
     }
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -151,7 +195,7 @@ public partial class MainWindow
         InputHint.Visibility = width < 880 ? Visibility.Collapsed : Visibility.Visible;
         PaperButtonLabel.Visibility = width < 900 ? Visibility.Collapsed : Visibility.Visible;
         if (width < 1020 && ContextPanel.Visibility == Visibility.Visible) NavigationPanel.Visibility = Visibility.Collapsed;
-        toolbarTranslation.X = 0; toolbarTranslation.Y = 0;
+        ApplyToolbarPosition();
     }
     private static void AnimatePanel(FrameworkElement panel)
     {
@@ -184,7 +228,10 @@ public partial class MainWindow
         {
             writer.Write(db => db.SaveNotebookPaper(notebookId, paper));
             var book = notebooks.First(n => n.Id == notebookId);
-            bindingSelection = true; notebooks[notebooks.IndexOf(book)] = book with { Paper = paper }; bindingSelection = false;
+            bindingSelection = true;
+            notebooks[notebooks.IndexOf(book)] = book with { Paper = paper };
+            UpdateNotebookTab(book with { Paper = paper });
+            bindingSelection = false;
         }
         else writer.Write(db => db.SavePaper(id, paper));
         for (var i = 0; i < pages.Count; i++)

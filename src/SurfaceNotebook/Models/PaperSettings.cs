@@ -43,4 +43,14 @@ public sealed record PaperSettings(
 public sealed record PageText(Guid Id, double X, double Y, double Width, double FontSize, string Color, string Text);
 
 public sealed record WorkspacePreferences(bool Dark = false, bool Sidebar = true, bool ToolbarBottom = false,
-    List<Guid>? OpenPages = null, List<Guid>? Favorites = null);
+    List<Guid>? OpenPages = null, List<Guid>? Favorites = null, List<Guid>? OpenNotebooks = null,
+    Dictionary<Guid, Guid>? NotebookPages = null, ToolbarPosition? ToolbarPosition = null);
+
+// Fractions of the available toolbar travel keep the palette reachable after
+// rotation, resizing, and opening side panels. Legacy preferences need no migration.
+public sealed record ToolbarPosition(double Horizontal = .5, double Vertical = 0)
+{
+    public ToolbarPosition Constrain() => new(
+        double.IsFinite(Horizontal) ? Math.Clamp(Horizontal, 0, 1) : .5,
+        double.IsFinite(Vertical) ? Math.Clamp(Vertical, 0, 1) : 0);
+}

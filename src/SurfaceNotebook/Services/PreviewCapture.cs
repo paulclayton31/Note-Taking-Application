@@ -109,8 +109,10 @@ public static class PreviewCapture
         var third = new PageSummary(Guid.NewGuid(), book.Id, "Questions for Friday", 2, null, paper with { Pattern = PaperPattern.Dots });
         db.CreatePage(third);
         var calculus = new NotebookSummary(Guid.NewGuid(), "Calculus");
-        db.CreateNotebook(calculus, Guid.NewGuid());
-        db.SavePreferences(new WorkspacePreferences(OpenPages: [first, second.Id, third.Id], Favorites: [first]));
+        var calculusPage = Guid.NewGuid();
+        db.CreateNotebook(calculus, calculusPage);
+        db.SavePreferences(new WorkspacePreferences(Favorites: [first], OpenNotebooks: [book.Id, calculus.Id],
+            NotebookPages: new Dictionary<Guid, Guid> { [book.Id] = first, [calculus.Id] = calculusPage }));
         db.SelectPage(first); db.MarkClean();
     }
 }

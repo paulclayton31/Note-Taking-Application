@@ -31,7 +31,8 @@ internal static partial class Program
             CheckAutosave(Path.Combine(root, "writer"));
             CheckCrashRecovery(Path.Combine(root, "crash"));
             CheckWindow(Path.Combine(root, "ui"), args.FirstOrDefault());
-            Console.WriteLine("PASS: legacy migration and backup; paper geometry/templates; ink and text history; highlighter/precision eraser/shapes; autosave/recovery; pen-only input/palm suppression; notebooks/tabs/themes/focus/responsive rendering.");
+            CheckNotebookTabsAndToolbar(Path.Combine(root, "workspace-navigation"));
+            Console.WriteLine("PASS: legacy migration and backup; paper geometry/templates; ink and text history; autosave/recovery; pen-only input/palm suppression; notebook tabs and last-page restoration; toolbar hit testing, mouse/touch movement, docking, bounds, and saved placement.");
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }

@@ -116,9 +116,9 @@
                         <ListBox.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <local:WorkspaceIcon Kind="Page" Foreground="{DynamicResource Muted}" Width="15" Height="15" Margin="0,0,8,0"/>
+                                    <local:WorkspaceIcon Kind="Notebook" Foreground="{DynamicResource Muted}" Width="15" Height="15" Margin="0,0,8,0"/>
                                     <TextBlock Text="{Binding Name}" MaxWidth="155" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                                    <Button Click="CloseTab_Click" Tag="{Binding Id}" ToolTip="Close tab" MinHeight="34" MinWidth="34" Padding="10" Margin="8,0,0,0">
+                                    <Button Click="CloseTab_Click" Tag="{Binding Id}" ToolTip="Close notebook tab" MinHeight="34" MinWidth="34" Padding="10" Margin="8,0,0,0">
                                         <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Items.Count, ElementName=DocumentTabs}" Value="1"><Setter Property="IsEnabled" Value="False"/></DataTrigger></Style.Triggers></Style></Button.Style>
                                         <local:WorkspaceIcon Kind="Close" Width="12" Height="12" Foreground="{DynamicResource Muted}"/>
                                     </Button>
@@ -150,12 +150,25 @@
                             <local:PenCanvas x:Name="InkSurface" Background="Transparent" ClipToBounds="True" EditingMode="Ink" EditingModeInverted="EraseByStroke" UseCustomCursor="False"/>
                         </Grid>
                     </local:PageViewport>
-                    <Border x:Name="ToolbarFrame" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,14,16,0" Background="{DynamicResource Surface}"
+                    <Border x:Name="ToolbarFrame" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Background="{DynamicResource Surface}"
                             BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="14" Padding="5"
                             MaxWidth="{Binding ActualWidth, ElementName=MainStage}">
                         <DockPanel LastChildFill="True">
-                            <Thumb x:Name="ToolbarGrip" DockPanel.Dock="Left" Width="20" Cursor="SizeAll" DragDelta="Toolbar_DragDelta" DragCompleted="Toolbar_DragCompleted" ToolTip="Drag to reposition toolbar">
-                                <Thumb.Template><ControlTemplate TargetType="Thumb"><local:WorkspaceIcon Kind="Grip" Foreground="{DynamicResource Faint}" Width="14" Height="20" VerticalAlignment="Center"/></ControlTemplate></Thumb.Template>
+                            <Thumb x:Name="ToolbarGrip" DockPanel.Dock="Left" Width="44" MinHeight="44" Focusable="True" Cursor="SizeAll"
+                                   AutomationProperties.Name="Move writing toolbar" DragDelta="Toolbar_DragDelta" DragCompleted="Toolbar_DragCompleted"
+                                   PreviewKeyDown="ToolbarGrip_KeyDown" ToolTip="Move toolbar · drag with finger, pen, or mouse">
+                                <Thumb.Template>
+                                    <ControlTemplate TargetType="Thumb">
+                                        <Border x:Name="GripSurface" Background="Transparent" CornerRadius="9" BorderBrush="Transparent" BorderThickness="1">
+                                            <local:WorkspaceIcon Kind="Grip" Foreground="{DynamicResource Muted}" Width="18" Height="22" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="GripSurface" Property="Background" Value="{DynamicResource Hover}"/></Trigger>
+                                            <Trigger Property="IsDragging" Value="True"><Setter TargetName="GripSurface" Property="Background" Value="{DynamicResource Selected}"/></Trigger>
+                                            <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="GripSurface" Property="BorderBrush" Value="{DynamicResource Accent}"/></Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Thumb.Template>
                             </Thumb>
                             <WrapPanel x:Name="Toolbar" VerticalAlignment="Center">
                                 <RadioButton x:Name="PenButton" GroupName="Tools" Tag="Pen" IsChecked="True" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Pen · P"><local:WorkspaceIcon Kind="Pen" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
@@ -213,7 +226,8 @@
                                     <ComboBox x:Name="TextSizePicker" SelectedIndex="1" SelectionChanged="Properties_Changed"><ComboBoxItem Content="16"/><ComboBoxItem Content="20"/><ComboBoxItem Content="28"/><ComboBoxItem Content="36"/></ComboBox>
                                 </StackPanel>
                                 <Border Height="1" Background="{DynamicResource Stroke}" Margin="0,18,0,10"/>
-                                <Button Click="DockToolbar_Click" HorizontalContentAlignment="Left" Content="Move toolbar to top / bottom" FontSize="12"/>
+                                <Button x:Name="DockToolbarTopButton" Click="DockToolbarTop_Click" HorizontalContentAlignment="Left" Content="Move toolbar to top" FontSize="12"/>
+                                <Button x:Name="DockToolbarBottomButton" Click="DockToolbarBottom_Click" HorizontalContentAlignment="Left" Content="Move toolbar to bottom" FontSize="12"/>
                                 <Button Click="HideToolbar_Click" HorizontalContentAlignment="Left" Content="Hide writing tools" FontSize="12"/>
                             </StackPanel>
                         </Border>
