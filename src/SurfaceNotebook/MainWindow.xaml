@@ -14,34 +14,57 @@
     <Border BorderBrush="{DynamicResource Stroke}" BorderThickness="1">
     <Grid>
         <Grid.RowDefinitions><RowDefinition Height="52"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-        <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,0,1">
-            <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
-                    <Button Click="ToggleNavigation_Click" ToolTip="Show or hide library · Ctrl+B" Padding="10" shell:WindowChrome.IsHitTestVisibleInChrome="True">
-                        <local:WorkspaceIcon Kind="Sidebar" Foreground="{DynamicResource Muted}"/>
+        <Border x:Name="UnifiedHeader" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,0,1">
+            <Grid Margin="6,0,4,0">
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="28"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button x:Name="HomeButton" Click="Home_Click" ToolTip="Home · your notebook library" Padding="8,4">
+                        <StackPanel Orientation="Horizontal">
+                            <Border Background="{DynamicResource AccentFill}" CornerRadius="7" Width="28" Height="29">
+                                <local:WorkspaceIcon Kind="Notebook" Foreground="White" Width="19" Height="19" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                            <TextBlock x:Name="BrandLabel" Text="surface notebook" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" Margin="9,0,6,0"/>
+                        </StackPanel>
                     </Button>
-                    <Border Background="{DynamicResource AccentFill}" CornerRadius="8" Width="29" Height="30" Margin="10,0,10,0">
-                        <local:WorkspaceIcon Kind="Notebook" Foreground="White" Width="19" Height="19" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-                    </Border>
-                    <TextBlock Text="surface" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    <TextBlock Text="notebook" FontSize="17" Foreground="{DynamicResource Muted}" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                    <Button x:Name="SidebarButton" Click="ToggleNavigation_Click" ToolTip="Show or hide navigation · Ctrl+B" Padding="10">
+                        <local:WorkspaceIcon Kind="Sidebar" Foreground="{DynamicResource Muted}" Width="18" Height="18"/>
+                    </Button>
                 </StackPanel>
-                <StackPanel x:Name="SaveIndicator" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,0">
-                    <Ellipse x:Name="SaveDot" Width="5" Height="5" Fill="#77A18D" Margin="0,0,7,0"/>
-                    <TextBlock Text="{Binding Status}" FontSize="11" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="290"/>
-                </StackPanel>
-                <StackPanel Grid.Column="2" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                <Grid x:Name="TabsHost" Grid.Column="1" VerticalAlignment="Center">
+                <Border x:Name="TabStrip" Background="Transparent" BorderBrush="{DynamicResource Stroke}" BorderThickness="0">
+                    <ListBox x:Name="DocumentTabs" Height="48" Padding="0" HorizontalAlignment="Left" MaxWidth="{Binding ActualWidth, ElementName=TabsHost}" shell:WindowChrome.IsHitTestVisibleInChrome="True" SelectionChanged="Tab_Changed" PreviewMouseWheel="Tabs_MouseWheel" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.PanningMode="HorizontalOnly">
+                        <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}"><Setter Property="Height" Value="44"/><Setter Property="Padding" Value="10,0,0,0"/><Setter Property="Margin" Value="5,2,0,2"/><Setter Property="VerticalContentAlignment" Value="Center"/></Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <local:WorkspaceIcon Kind="Notebook" Foreground="{DynamicResource Muted}" Width="15" Height="15" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding Name}" MaxWidth="155" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <Button Click="CloseTab_Click" Tag="{Binding Id}" ToolTip="Close notebook tab" AutomationProperties.Name="{Binding Name, StringFormat=Close {0}}" Height="40" Width="40" MinHeight="40" MinWidth="40" Padding="0" Margin="4,0,0,0" VerticalAlignment="Center">
+                                        <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Items.Count, ElementName=DocumentTabs}" Value="1"><Setter Property="IsEnabled" Value="False"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                        <Path Data="M1,1 L11,11 M1,11 L11,1" Width="12" Height="12" Stretch="None" Stroke="{DynamicResource Muted}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+
+                </Grid>
+                <Border Grid.Column="2" Background="Transparent" ToolTip="Drag to move window"/>
+                <StackPanel Grid.Column="3" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
                     <Button x:Name="ThemeButton" Click="Theme_Click" ToolTip="Switch light / dark theme" Padding="10"><local:WorkspaceIcon x:Name="ThemeIcon" Kind="Moon" Foreground="{DynamicResource Muted}"/></Button>
                     <Button x:Name="FocusButton" Click="Focus_Click" ToolTip="Focus mode · F11" Padding="10"><local:WorkspaceIcon Kind="Focus" Foreground="{DynamicResource Muted}"/></Button>
-                    <Border Width="1" Background="{DynamicResource Stroke}" Margin="8,15"/>
-                    <Button Click="Minimize_Click" ToolTip="Minimize" Padding="12"><local:WorkspaceIcon Kind="Minus" Width="14" Height="14" Foreground="{DynamicResource Muted}"/></Button>
-                    <Button Click="Maximize_Click" ToolTip="Maximize / restore" Padding="12"><local:WorkspaceIcon Kind="Maximize" Width="13" Height="13" Foreground="{DynamicResource Muted}"/></Button>
-                    <Button Click="Close_Click" ToolTip="Close" Padding="12"><local:WorkspaceIcon Kind="Close" Width="15" Height="15" Foreground="{DynamicResource Muted}"/></Button>
+                    <Border Width="1" Background="{DynamicResource Stroke}" Margin="5,15"/>
+                    <Button Click="Minimize_Click" ToolTip="Minimize" Padding="10"><local:WorkspaceIcon Kind="Minus" Width="14" Height="14" Foreground="{DynamicResource Muted}"/></Button>
+                    <Button Click="Maximize_Click" ToolTip="Maximize / restore" Padding="10"><local:WorkspaceIcon Kind="Maximize" Width="13" Height="13" Foreground="{DynamicResource Muted}"/></Button>
+                    <Button Click="Close_Click" ToolTip="Close" Padding="10"><local:WorkspaceIcon Kind="Close" Width="15" Height="15" Foreground="{DynamicResource Muted}"/></Button>
                 </StackPanel>
             </Grid>
         </Border>
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="1" x:Name="EditorRoot">
             <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <Border x:Name="NavigationPanel" Width="248" Background="{DynamicResource SidebarSurface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,1,0">
                 <Grid x:Name="NavigationControls" Margin="16,18,16,12">
@@ -70,12 +93,25 @@
                         <DockPanel><Button DockPanel.Dock="Right" Click="DismissRecovery_Click" ToolTip="Dismiss recovery notice" Padding="8"><local:WorkspaceIcon Kind="Close" Width="14" Height="14" Foreground="{DynamicResource Accent}"/></Button><TextBlock Text="Your saved notes were recovered." TextWrapping="Wrap" Foreground="{DynamicResource Accent}" FontSize="11" VerticalAlignment="Center"/></DockPanel>
                     </Border>
                     <Grid Grid.Row="5">
-                        <ListBox x:Name="PageList" SelectionChanged="Page_Changed" ScrollViewer.PanningMode="VerticalOnly">
+                        <ListBox x:Name="PageList" SelectionChanged="Page_Changed" ScrollViewer.PanningMode="VerticalOnly"
+                                 AllowDrop="True" DragOver="PageList_DragOver" Drop="PageList_Drop" DragLeave="PageList_DragLeave">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid MinHeight="82">
+                                        <Grid.ContextMenu>
+                                        <ContextMenu Opened="PageMenu_Opened">
+                                            <MenuItem Header="Rename page…" Click="RenamePage_Click"/>
+                                            <MenuItem Header="Duplicate page" Click="DuplicatePage_Click"/>
+                                            <Separator/>
+                                            <MenuItem Header="Move earlier" Tag="earlier" Click="MovePage_Click"/>
+                                            <MenuItem Header="Move later" Tag="later" Click="MovePage_Click"/>
+                                            <Separator/><MenuItem Header="Star / unstar page" Click="Favorite_Click"/>
+                                        </ContextMenu>
+                                        </Grid.ContextMenu>
                                         <Grid.ColumnDefinitions><ColumnDefinition Width="55"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                                        <Border Width="48" Height="64" Background="#FFFFFEFA" BorderBrush="#D9DCE3" BorderThickness="1" CornerRadius="2">
+                                        <Border Width="48" Height="64" Background="#FFFFFEFA" BorderBrush="#D9DCE3" BorderThickness="1" CornerRadius="2"
+                                                ToolTip="Drag with mouse or pen to reorder · hold for page actions"
+                                                PreviewMouseLeftButtonDown="PageDrag_Start" PreviewMouseMove="PageDrag_Move" PreviewMouseLeftButtonUp="PageDrag_End">
                                             <Image Source="{Binding Thumbnail}" Stretch="Uniform" Margin="1"/>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
@@ -85,9 +121,6 @@
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
-                            <ListBox.ContextMenu>
-                                <ContextMenu><MenuItem Header="Rename page" Click="RenamePage_Click"/><MenuItem Header="Favorite / unfavorite page" Click="Favorite_Click"/><Separator/><MenuItem Header="Export page…" Click="Export_Click"/></ContextMenu>
-                            </ListBox.ContextMenu>
                         </ListBox>
                         <TextBlock x:Name="EmptyPages" Visibility="Collapsed" Text="No pages found.&#10;Try another name or add a page." Foreground="{DynamicResource Muted}" TextAlignment="Center" TextWrapping="Wrap" Margin="10,32,10,0"/>
                     </Grid>
@@ -106,28 +139,8 @@
                 </Grid>
             </Border>
             <Grid Grid.Column="1" x:Name="WorkspaceRoot" Background="{DynamicResource Workspace}">
-                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="46"/></Grid.RowDefinitions>
-                <Border x:Name="TabStrip" Background="{DynamicResource SurfaceAlt}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,0,1">
-                    <ListBox x:Name="DocumentTabs" Height="47" SelectionChanged="Tab_Changed" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled">
-                        <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel>
-                        <ListBox.ItemContainerStyle>
-                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}"><Setter Property="Padding" Value="10,0,2,0"/><Setter Property="Margin" Value="5,4,0,4"/></Style>
-                        </ListBox.ItemContainerStyle>
-                        <ListBox.ItemTemplate>
-                            <DataTemplate>
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <local:WorkspaceIcon Kind="Notebook" Foreground="{DynamicResource Muted}" Width="15" Height="15" Margin="0,0,8,0"/>
-                                    <TextBlock Text="{Binding Name}" MaxWidth="155" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                                    <Button Click="CloseTab_Click" Tag="{Binding Id}" ToolTip="Close notebook tab" MinHeight="34" MinWidth="34" Padding="10" Margin="8,0,0,0">
-                                        <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Items.Count, ElementName=DocumentTabs}" Value="1"><Setter Property="IsEnabled" Value="False"/></DataTrigger></Style.Triggers></Style></Button.Style>
-                                        <local:WorkspaceIcon Kind="Close" Width="12" Height="12" Foreground="{DynamicResource Muted}"/>
-                                    </Button>
-                                </StackPanel>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </Border>
-                <Grid x:Name="PageHeader" Grid.Row="1" Height="62" Margin="28,0,18,0">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="46"/></Grid.RowDefinitions>
+                <Grid x:Name="PageHeader" Grid.Row="0" Height="44" Margin="28,0,18,0">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                     <StackPanel VerticalAlignment="Center">
                         <TextBlock x:Name="PageCaption" Text="Your notebook" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
@@ -135,13 +148,24 @@
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="FavoriteButton" Click="Favorite_Click" ToolTip="Favorite this page" Padding="12"><local:WorkspaceIcon Kind="Star" Foreground="{DynamicResource Muted}" Width="17" Height="17"/></Button>
-                        <Button Click="RenamePage_Click" ToolTip="Rename current page" Padding="12"><local:WorkspaceIcon Kind="Pen" Foreground="{DynamicResource Muted}" Width="17" Height="17"/></Button>
+                        <Button x:Name="PageActionsButton" Click="LibraryMenu_Click" ToolTip="Page actions · duplicate, reorder, rename" Padding="12">
+                            <local:WorkspaceIcon Kind="More" Foreground="{DynamicResource Muted}" Width="17" Height="17"/>
+                            <Button.ContextMenu>
+                                <ContextMenu Opened="PageMenu_Opened">
+                                    <MenuItem Header="Rename page…" Click="RenamePage_Click"/>
+                                    <MenuItem Header="Duplicate page" Click="DuplicatePage_Click"/>
+                                    <Separator/><MenuItem Header="Move earlier" Tag="earlier" Click="MovePage_Click"/>
+                                    <MenuItem Header="Move later" Tag="later" Click="MovePage_Click"/>
+                                    <Separator/><MenuItem Header="Export page…" Click="Export_Click"/>
+                                </ContextMenu>
+                            </Button.ContextMenu>
+                        </Button>
                         <Button x:Name="PaperButton" Click="Paper_Click" ToolTip="Paper size, template, and color" Padding="12">
                             <StackPanel Orientation="Horizontal"><local:WorkspaceIcon Kind="Paper" Foreground="{DynamicResource Muted}" Width="17" Height="17"/><TextBlock x:Name="PaperButtonLabel" Text="Paper" Margin="7,0,0,0" Foreground="{DynamicResource Muted}"/></StackPanel>
                         </Button>
                     </StackPanel>
                 </Grid>
-                <Grid Grid.Row="2" x:Name="MainStage" ClipToBounds="True">
+                <Grid Grid.Row="1" x:Name="MainStage" ClipToBounds="True">
                     <local:PageViewport x:Name="Viewport" Background="{DynamicResource Workspace}">
                         <Grid x:Name="PageHost" Width="816" Height="1056" HorizontalAlignment="Left" VerticalAlignment="Top">
                             <Border Background="#0D141C30" Margin="-1,3,-1,-4" CornerRadius="2" IsHitTestVisible="False"/>
@@ -191,9 +215,25 @@
                     <Button x:Name="RevealToolbar" Visibility="Collapsed" Click="HideToolbar_Click" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,12,0,0" Background="{DynamicResource Surface}" ToolTip="Show writing tools"><local:WorkspaceIcon Kind="Pen" Foreground="{DynamicResource Accent}"/></Button>
                     <Popup x:Name="ToolPopup" PlacementTarget="{Binding ElementName=PropertiesButton}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" VerticalOffset="8">
                         <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="12" Padding="20" Width="300">
+                            <ScrollViewer MaxHeight="560" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
                             <StackPanel>
                                 <TextBlock x:Name="ToolTitle" Text="Pen" FontSize="17" FontWeight="SemiBold"/>
                                 <TextBlock x:Name="ToolHint" Text="Pressure-sensitive ink" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,18" TextWrapping="Wrap"/>
+                                <StackPanel x:Name="SavedPensPanel" Margin="0,0,0,16">
+                                    <TextBlock Text="YOUR PENS" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
+                                    <ItemsControl x:Name="SavedPenList">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate><DataTemplate>
+                                            <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="78" Padding="5,8" ToolTip="{Binding Description}" Margin="0,0,3,5">
+                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                                <StackPanel><Ellipse Fill="{Binding Color}" Width="21" Height="21" Margin="0,0,0,7"/><TextBlock Text="{Binding Name}" FontSize="10" TextTrimming="CharacterEllipsis" MaxWidth="65" TextAlignment="Center"/></StackPanel>
+                                                <Button.ContextMenu><ContextMenu><MenuItem Header="Rename saved pen…" Tag="rename" Click="PresetAction_Click"/><MenuItem Header="Remove saved pen" Tag="remove" Click="PresetAction_Click"/></ContextMenu></Button.ContextMenu>
+                                            </Button>
+                                        </DataTemplate></ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock x:Name="CurrentPenDescription" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,8"/>
+                                    <Button x:Name="SavePenButton" Click="SavePreset_Click" Content="Save current pen…" HorizontalContentAlignment="Left" BorderBrush="{DynamicResource Stroke}" FontSize="12"/>
+                                </StackPanel>
                                 <StackPanel x:Name="ColorControls">
                                     <TextBlock Text="INK COLOR" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
                                     <ComboBox x:Name="ColorPicker" SelectedIndex="0" SelectionChanged="Color_Changed" AutomationProperties.Name="Ink color">
@@ -230,6 +270,7 @@
                                 <Button x:Name="DockToolbarBottomButton" Click="DockToolbarBottom_Click" HorizontalContentAlignment="Left" Content="Move toolbar to bottom" FontSize="12"/>
                                 <Button Click="HideToolbar_Click" HorizontalContentAlignment="Left" Content="Hide writing tools" FontSize="12"/>
                             </StackPanel>
+                            </ScrollViewer>
                         </Border>
                     </Popup>
                     <Border x:Name="SaveErrorBanner" Visibility="Collapsed" VerticalAlignment="Bottom" Margin="16" Padding="14"
@@ -237,9 +278,13 @@
                         <DockPanel><Button DockPanel.Dock="Right" Click="Export_Click" Content="Export backup" Margin="12,0,0,0"/><TextBlock Text="Storage is unavailable. Keep the app open while autosave retries. You can export this page for a backup." Foreground="{DynamicResource Danger}" TextWrapping="Wrap" VerticalAlignment="Center"/></DockPanel>
                     </Border>
                 </Grid>
-                <Grid Grid.Row="3" Margin="24,0,14,0">
+                <Grid Grid.Row="2" Margin="18,0,12,0">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                    <TextBlock x:Name="InputHint" Text="Pen to write · touch to navigate" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center"/>
+                    <StackPanel x:Name="SaveIndicator" Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="True">
+                        <Ellipse x:Name="SaveDot" Width="5" Height="5" Fill="#77A18D" Margin="0,0,7,0"/>
+                        <TextBlock Text="{Binding Status}" FontSize="10" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="165"/>
+                        <TextBlock x:Name="InputHint" Text="Pen to write · touch to navigate" FontSize="10" Foreground="{DynamicResource Faint}" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                    </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
                         <Button x:Name="PreviousPageButton" Click="PreviousPage_Click" ToolTip="Previous page · Alt+Up" Padding="10,5"><local:WorkspaceIcon Kind="Chevron" Foreground="{DynamicResource Muted}" Width="12" Height="12"><local:WorkspaceIcon.RenderTransform><RotateTransform Angle="180" CenterX="6" CenterY="6"/></local:WorkspaceIcon.RenderTransform></local:WorkspaceIcon></Button>
                         <TextBlock x:Name="PageNumber" Text="1 / 1" FontSize="11" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="4,0"/>
@@ -247,9 +292,9 @@
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal">
                         <Button Click="ZoomOut_Click" ToolTip="Zoom out" Padding="7"><local:WorkspaceIcon Kind="Minus" Foreground="{DynamicResource Muted}" Width="14" Height="14"/></Button>
-                        <Button Click="Fit_Click" ToolTip="Fit whole page · right-click for more" Padding="8,4">
+                        <Button x:Name="ZoomButton" Click="ZoomMenu_Click" ToolTip="Zoom · fit width, whole page, or choose a scale" Padding="8,4">
                             <Button.ContextMenu><ContextMenu><MenuItem Header="Fit whole page" Click="Fit_Click"/><MenuItem Header="Fit page width" Click="FitWidth_Click"/><MenuItem Header="Actual size · 100%" Click="ActualSize_Click"/></ContextMenu></Button.ContextMenu>
-                            <TextBlock x:Name="ZoomLabel" Text="100%" FontSize="11" Foreground="{DynamicResource Muted}" MinWidth="36" TextAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal"><TextBlock x:Name="ZoomLabel" Text="100%" FontSize="11" Foreground="{DynamicResource Muted}" MinWidth="36" TextAlignment="Center"/><local:WorkspaceIcon Kind="Down" Width="10" Height="10" Foreground="{DynamicResource Muted}" Margin="4,0,0,0"/></StackPanel>
                         </Button>
                         <Button Click="ZoomIn_Click" ToolTip="Zoom in" Padding="7"><local:WorkspaceIcon Kind="Plus" Foreground="{DynamicResource Muted}" Width="14" Height="14"/></Button>
                     </StackPanel>
@@ -259,6 +304,25 @@
                 <local:PaperSettingsPanel x:Name="PaperSettingsEditor"/>
             </Border>
         </Grid>
+        <local:LibraryHomeView x:Name="HomeView" Grid.Row="1" Visibility="Collapsed"/>
+        <Popup x:Name="ZoomPopup" PlacementTarget="{Binding ElementName=ZoomButton}" Placement="Top" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" VerticalOffset="-8">
+            <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="12" Padding="18" Width="300">
+                <StackPanel>
+                    <DockPanel><TextBlock Text="Page zoom" FontSize="17" FontWeight="SemiBold"/><TextBlock x:Name="ZoomValueLabel" Text="100%" HorizontalAlignment="Right" Foreground="{DynamicResource Muted}"/></DockPanel>
+                    <Slider x:Name="ZoomSlider" Minimum="25" Maximum="400" Value="100" TickFrequency="5" IsSnapToTickEnabled="True" AutomationProperties.Name="Zoom percentage" ValueChanged="ZoomSlider_Changed" Margin="0,14,0,12" Height="44"/>
+                    <UniformGrid Columns="4" Margin="0,0,0,12">
+                        <Button Content="50%" Tag="50" Click="ZoomPreset_Click"/><Button Content="75%" Tag="75" Click="ZoomPreset_Click"/><Button Content="100%" Tag="100" Click="ZoomPreset_Click"/><Button Content="150%" Tag="150" Click="ZoomPreset_Click"/>
+                    </UniformGrid>
+                    <Button x:Name="FitWidthButton" Click="FitWidth_Click" HorizontalContentAlignment="Left" Margin="0,0,0,4" Background="{DynamicResource Selected}">
+                        <StackPanel Orientation="Horizontal"><local:WorkspaceIcon Kind="Fit" Foreground="{DynamicResource Accent}" Margin="0,0,12,0"/><TextBlock Text="Fit width" VerticalAlignment="Center"/></StackPanel>
+                    </Button>
+                    <Button x:Name="FitWholePageButton" Click="Fit_Click" HorizontalContentAlignment="Left">
+                        <StackPanel Orientation="Horizontal"><local:WorkspaceIcon Kind="Page" Foreground="{DynamicResource Muted}" Margin="0,0,12,0"/><TextBlock Text="Whole page" VerticalAlignment="Center"/></StackPanel>
+                    </Button>
+                    <TextBlock Text="Pinch to zoom · Ctrl + mouse wheel" FontSize="11" Foreground="{DynamicResource Muted}" Margin="4,12,0,0"/>
+                </StackPanel>
+            </Border>
+        </Popup>
     </Grid>
     </Border>
 </Window>

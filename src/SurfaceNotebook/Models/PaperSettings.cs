@@ -44,7 +44,24 @@ public sealed record PageText(Guid Id, double X, double Y, double Width, double 
 
 public sealed record WorkspacePreferences(bool Dark = false, bool Sidebar = true, bool ToolbarBottom = false,
     List<Guid>? OpenPages = null, List<Guid>? Favorites = null, List<Guid>? OpenNotebooks = null,
-    Dictionary<Guid, Guid>? NotebookPages = null, ToolbarPosition? ToolbarPosition = null);
+    Dictionary<Guid, Guid>? NotebookPages = null, ToolbarPosition? ToolbarPosition = null,
+    WritingPreferences? Writing = null, bool HomeVisible = true);
+
+public sealed record PenPreset(Guid Id, string Name, string Color, double Width, bool Monoline = false)
+{
+    public bool IsValid => Id != Guid.Empty && !string.IsNullOrWhiteSpace(Name) && Name.Length <= 80 &&
+        PaperSettings.IsColor(Color) && double.IsFinite(Width) && Width >= .5 && Width <= 12;
+    public string Description => $"{Width:0.#} pt · {(Monoline ? "Monoline" : "Pressure")}";
+    public static List<PenPreset> Defaults =>
+    [
+        new(new Guid("31b22a24-42df-4636-8e6c-bd2367fa2e11"), "Midnight", "#FF24324A", 2.5),
+        new(new Guid("31b22a24-42df-4636-8e6c-bd2367fa2e12"), "Indigo", "#FF5C55B3", 2.5),
+        new(new Guid("31b22a24-42df-4636-8e6c-bd2367fa2e13"), "Fine rose", "#FFCE3F53", 1.5)
+    ];
+}
+public sealed record WritingPreferences(List<PenPreset>? Presets = null, Guid? ActivePreset = null,
+    string PenColor = "#FF24324A", double PenWidth = 2.5, bool Monoline = false,
+    string HighlighterColor = "#FFE7B944", double HighlighterWidth = 18, double EraserSize = 24, bool PrecisionEraser = false);
 
 // Fractions of the available toolbar travel keep the palette reachable after
 // rotation, resizing, and opening side panels. Legacy preferences need no migration.

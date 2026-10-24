@@ -85,7 +85,7 @@ public partial class MainWindow
     }
     private void Favorite_Click(object sender, RoutedEventArgs e)
     {
-        if (currentPageId is not Guid id) return;
+        if (PageFromAction(sender)?.Id is not Guid id) return;
         if (!favorites.Add(id)) favorites.Remove(id);
         BindNavigation(); SavePreferences();
     }
@@ -97,9 +97,28 @@ public partial class MainWindow
     }
     private async void Tab_Changed(object sender, SelectionChangedEventArgs e)
     {
+        if (DocumentTabs.SelectedItem is { } selected)
+            _ = Dispatcher.BeginInvoke(() => DocumentTabs.ScrollIntoView(selected), DispatcherPriority.Loaded);
         if (bindingSelection || busy || DocumentTabs.SelectedItem is not NotebookSummary tab ||
-            pages.FirstOrDefault(p => p.Id == currentPageId)?.NotebookId == tab.Id) return;
+            (!homeVisible && pages.FirstOrDefault(p => p.Id == currentPageId)?.NotebookId == tab.Id)) return;
         try { await ActivateNotebookAsync(tab.Id); } catch (Exception ex) { BindNavigation(); ShowError(ex); }
+    }
+    private void Tabs_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        var viewer = FindTabScrollViewer(DocumentTabs);
+        if (viewer is null || viewer.ScrollableWidth <= 0) return;
+        viewer.ScrollToHorizontalOffset(viewer.HorizontalOffset - e.Delta);
+        e.Handled = true;
+    }
+    private static ScrollViewer? FindTabScrollViewer(DependencyObject parent)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is ScrollViewer viewer) return viewer;
+            if (FindTabScrollViewer(child) is { } nested) return nested;
+        }
+        return null;
     }
     public Task ActivateNotebookAsync(Guid notebookId)
     {
@@ -137,6 +156,7 @@ public partial class MainWindow
         preferences = preferences with { OpenPages = null, OpenNotebooks = openNotebooks.Select(n => n.Id).ToList(),
             NotebookPages = new Dictionary<Guid, Guid>(notebookPages), ToolbarPosition = toolbarPosition,
             Favorites = favorites.ToList(),
+            Writing = CaptureWritingPreferences(), HomeVisible = homeVisible,
             Sidebar = focusMode ? sidebarBeforeFocus : NavigationPanel.Visibility == Visibility.Visible };
         var snapshot = preferences;
         writer.Write(db => db.SavePreferences(snapshot));
@@ -152,9 +172,11 @@ public partial class MainWindow
         preferences = preferences with { Dark = dark }; WorkspaceTheme.Apply(dark);
         ThemeIcon.Kind = dark ? "Sun" : "Moon"; SavePreferences();
         if (currentPageId is not null) BindNavigation();
+        RefreshHome();
     }
     private void ToggleNavigation_Click(object sender, RoutedEventArgs e)
     {
+        if (homeVisible) { HomeView.ToggleRail(); return; }
         if (focusMode) { ToggleFocus(); return; }
         NavigationPanel.Visibility = NavigationPanel.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
         AnimatePanel(NavigationPanel); SavePreferences();
@@ -162,7 +184,11 @@ public partial class MainWindow
     private void Focus_Click(object sender, RoutedEventArgs e) => ToggleFocus();
     public void ToggleFocus()
     {
-        CommitTextEditor(); ToolPopup.IsOpen = false;
+        if (homeVisible) return;
+        var previousView = Viewport.View;
+        var previousSize = new Size(Viewport.ActualWidth, Viewport.ActualHeight);
+        var previousPage = currentPageId;
+        CommitTextEditor(); ToolPopup.IsOpen = false; ZoomPopup.IsOpen = false;
         focusMode = !focusMode;
         if (focusMode)
         {
@@ -179,7 +205,15 @@ public partial class MainWindow
             TabStrip.Visibility = Visibility.Visible; PageHeader.Visibility = Visibility.Visible;
             FocusButton.Background = Brushes.Transparent;
         }
-        Dispatcher.BeginInvoke(() => { ApplyToolbarPosition(); Viewport.FitPage(); }, DispatcherPriority.Loaded);
+        Dispatcher.BeginInvoke(() =>
+        {
+            ApplyToolbarPosition();
+            if (!homeVisible && currentPageId == previousPage)
+            {
+                Viewport.SetView(previousView.Pan((Viewport.ActualWidth - previousSize.Width) / 2, (Viewport.ActualHeight - previousSize.Height) / 2));
+                Viewport.CompleteGesture();
+            }
+        }, DispatcherPriority.Loaded);
     }
     private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
     {
@@ -191,8 +225,9 @@ public partial class MainWindow
         var nowCompact = width < 1020;
         if (nowCompact && !compact && !focusMode) NavigationPanel.Visibility = Visibility.Collapsed;
         compact = nowCompact;
-        SaveIndicator.Visibility = width < 1120 ? Visibility.Collapsed : Visibility.Visible;
-        InputHint.Visibility = width < 880 ? Visibility.Collapsed : Visibility.Visible;
+        BrandLabel.Visibility = width < 1000 ? Visibility.Collapsed : Visibility.Visible;
+        SaveIndicator.Visibility = width < 850 ? Visibility.Collapsed : Visibility.Visible;
+        InputHint.Visibility = width < 1320 ? Visibility.Collapsed : Visibility.Visible;
         PaperButtonLabel.Visibility = width < 900 ? Visibility.Collapsed : Visibility.Visible;
         if (width < 1020 && ContextPanel.Visibility == Visibility.Visible) NavigationPanel.Visibility = Visibility.Collapsed;
         ApplyToolbarPosition();

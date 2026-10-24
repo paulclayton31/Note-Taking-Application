@@ -8,7 +8,7 @@ namespace SurfaceNotebook.Services;
 // One ordered worker keeps disk I/O, SQLite, and serialization off the pen/UI thread.
 public sealed class AutosaveWriter : IDisposable
 {
-    private sealed record Work(Func<NotebookDatabase, object?> Run, TaskCompletionSource<object?> Completion, bool Mutation);
+    private sealed record Work(Func<NotebookDatabase, object?> Run, TaskCompletionSource<object?> Completion, bool Mutation, bool RetryAllFailures);
     private readonly Channel<Work> queue = Channel.CreateUnbounded<Work>(new UnboundedChannelOptions { SingleReader = true });
     private readonly CancellationTokenSource cancellation = new();
     private readonly Task worker;
@@ -24,17 +24,18 @@ public sealed class AutosaveWriter : IDisposable
     public AutosaveWriter(string directory) => worker = Task.Run(() => RunAsync(directory));
 
     public Task<T> ReadAsync<T>(Func<NotebookDatabase, T> action) => SubmitAsync<T>(db => action(db));
+    public Task<T> MutateAsync<T>(Func<NotebookDatabase, T> action) => SubmitAsync<T>(db => action(db), mutation: true);
     public void Write(Action<NotebookDatabase> action)
     {
-        var task = SubmitAsync<object?>(db => { action(db); return null; }, mutation: true);
+        var task = SubmitAsync<object?>(db => { action(db); return null; }, mutation: true, retryAllFailures: true);
         _ = task.ContinueWith(failed => { _ = failed.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
     }
-    private async Task<T> SubmitAsync<T>(Func<NotebookDatabase, object?> action, bool mutation = false)
+    private async Task<T> SubmitAsync<T>(Func<NotebookDatabase, object?> action, bool mutation = false, bool retryAllFailures = false)
     {
         await Initialized.ConfigureAwait(false);
         var completion = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
         Interlocked.Increment(ref pending);
-        if (!queue.Writer.TryWrite(new Work(action, completion, mutation)))
+        if (!queue.Writer.TryWrite(new Work(action, completion, mutation, retryAllFailures)))
         {
             Interlocked.Decrement(ref pending);
             throw new ObjectDisposedException(nameof(AutosaveWriter));
@@ -78,7 +79,8 @@ public sealed class AutosaveWriter : IDisposable
                         Changed?.Invoke();
                         break;
                     }
-                    catch (Exception ex) when (work.Mutation || ex is SqliteException or IOException or UnauthorizedAccessException)
+                    catch (Exception ex) when (work.RetryAllFailures || ex is IOException or UnauthorizedAccessException ||
+                        ex is SqliteException sql && (!work.Mutation || sql.SqliteErrorCode is 5 or 6 or 10 or 13 or 14))
                     {
                         // Keep this operation (and everything after it) queued in order.
                         Volatile.Write(ref error, ex.Message);

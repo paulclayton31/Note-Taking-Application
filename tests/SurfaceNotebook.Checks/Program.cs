@@ -27,12 +27,14 @@ internal static partial class Program
             CheckRoundTripAndValidation(root);
             CheckHistory();
             CheckPaperAndMigration(Path.Combine(root, "migration"));
+            CheckLibraryStorage(Path.Combine(root, "library-storage"));
             CheckDatabase(Path.Combine(root, "database"));
             CheckAutosave(Path.Combine(root, "writer"));
             CheckCrashRecovery(Path.Combine(root, "crash"));
             CheckWindow(Path.Combine(root, "ui"), args.FirstOrDefault());
             CheckNotebookTabsAndToolbar(Path.Combine(root, "workspace-navigation"));
-            Console.WriteLine("PASS: legacy migration and backup; paper geometry/templates; ink and text history; autosave/recovery; pen-only input/palm suppression; notebook tabs and last-page restoration; toolbar hit testing, mouse/touch movement, docking, bounds, and saved placement.");
+            CheckHomePensZoomAndPages(Path.Combine(root, "library-workflows"));
+            Console.WriteLine("PASS: migrations and backups; paper geometry/templates; ink and text history; autosave/recovery; pen-only input/palm suppression; notebook tabs, close-button layout at 100–200% scale, and last-page restoration; toolbar movement and saved placement; Home folders/search/stars; pen presets; touch zoom; independent page duplication and transactional reordering.");
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
@@ -243,6 +245,7 @@ internal static partial class Program
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(Dispatcher.CurrentDispatcher));
         var window = new MainWindow(root);
         Await(window.InitializeLibraryAsync());
+        window.ShowWorkspace();
         Require(window.IsReady, "Library UI did not initialize.");
         var first = window.CurrentPageId!.Value;
         var ink = (PenCanvas)window.FindName("InkSurface");

@@ -66,7 +66,7 @@ jobs:
             throw 'Preview capture timed out'
           }
           if ($appProcess.ExitCode -ne 0) { throw "Preview capture failed: $($appProcess.ExitCode)" }
-          foreach ($image in @('workspace-light.png', 'workspace-dark.png', 'paper-settings.png', 'focus-mode.png', 'portrait.png', 'compact-window.png')) {
+          foreach ($image in @('home-light.png', 'home-dark.png', 'workspace-light.png', 'workspace-dark.png', 'paper-settings.png', 'focus-mode.png', 'portrait.png', 'compact-window.png')) {
             if (-not (Test-Path -LiteralPath (Join-Path $outputDirectory $image))) { throw "Missing screenshot: $image" }
           }
       - uses: actions/upload-artifact@v4

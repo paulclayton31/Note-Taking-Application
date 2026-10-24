@@ -85,6 +85,7 @@ public partial class MainWindow
         ColorControls.Visibility = toolName is "Pen" or "Highlighter" or "Shape" or "Text" ? Visibility.Visible : Visibility.Collapsed;
         ThicknessControls.Visibility = toolName is "Pen" or "Highlighter" or "Shape" or "Eraser" ? Visibility.Visible : Visibility.Collapsed;
         PenStyleControls.Visibility = toolName == "Pen" ? Visibility.Visible : Visibility.Collapsed;
+        SavedPensPanel.Visibility = toolName == "Pen" ? Visibility.Visible : Visibility.Collapsed;
         EraserControls.Visibility = toolName == "Eraser" ? Visibility.Visible : Visibility.Collapsed;
         ShapeControls.Visibility = toolName == "Shape" ? Visibility.Visible : Visibility.Collapsed;
         TextControls.Visibility = toolName == "Text" ? Visibility.Visible : Visibility.Collapsed;
@@ -125,6 +126,7 @@ public partial class MainWindow
         if (toolName == "Highlighter") highlighterColor = (string)item.Tag; else penColor = (string)item.Tag;
         ApplyPen();
         ChangeTextAppearance(box => box.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(penColor)));
+        WritingSettingsChanged();
     }
     private void Thickness_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
@@ -134,6 +136,7 @@ public partial class MainWindow
         else penWidth = e.NewValue;
         if (ThicknessValue is not null) ThicknessValue.Text = e.NewValue.ToString("0.#", CultureInfo.CurrentCulture);
         ApplyPen();
+        WritingSettingsChanged();
     }
     private void Properties_Changed(object sender, SelectionChangedEventArgs e)
     {
@@ -141,6 +144,7 @@ public partial class MainWindow
         ApplyPen();
         if (TextSizePicker?.SelectedItem is ComboBoxItem item)
             ChangeTextAppearance(box => box.FontSize = double.Parse((string)item.Content, CultureInfo.InvariantCulture));
+        WritingSettingsChanged();
     }
     private void ChangeTextAppearance(Action<TextBox> change)
     {

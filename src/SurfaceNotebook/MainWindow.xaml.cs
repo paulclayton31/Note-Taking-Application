@@ -61,13 +61,15 @@ public partial class MainWindow : Window
         DocumentTabs.ItemsSource = openNotebooks;
         InkSurface.Strokes.StrokesChanged += Strokes_Changed;
         PreviewKeyDown += Window_KeyDown;
-        Viewport.ViewChanged += () => ZoomLabel.Text = $"{Viewport.View.Zoom:P0}";
+        AddHandler(Mouse.MouseUpEvent, new MouseButtonEventHandler((_, _) => pageDragSource = null), true);
+        Viewport.ViewChanged += UpdateZoomControls;
         Viewport.GestureCompleted += () => { if (ready && !busy) { viewTimer.Stop(); viewTimer.Start(); } };
         Viewport.PageTurnRequested += async direction => await NavigatePageAsync(direction);
         viewTimer.Tick += (_, _) => { viewTimer.Stop(); SaveCurrentView(); };
         PaperSettingsEditor.ApplyRequested += ApplyPaper;
         PaperSettingsEditor.CloseRequested += CloseContextPanel;
         InitializeTools();
+        InitializeHome();
         ApplyPen();
         SetBusy(true);
         model.Status = "Opening your notebooks…";
@@ -83,6 +85,7 @@ public partial class MainWindow : Window
         var library = await writer.Initialized;
         foreach (var notebook in library.Notebooks) notebooks.Add(notebook);
         pages.AddRange(library.Pages);
+        folders.AddRange(library.Folders ?? []);
         foreach (var page in pages) if (page.View is not null) views[page.Id] = page.View;
         preferences = library.Preferences ?? new();
         RestoreNotebookTabs();
@@ -91,9 +94,11 @@ public partial class MainWindow : Window
         ThemeIcon.Kind = preferences.Dark ? "Sun" : "Moon";
         NavigationPanel.Visibility = preferences.Sidebar ? Visibility.Visible : Visibility.Collapsed;
         RestoreToolbarPosition();
+        RestoreWritingPreferences();
+        var startAtHome = preferences.HomeVisible;
         RecoveryBanner.Visibility = library.RecoveredSession ? Visibility.Visible : Visibility.Collapsed;
         ready = true;
-        try { await ActivatePageAsync(library.LastPageId); }
+        try { await ActivatePageAsync(library.LastPageId); if (startAtHome) ShowHome(); }
         catch { ready = false; SetBusy(true); throw; }
     }
     private async void Window_Loaded(object sender, RoutedEventArgs e)
@@ -129,6 +134,7 @@ public partial class MainWindow : Window
         DocumentTabs.IsEnabled = !value;
         PageHeader.IsEnabled = !value;
         ContextPanel.IsEnabled = !value;
+        HomeView.IsEnabled = !value;
         InkSurface.IsEnabled = !value;
         if (!value) { RefreshHistory(); UpdateSaveStatus(); }
     }
@@ -214,10 +220,12 @@ public partial class MainWindow : Window
             SetStrokes(next.Strokes); RenderTexts(); ConfigurePaper();
             Viewport.SetPenPresence(false);
             if (views.TryGetValue(id, out var view)) Viewport.SetView(view); else Viewport.FitPage();
-            writer.Write(db => db.SelectPage(id));
+            var opened = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            writer.Write(db => db.SelectPage(id, opened));
+            ReplaceNotebook(notebooks.First(n => n.Id == page.NotebookId) with { LastOpened = opened });
             notebookPages[page.NotebookId] = id;
             if (openNotebooks.All(n => n.Id != page.NotebookId)) openNotebooks.Add(notebooks.First(n => n.Id == page.NotebookId));
-            BindNavigation(); SavePreferences();
+            ShowWorkspace(); BindNavigation(); SavePreferences();
             if (ContextPanel.Visibility == Visibility.Visible) PaperSettingsEditor.Load(next.Paper);
             foreach (var stale in sessions.Where(pair => pair.Key != id).OrderByDescending(pair => pair.Value.Visited).Skip(4).ToArray())
                 sessions.Remove(stale.Key);
@@ -235,7 +243,7 @@ public partial class MainWindow : Window
         {
             NotebookPicker.SelectedItem = notebook;
             BindPageList();
-            DocumentTabs.SelectedItem = openNotebooks.FirstOrDefault(n => n.Id == page.NotebookId);
+            DocumentTabs.SelectedItem = homeVisible ? null : openNotebooks.FirstOrDefault(n => n.Id == page.NotebookId);
             PageCaption.Text = page.Name;
             PaperCaption.Text = $"{notebook.Name}  /  {(session?.Paper ?? PaperSettings.Default).Label}";
             var siblings = pages.Where(p => p.NotebookId == page.NotebookId).OrderBy(p => p.Position).ToList();
@@ -276,10 +284,12 @@ public partial class MainWindow : Window
         try { await ActivateNotebookAsync(notebook.Id); }
         catch (Exception ex) { BindNavigation(); ShowError(ex); }
     }
-    public async Task<Guid> CreateNotebookAsync(string name)
+    public async Task<Guid> CreateNotebookAsync(string name, Guid? folderId = null)
     {
         if (writer is null) throw new InvalidOperationException("Library is not open.");
-        var notebook = new NotebookSummary(Guid.NewGuid(), name.Trim(), PaperSettings.Default);
+        ValidateName(name);
+        if (folderId is not null && folders.All(f => f.Id != folderId)) throw new ArgumentException("Choose an existing folder.");
+        var notebook = new NotebookSummary(Guid.NewGuid(), name.Trim(), PaperSettings.Default, folderId);
         var page = new PageSummary(Guid.NewGuid(), notebook.Id, "Page 1", 0, null, notebook.Paper);
         writer.Write(db => db.CreateNotebook(notebook, page.Id));
         notebooks.Add(notebook); pages.Add(page);
@@ -302,7 +312,7 @@ public partial class MainWindow : Window
     private async void AddNotebook_Click(object sender, RoutedEventArgs e)
     {
         var name = NameDialog.Ask(this, "New notebook", "New notebook");
-        if (name is not null) try { await CreateNotebookAsync(name); } catch (Exception ex) { ShowError(ex); }
+        if (name is not null) try { await CreateNotebookAsync(name, homeVisible ? homeFolder : (NotebookPicker.SelectedItem as NotebookSummary)?.FolderId); } catch (Exception ex) { ShowError(ex); }
     }
     private async void AddPage_Click(object sender, RoutedEventArgs e)
     {
@@ -313,16 +323,11 @@ public partial class MainWindow : Window
         if (NotebookPicker.SelectedItem is not NotebookSummary notebook || writer is null) return;
         var name = NameDialog.Ask(this, "Rename notebook", notebook.Name);
         if (name is null) return;
-        bindingSelection = true;
-        notebooks[notebooks.IndexOf(notebook)] = notebook with { Name = name };
-        UpdateNotebookTab(notebook with { Name = name });
-        bindingSelection = false;
-        writer.Write(db => db.RenameNotebook(notebook.Id, name));
-        BindNavigation();
+        RenameNotebook(notebook.Id, name);
     }
     private void RenamePage_Click(object sender, RoutedEventArgs e)
     {
-        if (pages.FirstOrDefault(p => p.Id == currentPageId) is not { } page || writer is null) return;
+        if (PageFromAction(sender) is not { } page || writer is null) return;
         var name = NameDialog.Ask(this, "Rename page", page.Name);
         if (name is null) return;
         var updated = page with { Name = name };
@@ -378,7 +383,7 @@ public partial class MainWindow : Window
     }
     public async Task<bool> ShutdownLibraryAsync()
     {
-        CommitTextEditor(); SaveCurrentView(); SavePreferences(); thumbnailTimer.Stop(); textTimer.Stop();
+        CommitTextEditor(); SaveCurrentView(); SavePreferences(); thumbnailTimer.Stop(); textTimer.Stop(); writingTimer.Stop();
         if (writer is null) return true;
         if (!writer.Initialized.IsCompletedSuccessfully) { writer.Dispose(); return true; }
         if (!await writer.FinishAsync(TimeSpan.FromSeconds(10))) return false;
@@ -408,7 +413,8 @@ public partial class MainWindow : Window
         if (e.Key == Key.F11) { ToggleFocus(); e.Handled = true; return; }
         if (e.Key == Key.Escape)
         {
-            if (ToolPopup.IsOpen) ToolPopup.IsOpen = false;
+            if (ZoomPopup.IsOpen) ZoomPopup.IsOpen = false;
+            else if (ToolPopup.IsOpen) ToolPopup.IsOpen = false;
             else if (textEditor is not null) CommitTextEditor();
             else if (ContextPanel.Visibility == Visibility.Visible) CloseContextPanel();
             else if (focusMode) ToggleFocus();
@@ -441,8 +447,8 @@ public partial class MainWindow : Window
     }
     private void ZoomIn_Click(object sender, RoutedEventArgs e) { Viewport.Zoom(1.2, new Point(Viewport.ActualWidth / 2, Viewport.ActualHeight / 2)); Viewport.CompleteGesture(); }
     private void ZoomOut_Click(object sender, RoutedEventArgs e) { Viewport.Zoom(1 / 1.2, new Point(Viewport.ActualWidth / 2, Viewport.ActualHeight / 2)); Viewport.CompleteGesture(); }
-    private void Fit_Click(object sender, RoutedEventArgs e) => Viewport.FitPage();
-    private void FitWidth_Click(object sender, RoutedEventArgs e) => Viewport.FitWidth();
+    private void Fit_Click(object sender, RoutedEventArgs e) { Viewport.FitPage(); ZoomPopup.IsOpen = false; }
+    private void FitWidth_Click(object sender, RoutedEventArgs e) { Viewport.FitWidth(); ZoomPopup.IsOpen = false; }
     private void ActualSize_Click(object sender, RoutedEventArgs e)
     {
         Viewport.SetView(new PageView(1, (Viewport.ActualWidth - Viewport.PaperWidth) / 2, 88)); Viewport.CompleteGesture();

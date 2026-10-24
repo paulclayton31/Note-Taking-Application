@@ -23,6 +23,12 @@ public static class PreviewCapture
             Seed(temporary);
             window = new MainWindow(temporary);
             await window.InitializeLibraryAsync();
+            window.ShowHome();
+            await CaptureAsync(window, Path.Combine(outputDirectory, "home-light.png"), 1440, 1000);
+            window.SetDarkTheme(true);
+            await CaptureAsync(window, Path.Combine(outputDirectory, "home-dark.png"), 1440, 1000);
+            window.SetDarkTheme(false);
+            window.ShowWorkspace();
             await CaptureAsync(window, Path.Combine(outputDirectory, "workspace-light.png"), 1440, 1000);
             window.SetDarkTheme(true);
             await CaptureAsync(window, Path.Combine(outputDirectory, "workspace-dark.png"), 1440, 1000);
@@ -51,6 +57,8 @@ public static class PreviewCapture
         content.Measure(new Size(width, height)); content.Arrange(new Rect(0, 0, width, height)); content.UpdateLayout();
         await Dispatcher.Yield(DispatcherPriority.ApplicationIdle);
         ((Controls.PageViewport)window.FindName("Viewport")).FitPage();
+        content.UpdateLayout();
+        await Dispatcher.Yield(DispatcherPriority.Render);
         content.UpdateLayout();
         var image = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); image.Render(content);
         var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image));
@@ -111,8 +119,16 @@ public static class PreviewCapture
         var calculus = new NotebookSummary(Guid.NewGuid(), "Calculus");
         var calculusPage = Guid.NewGuid();
         db.CreateNotebook(calculus, calculusPage);
+        var algebra = new NotebookSummary(Guid.NewGuid(), "Linear algebra");
+        db.CreateNotebook(algebra, Guid.NewGuid());
+        var journal = new NotebookSummary(Guid.NewGuid(), "Lab journal");
+        db.CreateNotebook(journal, Guid.NewGuid());
+        var semester = new FolderSummary(Guid.NewGuid(), "Fall semester");
+        db.CreateFolder(semester); db.CreateFolder(new FolderSummary(Guid.NewGuid(), "Reference & reading"));
+        db.CreateFolder(new FolderSummary(Guid.NewGuid(), "Engineering", semester.Id));
+        db.FavoriteNotebook(book.Id, true);
         db.SavePreferences(new WorkspacePreferences(Favorites: [first], OpenNotebooks: [book.Id, calculus.Id],
-            NotebookPages: new Dictionary<Guid, Guid> { [book.Id] = first, [calculus.Id] = calculusPage }));
+            NotebookPages: new Dictionary<Guid, Guid> { [book.Id] = first, [calculus.Id] = calculusPage }, HomeVisible: true));
         db.SelectPage(first); db.MarkClean();
     }
 }

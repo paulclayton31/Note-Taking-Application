@@ -60,7 +60,7 @@ internal static partial class Program
             db.SavePreferences(new WorkspacePreferences(ToolbarBottom: true, OpenPages: [first, second, third, other, first]));
             db.SelectPage(second); db.MarkClean();
         }
-        var window = new MainWindow(root); Await(window.InitializeLibraryAsync()); ArrangeWorkspace(window);
+        var window = new MainWindow(root); Await(window.InitializeLibraryAsync()); window.ShowWorkspace(); ArrangeWorkspace(window);
         var tabs = (ListBox)window.FindName("DocumentTabs");
         Require(tabs.Items.Count == 2 && tabs.Items.OfType<NotebookSummary>().Select(n => n.Id).Distinct().Count() == 2,
             "Old page tabs were not collapsed into one tab per notebook.");
