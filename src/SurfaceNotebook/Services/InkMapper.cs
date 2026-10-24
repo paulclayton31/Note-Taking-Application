@@ -22,6 +22,12 @@ public static class InkMapper
                 stroke.AddPropertyData(IdProperty, Guid.NewGuid().ToString());
     }
 
+    public static void RenewIdentity(Stroke stroke)
+    {
+        if (stroke.ContainsPropertyData(IdProperty)) stroke.RemovePropertyData(IdProperty);
+        stroke.AddPropertyData(IdProperty, Guid.NewGuid().ToString());
+    }
+
     public static PageDocument Capture(StrokeCollection strokes) => new(
         PageDocument.CurrentVersion, PageDocument.DefaultWidth, PageDocument.DefaultHeight,
         strokes.Select(stroke =>
@@ -31,12 +37,13 @@ public static class InkMapper
             var attributes = stroke.DrawingAttributes;
             return new InkStroke(Guid.Parse((string)stroke.GetPropertyData(IdProperty)),
                 attributes.Color.ToString(), attributes.Width, attributes.FitToCurve,
-                stroke.StylusPoints.Select(p => new InkPoint(p.X, p.Y, p.PressureFactor)).ToList());
+                stroke.StylusPoints.Select(p => new InkPoint(p.X, p.Y, p.PressureFactor)).ToList(),
+                attributes.Height, attributes.IsHighlighter, attributes.IgnorePressure, attributes.StylusTip == StylusTip.Rectangle);
         }).ToList());
 
     public static StrokeCollection Restore(PageDocument page)
     {
-        page.Validate();
+        page.Validate(enforceSizeLimits: false); // Imports are size-checked by PageStore; existing notebooks have no export-size cap.
         var result = new StrokeCollection();
         foreach (var data in page.Strokes)
         {
@@ -46,8 +53,9 @@ public static class InkMapper
                 DrawingAttributes = new DrawingAttributes
                 {
                     Color = (Color)ColorConverter.ConvertFromString(data.Color),
-                    Width = data.Width, Height = data.Width,
-                    FitToCurve = data.FitToCurve, IgnorePressure = false
+                    Width = data.Width, Height = data.Height ?? data.Width,
+                    FitToCurve = data.FitToCurve, IgnorePressure = data.IgnorePressure,
+                    IsHighlighter = data.IsHighlighter, StylusTip = data.RectangleTip ? StylusTip.Rectangle : StylusTip.Ellipse
                 }
             };
             stroke.AddPropertyData(IdProperty, data.Id.ToString());

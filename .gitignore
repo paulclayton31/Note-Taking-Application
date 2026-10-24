@@ -5,4 +5,6 @@
 *.suo
 TestResults/
 artifacts/
+work/
+release-assets/
 *.stempage

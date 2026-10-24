@@ -6,6 +6,12 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Download and run
 
+**New: [Try the v0.3 workspace preview](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.0-preview.1)** — floating tools, real paper sizes and templates, light/dark themes, tabs, thumbnails, typed text, and focus mode. Download the named x64 or ARM64 executable from that release. [Preview guide and shortcuts](docs/v0.3-workspace.md).
+
+![v0.3 paper-first workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0-preview.1/workspace-light.png)
+
+The stable v0.2 release remains available below.
+
 **[Download the latest Windows app](https://github.com/paulclayton31/Note-Taking-Application/releases/latest)** from the repository's **Releases** section.
 
 - [Windows x64 executable](https://github.com/paulclayton31/Note-Taking-Application/releases/latest/download/SurfaceNotebook-windows-x64.exe) for Intel/AMD devices.
@@ -17,7 +23,9 @@ The automatically generated **Source code** downloads contain the project files.
 
 ## Project status
 
-**v0.2** is a **C# / .NET 10 / WPF notebook app** with multiple notebooks and pages, automatic local saving, recovery of committed notes after unexpected shutdown, and touch navigation. Writing is strictly pen-only: one finger moves the page and two fingers zoom. Pressure-sensitive ink, curve fitting, pen colors/width, whole-stroke erasing, and undo/redo are retained.
+**v0.3.0-preview.1** adds the first functional redesign to the **C# / .NET 10 / WPF notebook app**. The new workspace retains v0.2's multiple notebooks/pages, ordered background autosave, committed-note recovery, and strictly pen-only writing. Fingers pan and zoom in every tool. The default pressure/curve settings remain intact.
+
+The preview supports pen/highlighter, stroke/precision erasing, native lasso transforms, geometric ink shapes, typed text, a draggable/dockable palette, paper customization, tabs, search, favorites, and focus mode. It migrates a v0.2 library with a pre-upgrade SQLite backup; v0.2 cannot directly open the upgraded library.
 
 The capabilities below describe the broader intended product. PDF annotation, STEM objects, AI, and cloud sync are future work. Physical pen/palm/touch validation is still required on each Surface model.
 
@@ -27,7 +35,7 @@ To start with the .NET 10 SDK installed:
 dotnet run --project src/SurfaceNotebook
 ```
 
-See [v0.2 usage, saving/recovery, architecture, and Surface test checklist](docs/v0.2-notebooks.md). Import existing v0.1 `.stempage` files using **Import page**. Notebook edits save automatically; wait for **Saved locally** before a forced shutdown. Portable editable copies are available through **Export page**.
+See the [v0.3 preview guide](docs/v0.3-workspace.md) and [v0.2 storage background](docs/v0.2-notebooks.md). Use the library's **…** menu to import older `.stempage` files or export the current page. Notebook edits save automatically; wait for **All changes saved** before a forced shutdown.
 
 ## Vision
 

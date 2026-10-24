@@ -2,6 +2,7 @@ using System.Windows;
 using System.IO;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using SurfaceNotebook.Services;
 
 namespace SurfaceNotebook;
 
@@ -10,6 +11,18 @@ public partial class App : Application
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        var captureIndex = Array.IndexOf(e.Args, "--capture-preview");
+        if (captureIndex >= 0)
+        {
+            try
+            {
+                if (captureIndex + 1 >= e.Args.Length) throw new ArgumentException("Provide an output directory for preview screenshots.");
+                await PreviewCapture.GenerateAsync(Path.GetFullPath(e.Args[captureIndex + 1]));
+                Shutdown(0);
+            }
+            catch (Exception ex) { Console.Error.WriteLine(ex); Shutdown(1); }
+            return;
+        }
         if (e.Args.Contains("--verify-startup", StringComparer.Ordinal))
         {
             // Exercise resources, WPF layout, and rendering in the published bundle.

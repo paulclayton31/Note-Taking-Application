@@ -5,21 +5,34 @@ namespace SurfaceNotebook.Models;
 // These types deliberately have no dependency on WPF. Positions are page-space DIPs.
 public sealed record InkPoint(double X, double Y, float Pressure);
 public sealed record InkStroke(Guid Id, string Color, double Width, bool FitToCurve,
-    List<InkPoint> Points);
+    List<InkPoint> Points, double? Height = null, bool IsHighlighter = false, bool IgnorePressure = false, bool RectangleTip = false);
 
 public sealed record PageDocument(int Version, double Width, double Height,
-    List<InkStroke> Strokes)
+    List<InkStroke> Strokes, PaperSettings? Paper = null, List<PageText>? Texts = null)
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
     public const double DefaultWidth = 816;
     public const double DefaultHeight = 1056;
 
     public void Validate(bool enforceSizeLimits = true)
     {
-        if (Version != CurrentVersion)
+        if (Version is not 1 and not CurrentVersion)
             throw new InvalidDataException($"Unsupported page version: {Version}.");
-        if (Width != DefaultWidth || Height != DefaultHeight)
-            throw new InvalidDataException("This prototype supports a single 816 × 1056 page size.");
+        if (!double.IsFinite(Width) || !double.IsFinite(Height) || Width < 288 || Height < 288 || Width > 3456 || Height > 3456)
+            throw new InvalidDataException("Invalid page dimensions.");
+        Paper?.Validate();
+        if (Paper is not null && (Math.Abs(Paper.Width - Width) > 0.01 || Math.Abs(Paper.Height - Height) > 0.01))
+            throw new InvalidDataException("Paper dimensions do not match the page.");
+        if (Texts is not null)
+        {
+            if (Texts.Count > 2000) throw new InvalidDataException("Too many text objects.");
+            var textIds = new HashSet<Guid>();
+            foreach (var text in Texts)
+                if (text is null || text.Id == Guid.Empty || !textIds.Add(text.Id) || !double.IsFinite(text.X) || !double.IsFinite(text.Y) ||
+                    Math.Abs(text.X) > 100000 || Math.Abs(text.Y) > 100000 || !double.IsFinite(text.Width) || text.Width < 40 || text.Width > 3456 ||
+                    !double.IsFinite(text.FontSize) || text.FontSize < 8 || text.FontSize > 96 || !PaperSettings.IsColor(text.Color) ||
+                    text.Text is null || text.Text.Length > 100000) throw new InvalidDataException("Invalid text object.");
+        }
         if (Strokes is null || (enforceSizeLimits && Strokes.Count > 20_000))
             throw new InvalidDataException("Invalid stroke collection.");
         var ids = new HashSet<Guid>();
@@ -30,7 +43,8 @@ public sealed record PageDocument(int Version, double Width, double Height,
                 stroke.Color is null || stroke.Color.Length != 9 || stroke.Color[0] != '#' ||
                 !uint.TryParse(stroke.Color.AsSpan(1), System.Globalization.NumberStyles.HexNumber,
                     System.Globalization.CultureInfo.InvariantCulture, out _) ||
-                !double.IsFinite(stroke.Width) || stroke.Width < 0.5 || stroke.Width > 30 ||
+                !double.IsFinite(stroke.Width) || stroke.Width < 0.5 || stroke.Width > 100 ||
+                (stroke.Height is double height && (!double.IsFinite(height) || height < 0.5 || height > 100)) ||
                 stroke.Points is null || stroke.Points.Count == 0)
                 throw new InvalidDataException("Invalid ink stroke.");
             totalPoints += stroke.Points.Count;

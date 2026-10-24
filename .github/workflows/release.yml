@@ -55,6 +55,20 @@ jobs:
             throw 'Published application startup timed out'
           }
           if ($appProcess.ExitCode -ne 0) { throw "Published application startup failed: $($appProcess.ExitCode)" }
+      - name: Capture the actual preview interface
+        shell: pwsh
+        run: |
+          $executable = (Resolve-Path release-assets/SurfaceNotebook-windows-x64.exe).Path
+          $outputDirectory = (Resolve-Path release-assets).Path
+          $appProcess = Start-Process -FilePath $executable -ArgumentList @('--capture-preview', ('"{0}"' -f $outputDirectory)) -WindowStyle Hidden -PassThru
+          if (-not $appProcess.WaitForExit(60000)) {
+            $appProcess.Kill()
+            throw 'Preview capture timed out'
+          }
+          if ($appProcess.ExitCode -ne 0) { throw "Preview capture failed: $($appProcess.ExitCode)" }
+          foreach ($image in @('workspace-light.png', 'workspace-dark.png', 'paper-settings.png', 'focus-mode.png', 'portrait.png', 'compact-window.png')) {
+            if (-not (Test-Path -LiteralPath (Join-Path $outputDirectory $image))) { throw "Missing screenshot: $image" }
+          }
       - uses: actions/upload-artifact@v4
         with:
           name: Windows-release-assets

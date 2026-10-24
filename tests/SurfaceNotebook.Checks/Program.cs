@@ -14,7 +14,7 @@ using SurfaceNotebook.Controls;
 using SurfaceNotebook.Models;
 using SurfaceNotebook.Services;
 
-internal static class Program
+internal static partial class Program
 {
     [STAThread]
     private static int Main(string[] args)
@@ -26,11 +26,12 @@ internal static class Program
         {
             CheckRoundTripAndValidation(root);
             CheckHistory();
+            CheckPaperAndMigration(Path.Combine(root, "migration"));
             CheckDatabase(Path.Combine(root, "database"));
             CheckAutosave(Path.Combine(root, "writer"));
             CheckCrashRecovery(Path.Combine(root, "crash"));
             CheckWindow(Path.Combine(root, "ui"), args.FirstOrDefault());
-            Console.WriteLine("PASS: page compatibility; transactional notebook storage; ordered autosave and retries; killed-process recovery; pen-only input; touch pan/zoom; multi-page UI and reopening.");
+            Console.WriteLine("PASS: legacy migration and backup; paper geometry/templates; ink and text history; highlighter/precision eraser/shapes; autosave/recovery; pen-only input/palm suppression; notebooks/tabs/themes/focus/responsive rendering.");
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
@@ -99,6 +100,10 @@ internal static class Program
         history.Undo();
         history.Record(new StrokeCollection { SampleStroke(), SampleStroke() });
         Require(!history.CanRedo && history.Undo().Count == 0, "New edits did not replace the redo branch.");
+        var text = new PageText(Guid.NewGuid(), 20, 30, 200, 20, "#FF24324A", "Energy");
+        history.Reset(strokes, [text]); history.Record(strokes, [text with { Text = "Kinetic energy" }]);
+        history.Undo(); Require(history.Texts.Single().Text == "Energy", "Text undo was lost.");
+        history.Redo(); Require(history.Texts.Single().Text == "Kinetic energy", "Text redo was lost.");
     }
 
     private static void CheckDatabase(string root)
@@ -280,6 +285,7 @@ internal static class Program
         Require(ink.Strokes.Count == 0, "Window undo failed.");
         ((Button)window.FindName("RedoButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(ink.Strokes.Count == 1 && InkMapper.Capture(ink.Strokes).Strokes[0].Id == identity, "Redo lost ink or identity.");
+        CheckNewWorkspace(window, ink, viewport, root);
         var second = Await(window.CreatePageAsync());
         Require(ink.Strokes.Count == 0, "A new page contains another page's ink.");
         ink.Strokes.Add(SampleStroke()); ink.Strokes.Add(SampleStroke());

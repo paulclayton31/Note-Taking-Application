@@ -1,0 +1,46 @@
+using System.Globalization;
+using System.IO;
+
+namespace SurfaceNotebook.Models;
+
+public enum PaperFormat { Letter, A4, Legal, Custom }
+public enum PaperPattern { Blank, College, Wide, Graph, Dots, Engineering }
+
+// Physical dimensions use 96 device-independent pixels per inch, at every zoom.
+public sealed record PaperSettings(
+    PaperFormat Format = PaperFormat.Letter,
+    bool Landscape = false,
+    PaperPattern Pattern = PaperPattern.College,
+    double CustomWidth = 8.5,
+    double CustomHeight = 11,
+    double Spacing = 24,
+    string Background = "#FFFFFEFA",
+    string LineColor = "#FFDCE3EC")
+{
+    public static PaperSettings Default { get; } = new();
+    private (double Width, double Height) Dimensions => Format switch
+    {
+        PaperFormat.A4 => (210 * 96 / 25.4, 297 * 96 / 25.4),
+        PaperFormat.Legal => (816, 1344),
+        PaperFormat.Custom => (CustomWidth * 96, CustomHeight * 96),
+        _ => (816, 1056)
+    };
+    public double Width => Landscape ? Dimensions.Height : Dimensions.Width;
+    public double Height => Landscape ? Dimensions.Width : Dimensions.Height;
+    public string Label => $"{(Format == PaperFormat.Letter ? "US Letter" : Format)} · {(Landscape ? "Landscape" : "Portrait")}";
+    public double LineSpacing => Pattern switch { PaperPattern.College => 26.4, PaperPattern.Wide => 33.6, _ => Spacing };
+    public static bool IsColor(string? color) => color is { Length: 9 } && color[0] == '#' &&
+        uint.TryParse(color.AsSpan(1), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out _);
+    public void Validate()
+    {
+        if (!Enum.IsDefined(Format) || !Enum.IsDefined(Pattern) || !double.IsFinite(CustomWidth) || !double.IsFinite(CustomHeight) ||
+            CustomWidth < 3 || CustomWidth > 36 || CustomHeight < 3 || CustomHeight > 36 ||
+            !double.IsFinite(Spacing) || Spacing < 8 || Spacing > 96 || !IsColor(Background) || !IsColor(LineColor))
+            throw new InvalidDataException("Paper dimensions must be 3–36 inches, spacing 8–96, and colors #AARRGGBB.");
+    }
+}
+
+public sealed record PageText(Guid Id, double X, double Y, double Width, double FontSize, string Color, string Text);
+
+public sealed record WorkspacePreferences(bool Dark = false, bool Sidebar = true, bool ToolbarBottom = false,
+    List<Guid>? OpenPages = null, List<Guid>? Favorites = null);

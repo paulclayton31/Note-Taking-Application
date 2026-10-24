@@ -2,101 +2,249 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:SurfaceNotebook.Controls"
-        Title="Surface Notebook" Width="1280" Height="900" MinWidth="720" MinHeight="520"
-        Background="#EEF1F5" Closing="Window_Closing" Loaded="Window_Loaded">
-    <DockPanel>
-        <Border DockPanel.Dock="Top" Background="White" Padding="16,10">
-            <StackPanel>
-                <DockPanel>
-                    <Button Content="Notebooks" DockPanel.Dock="Right" Click="ToggleNavigation_Click" />
-                    <StackPanel>
-                        <TextBlock Text="Surface Notebook" FontSize="24" FontWeight="SemiBold" />
-                        <TextBlock x:Name="PageCaption" Text="Opening your notebooks…" Foreground="#526174" Margin="0,2,0,8" />
-                    </StackPanel>
-                </DockPanel>
-                <WrapPanel x:Name="Toolbar">
-                    <RadioButton x:Name="PenButton" Content="Pen" GroupName="Tool" IsChecked="True" VerticalAlignment="Center" Margin="8" Checked="Tool_Changed" />
-                    <RadioButton x:Name="EraserButton" Content="Eraser" GroupName="Tool" VerticalAlignment="Center" Margin="8" Checked="Tool_Changed" ToolTip="Erase a whole stroke; the pen's inverted tip also erases" />
-                    <ComboBox x:Name="ColorPicker" SelectedIndex="0" Width="104" MinHeight="42" Margin="8,4" SelectionChanged="Color_Changed" AutomationProperties.Name="Ink color">
-                        <ComboBoxItem Content="Black" Tag="#FF172331" />
-                        <ComboBoxItem Content="Blue" Tag="#FF2459CD" />
-                        <ComboBoxItem Content="Red" Tag="#FFCE3546" />
-                        <ComboBoxItem Content="Green" Tag="#FF16734C" />
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
+        Title="Surface Notebook" Width="1440" Height="1000" MinWidth="640" MinHeight="560"
+        FontFamily="Segoe UI Variable, Segoe UI" FontSize="13"
+        Background="{DynamicResource Surface}" Foreground="{DynamicResource Ink}"
+        WindowStyle="None" ResizeMode="CanResize" Closing="Window_Closing" Loaded="Window_Loaded"
+        SizeChanged="Window_SizeChanged">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="52" ResizeBorderThickness="7" CornerRadius="0" GlassFrameThickness="0" UseAeroCaptionButtons="False"/>
+    </shell:WindowChrome.WindowChrome>
+    <Border BorderBrush="{DynamicResource Stroke}" BorderThickness="1">
+    <Grid>
+        <Grid.RowDefinitions><RowDefinition Height="52"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                    <Button Click="ToggleNavigation_Click" ToolTip="Show or hide library · Ctrl+B" Padding="10" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                        <local:WorkspaceIcon Kind="Sidebar" Foreground="{DynamicResource Muted}"/>
+                    </Button>
+                    <Border Background="{DynamicResource AccentFill}" CornerRadius="8" Width="29" Height="30" Margin="10,0,10,0">
+                        <local:WorkspaceIcon Kind="Notebook" Foreground="White" Width="19" Height="19" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="surface" FontSize="17" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Text="notebook" FontSize="17" Foreground="{DynamicResource Muted}" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel x:Name="SaveIndicator" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12,0">
+                    <Ellipse x:Name="SaveDot" Width="5" Height="5" Fill="#77A18D" Margin="0,0,7,0"/>
+                    <TextBlock Text="{Binding Status}" FontSize="11" Foreground="{DynamicResource Muted}" TextTrimming="CharacterEllipsis" MaxWidth="290"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" shell:WindowChrome.IsHitTestVisibleInChrome="True">
+                    <Button x:Name="ThemeButton" Click="Theme_Click" ToolTip="Switch light / dark theme" Padding="10"><local:WorkspaceIcon x:Name="ThemeIcon" Kind="Moon" Foreground="{DynamicResource Muted}"/></Button>
+                    <Button x:Name="FocusButton" Click="Focus_Click" ToolTip="Focus mode · F11" Padding="10"><local:WorkspaceIcon Kind="Focus" Foreground="{DynamicResource Muted}"/></Button>
+                    <Border Width="1" Background="{DynamicResource Stroke}" Margin="8,15"/>
+                    <Button Click="Minimize_Click" ToolTip="Minimize" Padding="12"><local:WorkspaceIcon Kind="Minus" Width="14" Height="14" Foreground="{DynamicResource Muted}"/></Button>
+                    <Button Click="Maximize_Click" ToolTip="Maximize / restore" Padding="12"><local:WorkspaceIcon Kind="Maximize" Width="13" Height="13" Foreground="{DynamicResource Muted}"/></Button>
+                    <Button Click="Close_Click" ToolTip="Close" Padding="12"><local:WorkspaceIcon Kind="Close" Width="15" Height="15" Foreground="{DynamicResource Muted}"/></Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <Border x:Name="NavigationPanel" Width="248" Background="{DynamicResource SidebarSurface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,1,0">
+                <Grid x:Name="NavigationControls" Margin="16,18,16,12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <DockPanel Margin="4,0,0,14">
+                        <Button DockPanel.Dock="Right" Click="AddNotebook_Click" ToolTip="New notebook" Width="44" Padding="10"><local:WorkspaceIcon Kind="Plus" Foreground="{DynamicResource Muted}"/></Button>
+                        <StackPanel VerticalAlignment="Center"><TextBlock Text="YOUR WORKSPACE" Style="{StaticResource Caption}" FontSize="10"/><TextBlock Text="Notebooks" FontSize="21" FontWeight="SemiBold" Margin="0,3,0,0"/></StackPanel>
+                    </DockPanel>
+                    <ComboBox x:Name="NotebookPicker" Grid.Row="1" SelectionChanged="Notebook_Changed" Margin="0,0,0,12" ToolTip="Switch notebook">
+                        <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/></DataTemplate></ComboBox.ItemTemplate>
+                        <ComboBox.ContextMenu><ContextMenu><MenuItem Header="Rename notebook" Click="RenameNotebook_Click"/></ContextMenu></ComboBox.ContextMenu>
                     </ComboBox>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="8,0">
-                        <TextBlock Text="Width" VerticalAlignment="Center" />
-                        <Slider Width="95" Minimum="0.5" Maximum="12" Value="{Binding Thickness, Mode=TwoWay}" ValueChanged="Thickness_Changed" Margin="8,0" VerticalAlignment="Center" AutomationProperties.Name="Pen thickness" />
-                        <TextBlock Text="{Binding Thickness, StringFormat={}{0:F1}}" Width="28" VerticalAlignment="Center" />
+                    <Grid Grid.Row="2" Margin="0,0,0,18">
+                        <TextBox x:Name="SearchBox" Padding="36,10,10,10" TextChanged="Search_Changed" ToolTip="Search page names in this notebook"/>
+                        <local:WorkspaceIcon Kind="Search" Width="16" Height="16" Foreground="{DynamicResource Faint}" HorizontalAlignment="Left" Margin="12,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="SearchPlaceholder" Text="Find a page…" Foreground="{DynamicResource Faint}" Margin="36,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"/>
+                    </Grid>
+                    <DockPanel Grid.Row="3" Margin="5,0,0,8">
+                        <Button x:Name="FavoriteFilterButton" DockPanel.Dock="Right" Click="FavoriteFilter_Click" ToolTip="Filter favorite pages" Width="44" Padding="12"><local:WorkspaceIcon Kind="Star" Width="16" Height="16" Foreground="{DynamicResource Muted}"/></Button>
+                        <TextBlock x:Name="PagesLabel" Text="PAGES" Style="{StaticResource Caption}" VerticalAlignment="Center" FontSize="10"/>
+                    </DockPanel>
+                    <Border Grid.Row="4" x:Name="RecoveryBanner" Visibility="Collapsed" Background="{DynamicResource Selected}" CornerRadius="8" Padding="10" Margin="0,0,0,8">
+                        <DockPanel><Button DockPanel.Dock="Right" Click="DismissRecovery_Click" ToolTip="Dismiss recovery notice" Padding="8"><local:WorkspaceIcon Kind="Close" Width="14" Height="14" Foreground="{DynamicResource Accent}"/></Button><TextBlock Text="Your saved notes were recovered." TextWrapping="Wrap" Foreground="{DynamicResource Accent}" FontSize="11" VerticalAlignment="Center"/></DockPanel>
+                    </Border>
+                    <Grid Grid.Row="5">
+                        <ListBox x:Name="PageList" SelectionChanged="Page_Changed" ScrollViewer.PanningMode="VerticalOnly">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid MinHeight="82">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="55"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <Border Width="48" Height="64" Background="#FFFFFEFA" BorderBrush="#D9DCE3" BorderThickness="1" CornerRadius="2">
+                                            <Image Source="{Binding Thumbnail}" Stretch="Uniform" Margin="1"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" MaxWidth="124"/>
+                                            <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,5,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                            <ListBox.ContextMenu>
+                                <ContextMenu><MenuItem Header="Rename page" Click="RenamePage_Click"/><MenuItem Header="Favorite / unfavorite page" Click="Favorite_Click"/><Separator/><MenuItem Header="Export page…" Click="Export_Click"/></ContextMenu>
+                            </ListBox.ContextMenu>
+                        </ListBox>
+                        <TextBlock x:Name="EmptyPages" Visibility="Collapsed" Text="No pages found.&#10;Try another name or add a page." Foreground="{DynamicResource Muted}" TextAlignment="Center" TextWrapping="Wrap" Margin="10,32,10,0"/>
+                    </Grid>
+                    <StackPanel Grid.Row="6">
+                        <Button Click="AddPage_Click" Style="{StaticResource PrimaryButton}" Margin="0,12,0,10">
+                            <StackPanel Orientation="Horizontal"><local:WorkspaceIcon Kind="Plus" Foreground="White" Width="17" Height="17" Margin="0,0,8,0"/><TextBlock Text="New page" Foreground="White" FontWeight="SemiBold"/></StackPanel>
+                        </Button>
+                        <DockPanel LastChildFill="False">
+                            <TextBlock Text="LOCAL LIBRARY" Style="{StaticResource Caption}" FontSize="9" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                            <Button DockPanel.Dock="Right" Click="LibraryMenu_Click" ToolTip="Library actions" Padding="10">
+                                <local:WorkspaceIcon Kind="More" Foreground="{DynamicResource Muted}" Width="18" Height="18"/>
+                                <Button.ContextMenu><ContextMenu><MenuItem Header="Rename notebook…" Click="RenameNotebook_Click"/><MenuItem Header="Import page…" Click="Import_Click"/><MenuItem Header="Export current page…" Click="Export_Click"/><Separator/><MenuItem Header="Save now    Ctrl+S" Click="Flush_Click"/></ContextMenu></Button.ContextMenu>
+                            </Button>
+                        </DockPanel>
                     </StackPanel>
-                    <Button x:Name="UndoButton" Content="Undo" Click="Undo_Click" ToolTip="Ctrl+Z" />
-                    <Button x:Name="RedoButton" Content="Redo" Click="Redo_Click" ToolTip="Ctrl+Y" />
-                    <Button Content="Clear" Click="Clear_Click" />
-                    <Button Content="Import page" Click="Import_Click" />
-                    <Button Content="Export page" Click="Export_Click" />
-                    <Button Content="Save now" Click="Flush_Click" ToolTip="Flush queued edits (Ctrl+S)" />
-                </WrapPanel>
-            </StackPanel>
-        </Border>
-        <Border DockPanel.Dock="Bottom" Background="White" Padding="16,8">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="−" MinWidth="42" Click="ZoomOut_Click" AutomationProperties.Name="Zoom out" />
-                    <TextBlock x:Name="ZoomLabel" Text="100%" Width="48" TextAlignment="Center" VerticalAlignment="Center" />
-                    <Button Content="+" MinWidth="42" Click="ZoomIn_Click" AutomationProperties.Name="Zoom in" />
-                    <Button Content="Fit width" Click="Fit_Click" />
-                </StackPanel>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Foreground="#34465C" />
-                    <TextBlock Text="Pen writes · one finger moves · two fingers zoom" Foreground="#65758A" FontSize="12" />
-                </StackPanel>
-            </DockPanel>
-        </Border>
-        <Border x:Name="RecoveryBanner" DockPanel.Dock="Top" Background="#FFF2CD" Padding="16,10" Visibility="Collapsed">
-            <DockPanel>
-                <Button Content="Dismiss" DockPanel.Dock="Right" Click="DismissRecovery_Click" />
-                <TextBlock Text="Your previous session ended unexpectedly. Your last committed notes have been recovered." VerticalAlignment="Center" TextWrapping="Wrap" />
-            </DockPanel>
-        </Border>
-        <Border x:Name="NavigationPanel" DockPanel.Dock="Left" Width="228" Background="#F8FAFC" BorderBrush="#DCE3EC" BorderThickness="0,0,1,0" Padding="12">
-            <DockPanel x:Name="NavigationControls">
-                <StackPanel DockPanel.Dock="Top">
-                    <TextBlock Text="NOTEBOOKS" FontSize="12" Foreground="#526174" FontWeight="SemiBold" Margin="4,4,0,8" />
-                    <ComboBox x:Name="NotebookPicker" DisplayMemberPath="Name" MinHeight="42" SelectionChanged="Notebook_Changed" AutomationProperties.Name="Current notebook" />
-                    <WrapPanel>
-                        <Button Content="New notebook" Click="AddNotebook_Click" />
-                        <Button Content="Rename" Click="RenameNotebook_Click" />
-                    </WrapPanel>
-                    <TextBlock Text="PAGES" FontSize="12" Foreground="#526174" FontWeight="SemiBold" Margin="4,20,0,8" />
-                    <WrapPanel>
-                        <Button Content="Add page" Click="AddPage_Click" />
-                        <Button Content="Rename" Click="RenamePage_Click" />
-                    </WrapPanel>
-                </StackPanel>
-                <ListBox x:Name="PageList" DisplayMemberPath="Name" SelectionChanged="Page_Changed" BorderThickness="0" Background="Transparent" AutomationProperties.Name="Notebook pages">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="ListBoxItem"><Setter Property="Padding" Value="12,14" /><Setter Property="Margin" Value="0,3" /></Style>
-                    </ListBox.ItemContainerStyle>
-                </ListBox>
-            </DockPanel>
-        </Border>
-        <local:PageViewport x:Name="Viewport">
-            <Border Width="816" Height="1056" HorizontalAlignment="Left" VerticalAlignment="Top" BorderBrush="#CAD2DD" BorderThickness="1">
-                <Grid Width="816" Height="1056">
-                    <Grid.Background>
-                        <DrawingBrush TileMode="Tile" Viewport="0,0,816,32" ViewportUnits="Absolute">
-                            <DrawingBrush.Drawing>
-                                <DrawingGroup>
-                                    <GeometryDrawing Brush="White" Geometry="M0,0 H816 V32 H0 Z" />
-                                    <GeometryDrawing Geometry="M0,31.5 H816">
-                                        <GeometryDrawing.Pen><Pen Brush="#E5EBF3" Thickness="1" /></GeometryDrawing.Pen>
-                                    </GeometryDrawing>
-                                </DrawingGroup>
-                            </DrawingBrush.Drawing>
-                        </DrawingBrush>
-                    </Grid.Background>
-                    <local:PenCanvas x:Name="InkSurface" Background="Transparent" ClipToBounds="True" EditingMode="Ink" EditingModeInverted="EraseByStroke" />
                 </Grid>
             </Border>
-        </local:PageViewport>
-    </DockPanel>
+            <Grid Grid.Column="1" x:Name="WorkspaceRoot" Background="{DynamicResource Workspace}">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="46"/></Grid.RowDefinitions>
+                <Border x:Name="TabStrip" Background="{DynamicResource SurfaceAlt}" BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,0,1">
+                    <ListBox x:Name="DocumentTabs" Height="47" SelectionChanged="Tab_Changed" ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                        <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}"><Setter Property="Padding" Value="10,0,2,0"/><Setter Property="Margin" Value="5,4,0,4"/></Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <local:WorkspaceIcon Kind="Page" Foreground="{DynamicResource Muted}" Width="15" Height="15" Margin="0,0,8,0"/>
+                                    <TextBlock Text="{Binding Name}" MaxWidth="155" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <Button Click="CloseTab_Click" Tag="{Binding Id}" ToolTip="Close tab" MinHeight="34" MinWidth="34" Padding="10" Margin="8,0,0,0">
+                                        <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Items.Count, ElementName=DocumentTabs}" Value="1"><Setter Property="IsEnabled" Value="False"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                        <local:WorkspaceIcon Kind="Close" Width="12" Height="12" Foreground="{DynamicResource Muted}"/>
+                                    </Button>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </Border>
+                <Grid x:Name="PageHeader" Grid.Row="1" Height="62" Margin="28,0,18,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock x:Name="PageCaption" Text="Your notebook" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="PaperCaption" Text="US Letter · Portrait" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,3,0,0"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="FavoriteButton" Click="Favorite_Click" ToolTip="Favorite this page" Padding="12"><local:WorkspaceIcon Kind="Star" Foreground="{DynamicResource Muted}" Width="17" Height="17"/></Button>
+                        <Button Click="RenamePage_Click" ToolTip="Rename current page" Padding="12"><local:WorkspaceIcon Kind="Pen" Foreground="{DynamicResource Muted}" Width="17" Height="17"/></Button>
+                        <Button x:Name="PaperButton" Click="Paper_Click" ToolTip="Paper size, template, and color" Padding="12">
+                            <StackPanel Orientation="Horizontal"><local:WorkspaceIcon Kind="Paper" Foreground="{DynamicResource Muted}" Width="17" Height="17"/><TextBlock x:Name="PaperButtonLabel" Text="Paper" Margin="7,0,0,0" Foreground="{DynamicResource Muted}"/></StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Grid>
+                <Grid Grid.Row="2" x:Name="MainStage" ClipToBounds="True">
+                    <local:PageViewport x:Name="Viewport" Background="{DynamicResource Workspace}">
+                        <Grid x:Name="PageHost" Width="816" Height="1056" HorizontalAlignment="Left" VerticalAlignment="Top">
+                            <Border Background="#0D141C30" Margin="-1,3,-1,-4" CornerRadius="2" IsHitTestVisible="False"/>
+                            <Border Background="#09141C30" Margin="-3,7,-3,-9" CornerRadius="3" IsHitTestVisible="False"/>
+                            <local:PaperSurface x:Name="PaperBackground"/>
+                            <local:PenCanvas x:Name="InkSurface" Background="Transparent" ClipToBounds="True" EditingMode="Ink" EditingModeInverted="EraseByStroke" UseCustomCursor="False"/>
+                        </Grid>
+                    </local:PageViewport>
+                    <Border x:Name="ToolbarFrame" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="16,14,16,0" Background="{DynamicResource Surface}"
+                            BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="14" Padding="5"
+                            MaxWidth="{Binding ActualWidth, ElementName=MainStage}">
+                        <DockPanel LastChildFill="True">
+                            <Thumb x:Name="ToolbarGrip" DockPanel.Dock="Left" Width="20" Cursor="SizeAll" DragDelta="Toolbar_DragDelta" DragCompleted="Toolbar_DragCompleted" ToolTip="Drag to reposition toolbar">
+                                <Thumb.Template><ControlTemplate TargetType="Thumb"><local:WorkspaceIcon Kind="Grip" Foreground="{DynamicResource Faint}" Width="14" Height="20" VerticalAlignment="Center"/></ControlTemplate></Thumb.Template>
+                            </Thumb>
+                            <WrapPanel x:Name="Toolbar" VerticalAlignment="Center">
+                                <RadioButton x:Name="PenButton" GroupName="Tools" Tag="Pen" IsChecked="True" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Pen · P"><local:WorkspaceIcon Kind="Pen" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="HighlighterButton" GroupName="Tools" Tag="Highlighter" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Highlighter · H"><local:WorkspaceIcon Kind="Highlight" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="EraserButton" GroupName="Tools" Tag="Eraser" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Eraser · E"><local:WorkspaceIcon Kind="Eraser" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="LassoButton" GroupName="Tools" Tag="Lasso" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Select ink · L"><local:WorkspaceIcon Kind="Lasso" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="ShapeButton" GroupName="Tools" Tag="Shape" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Shapes · S"><local:WorkspaceIcon Kind="Shape" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="TextButton" GroupName="Tools" Tag="Text" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Text · T"><local:WorkspaceIcon Kind="Text" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="HandButton" GroupName="Tools" Tag="Hand" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Hand / pan · V"><local:WorkspaceIcon Kind="Hand" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <Border Width="1" Height="24" Background="{DynamicResource Stroke}" Margin="7,10"/>
+                                <Button x:Name="UndoButton" Click="Undo_Click" Padding="12" ToolTip="Undo · Ctrl+Z"><local:WorkspaceIcon Kind="Undo" Foreground="{DynamicResource Muted}"/></Button>
+                                <Button x:Name="RedoButton" Click="Redo_Click" Padding="12" ToolTip="Redo · Ctrl+Y"><local:WorkspaceIcon Kind="Redo" Foreground="{DynamicResource Muted}"/></Button>
+                                <Border Width="1" Height="24" Background="{DynamicResource Stroke}" Margin="7,10"/>
+                                <Button x:Name="PropertiesButton" Click="ToolProperties_Click" Padding="10" ToolTip="Tool properties and toolbar position">
+                                    <StackPanel Orientation="Horizontal"><Ellipse x:Name="CurrentColor" Fill="#FF24324A" Width="19" Height="19" Stroke="#554B5360" StrokeThickness="1"/><local:WorkspaceIcon Kind="Down" Foreground="{DynamicResource Muted}" Width="12" Height="12" Margin="7,0,0,0"/></StackPanel>
+                                </Button>
+                            </WrapPanel>
+                        </DockPanel>
+                    </Border>
+                    <Button x:Name="RevealToolbar" Visibility="Collapsed" Click="HideToolbar_Click" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,12,0,0" Background="{DynamicResource Surface}" ToolTip="Show writing tools"><local:WorkspaceIcon Kind="Pen" Foreground="{DynamicResource Accent}"/></Button>
+                    <Popup x:Name="ToolPopup" PlacementTarget="{Binding ElementName=PropertiesButton}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" VerticalOffset="8">
+                        <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="12" Padding="20" Width="300">
+                            <StackPanel>
+                                <TextBlock x:Name="ToolTitle" Text="Pen" FontSize="17" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="ToolHint" Text="Pressure-sensitive ink" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,18" TextWrapping="Wrap"/>
+                                <StackPanel x:Name="ColorControls">
+                                    <TextBlock Text="INK COLOR" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
+                                    <ComboBox x:Name="ColorPicker" SelectedIndex="0" SelectionChanged="Color_Changed" AutomationProperties.Name="Ink color">
+                                        <ComboBoxItem Content="Midnight" Tag="#FF24324A"/><ComboBoxItem Content="Indigo" Tag="#FF5C55B3"/><ComboBoxItem Content="Rose" Tag="#FFCE3F53"/><ComboBoxItem Content="Teal" Tag="#FF248779"/><ComboBoxItem Content="Amber" Tag="#FFE7B944"/><ComboBoxItem Content="Sky" Tag="#FF4D8EC9"/><ComboBoxItem Content="White" Tag="#FFFFFFFF"/>
+                                    </ComboBox>
+                                    <WrapPanel Margin="0,9,0,12">
+                                        <Button Tag="#FF24324A" Click="Swatch_Click" ToolTip="Midnight" Padding="10"><Ellipse Fill="#24324A" Width="23" Height="23"/></Button>
+                                        <Button Tag="#FF5C55B3" Click="Swatch_Click" ToolTip="Indigo" Padding="10"><Ellipse Fill="#5C55B3" Width="23" Height="23"/></Button>
+                                        <Button Tag="#FFCE3F53" Click="Swatch_Click" ToolTip="Rose" Padding="10"><Ellipse Fill="#CE3F53" Width="23" Height="23"/></Button>
+                                        <Button Tag="#FF248779" Click="Swatch_Click" ToolTip="Teal" Padding="10"><Ellipse Fill="#248779" Width="23" Height="23"/></Button>
+                                        <Button Tag="#FFE7B944" Click="Swatch_Click" ToolTip="Amber" Padding="10"><Ellipse Fill="#E7B944" Width="23" Height="23"/></Button>
+                                    </WrapPanel>
+                                </StackPanel>
+                                <StackPanel x:Name="ThicknessControls">
+                                    <DockPanel><TextBlock x:Name="ThicknessLabel" Text="Thickness" Foreground="{DynamicResource Muted}"/><TextBlock x:Name="ThicknessValue" Text="2.5" HorizontalAlignment="Right"/></DockPanel>
+                                    <Slider x:Name="ThicknessSlider" AutomationProperties.Name="Tool thickness" Minimum="0.5" Maximum="12" Value="2.5" TickFrequency=".5" IsSnapToTickEnabled="True" ValueChanged="Thickness_Changed" Margin="0,10,0,18" Height="44"/>
+                                </StackPanel>
+                                <StackPanel x:Name="PenStyleControls">
+                                    <TextBlock Text="PEN STYLE" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
+                                    <ComboBox x:Name="PenStylePicker" SelectedIndex="0" SelectionChanged="Properties_Changed"><ComboBoxItem Content="Pressure"/><ComboBoxItem Content="Monoline"/></ComboBox>
+                                </StackPanel>
+                                <StackPanel x:Name="EraserControls" Visibility="Collapsed">
+                                    <ComboBox x:Name="EraserModePicker" SelectedIndex="0" SelectionChanged="Properties_Changed"><ComboBoxItem Content="Erase whole strokes"/><ComboBoxItem Content="Precision eraser"/></ComboBox>
+                                </StackPanel>
+                                <StackPanel x:Name="ShapeControls" Visibility="Collapsed">
+                                    <ComboBox x:Name="ShapePicker" SelectedIndex="0"><ComboBoxItem Content="Line"/><ComboBoxItem Content="Rectangle"/><ComboBoxItem Content="Ellipse"/><ComboBoxItem Content="Arrow"/></ComboBox>
+                                </StackPanel>
+                                <StackPanel x:Name="TextControls" Visibility="Collapsed">
+                                    <TextBlock Text="TEXT SIZE" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
+                                    <ComboBox x:Name="TextSizePicker" SelectedIndex="1" SelectionChanged="Properties_Changed"><ComboBoxItem Content="16"/><ComboBoxItem Content="20"/><ComboBoxItem Content="28"/><ComboBoxItem Content="36"/></ComboBox>
+                                </StackPanel>
+                                <Border Height="1" Background="{DynamicResource Stroke}" Margin="0,18,0,10"/>
+                                <Button Click="DockToolbar_Click" HorizontalContentAlignment="Left" Content="Move toolbar to top / bottom" FontSize="12"/>
+                                <Button Click="HideToolbar_Click" HorizontalContentAlignment="Left" Content="Hide writing tools" FontSize="12"/>
+                            </StackPanel>
+                        </Border>
+                    </Popup>
+                    <Border x:Name="SaveErrorBanner" Visibility="Collapsed" VerticalAlignment="Bottom" Margin="16" Padding="14"
+                            Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Danger}" BorderThickness="1" CornerRadius="10">
+                        <DockPanel><Button DockPanel.Dock="Right" Click="Export_Click" Content="Export backup" Margin="12,0,0,0"/><TextBlock Text="Storage is unavailable. Keep the app open while autosave retries. You can export this page for a backup." Foreground="{DynamicResource Danger}" TextWrapping="Wrap" VerticalAlignment="Center"/></DockPanel>
+                    </Border>
+                </Grid>
+                <Grid Grid.Row="3" Margin="24,0,14,0">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <TextBlock x:Name="InputHint" Text="Pen to write · touch to navigate" FontSize="10" Foreground="{DynamicResource Faint}" VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                        <Button x:Name="PreviousPageButton" Click="PreviousPage_Click" ToolTip="Previous page · Alt+Up" Padding="10,5"><local:WorkspaceIcon Kind="Chevron" Foreground="{DynamicResource Muted}" Width="12" Height="12"><local:WorkspaceIcon.RenderTransform><RotateTransform Angle="180" CenterX="6" CenterY="6"/></local:WorkspaceIcon.RenderTransform></local:WorkspaceIcon></Button>
+                        <TextBlock x:Name="PageNumber" Text="1 / 1" FontSize="11" Foreground="{DynamicResource Muted}" VerticalAlignment="Center" Margin="4,0"/>
+                        <Button x:Name="NextPageButton" Click="NextPage_Click" ToolTip="Next page · Alt+Down" Padding="10,5"><local:WorkspaceIcon Kind="Chevron" Foreground="{DynamicResource Muted}" Width="12" Height="12"/></Button>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <Button Click="ZoomOut_Click" ToolTip="Zoom out" Padding="7"><local:WorkspaceIcon Kind="Minus" Foreground="{DynamicResource Muted}" Width="14" Height="14"/></Button>
+                        <Button Click="Fit_Click" ToolTip="Fit whole page · right-click for more" Padding="8,4">
+                            <Button.ContextMenu><ContextMenu><MenuItem Header="Fit whole page" Click="Fit_Click"/><MenuItem Header="Fit page width" Click="FitWidth_Click"/><MenuItem Header="Actual size · 100%" Click="ActualSize_Click"/></ContextMenu></Button.ContextMenu>
+                            <TextBlock x:Name="ZoomLabel" Text="100%" FontSize="11" Foreground="{DynamicResource Muted}" MinWidth="36" TextAlignment="Center"/>
+                        </Button>
+                        <Button Click="ZoomIn_Click" ToolTip="Zoom in" Padding="7"><local:WorkspaceIcon Kind="Plus" Foreground="{DynamicResource Muted}" Width="14" Height="14"/></Button>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+            <Border x:Name="ContextPanel" Grid.Column="2" Width="312" Visibility="Collapsed" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1,0,0,0">
+                <local:PaperSettingsPanel x:Name="PaperSettingsEditor"/>
+            </Border>
+        </Grid>
+    </Grid>
+    </Border>
 </Window>
