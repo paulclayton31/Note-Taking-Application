@@ -13,7 +13,7 @@ PDF pages have fixed paper dimensions. The paper-settings button is disabled on 
 - Imports accept unlocked PDFs up to 100 MB and 200 pages. Pages must fit the app's 3–36-inch paper range. Prepared notebook data is limited to 300 MB; split larger documents before importing.
 - Preview images render at up to 192 DPI, capped at 3072 pixels on the longer edge. Import stores one self-contained source PDF page and its preview per page.
 - Password-protected PDFs need an unlocked copy first. Interactive PDF forms, signatures, attachments, and bookmarks are not notebook features; the visible page appearance is the import target.
-- PDF workflows use Windows 10 version 2004 or newer. Rendering is local, using the Windows PDF API; Adobe Reader and cloud services are not required.
+- PDF workflows run locally on supported Windows versions. Rendering is local, using a bundled PDFium renderer; Adobe Reader and cloud services are not required.
 - This change upgrades the library to schema 4, with a consistent `library-v032-backup.db` backup before the migration. Older app versions cannot open schema 4. Portable pages now use version 3; versions 1 and 2 remain readable.
 
 ## Vertical scratch-outs

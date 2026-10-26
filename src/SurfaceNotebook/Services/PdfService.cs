@@ -7,56 +7,44 @@ using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using SurfaceNotebook.Models;
-using Windows.Storage.Streams;
-using NativePdf = Windows.Data.Pdf.PdfDocument;
 
 namespace SurfaceNotebook.Services;
 
 public static class PdfService
 {
-    public static Task<List<PageDocument>> ImportAsync(string path, CancellationToken cancellation = default, IProgress<string>? progress = null) => Task.Run(async () =>
+    public static Task<List<PageDocument>> ImportAsync(string path, CancellationToken cancellation = default, IProgress<string>? progress = null) => Task.Run(() =>
     {
+        cancellation.ThrowIfCancellationRequested();
         if (new FileInfo(path).Length > 100_000_000) throw new InvalidDataException("Choose a PDF smaller than 100 MB.");
-        var bytes = await File.ReadAllBytesAsync(path, cancellation);
+        var bytes = File.ReadAllBytes(path); cancellation.ThrowIfCancellationRequested();
         using var input = new MemoryStream(bytes, writable: false);
         using var original = PdfReader.Open(input, PdfDocumentOpenMode.Import);
         if (original.SecuritySettings.IsEncrypted) throw new InvalidDataException("Save an unlocked copy of this PDF before importing it.");
         if (original.PageCount is < 1 or > 200) throw new InvalidDataException("Import PDFs with 1–200 pages at a time.");
-        using var nativeInput = new MemoryStream(bytes, writable: false);
-        cancellation.ThrowIfCancellationRequested();
-        using var nativeStream = nativeInput.AsRandomAccessStream();
-        var native = await NativePdf.LoadFromStreamAsync(nativeStream);
-        cancellation.ThrowIfCancellationRequested();
-        var result = new List<PageDocument>(); long totalBytes = 0;
-        for (var i = 0; i < original.PageCount; i++)
+        lock (PdfiumDocument.Gate)
         {
-            cancellation.ThrowIfCancellationRequested(); progress?.Report($"Preparing PDF page {i + 1} of {original.PageCount}…");
-            using var page = native.GetPage((uint)i);
-            var paper = new PaperSettings(Format: PaperFormat.Custom, Pattern: PaperPattern.Blank,
-                CustomWidth: page.Size.Width / 96, CustomHeight: page.Size.Height / 96, Background: "#FFFFFFFF");
-            paper.Validate();
-            using var rendered = new InMemoryRandomAccessStream();
-            var scale = Math.Min(2, 3072 / Math.Max(page.Size.Width, page.Size.Height));
-            // Let an in-flight Windows render finish before disposing its page/stream.
-            // Canceling its task can otherwise race native rendering with disposal.
-            cancellation.ThrowIfCancellationRequested();
-            await page.RenderToStreamAsync(rendered, new Windows.Data.Pdf.PdfPageRenderOptions
-            { DestinationWidth = (uint)Math.Ceiling(page.Size.Width * scale), DestinationHeight = (uint)Math.Ceiling(page.Size.Height * scale) });
-            cancellation.ThrowIfCancellationRequested();
-            rendered.Seek(0);
-            using var png = new MemoryStream(); await rendered.AsStreamForRead().CopyToAsync(png, cancellation);
-            using var single = new PdfDocument(); var source = original.Pages[i]; single.AddPage(source);
-            using var pdf = new MemoryStream(); single.Save(pdf, closeStream: false);
-            // Forms, annotations, rotation and crop offsets use the same Windows-rendered
-            // appearance on export. Ordinary pages retain source vectors and selectable text.
-            var raster = source.Rotate != 0 || (source.Elements.ContainsKey("/CropBox") && source.CropBox != source.MediaBox) || source.Annotations.Count > 0;
-            var background = new PdfBackground(pdf.ToArray(), png.ToArray(), raster); background.Validate();
-            totalBytes += background.SourcePdf.Length + background.PreviewPng.Length;
-            if (totalBytes > 300_000_000) throw new InvalidDataException("This PDF is too large to import in one notebook. Split it into smaller PDFs.");
-            var document = new PageDocument(PageDocument.CurrentVersion, paper.Width, paper.Height, [], paper, [], background);
-            document.Validate(); result.Add(document);
+            using var native = new PdfiumDocument(bytes);
+            if (native.PageCount != original.PageCount) throw new InvalidDataException("The PDF page count could not be verified.");
+            var result = new List<PageDocument>(); long totalBytes = 0;
+            for (var i = 0; i < original.PageCount; i++)
+            {
+                cancellation.ThrowIfCancellationRequested(); progress?.Report($"Preparing PDF page {i + 1} of {original.PageCount}…");
+                var rendered = native.Render(i, cancellation);
+                var paper = new PaperSettings(Format: PaperFormat.Custom, Pattern: PaperPattern.Blank,
+                    CustomWidth: rendered.Width / 96, CustomHeight: rendered.Height / 96, Background: "#FFFFFFFF");
+                paper.Validate();
+                using var single = new PdfDocument(); var source = original.Pages[i]; single.AddPage(source);
+                using var pdf = new MemoryStream(); single.Save(pdf, closeStream: false);
+                // Complex source pages use their exact rendered appearance on export.
+                var raster = source.Rotate != 0 || (source.Elements.ContainsKey("/CropBox") && source.CropBox != source.MediaBox) || source.Annotations.Count > 0;
+                var background = new PdfBackground(pdf.ToArray(), rendered.Png, raster); background.Validate();
+                totalBytes += background.SourcePdf.Length + background.PreviewPng.Length;
+                if (totalBytes > 300_000_000) throw new InvalidDataException("This PDF is too large to import in one notebook. Split it into smaller PDFs.");
+                var document = new PageDocument(PageDocument.CurrentVersion, paper.Width, paper.Height, [], paper, [], background);
+                document.Validate(); result.Add(document);
+            }
+            return result;
         }
-        return result;
     }, cancellation);
 
     public static BitmapImage LoadPreview(PdfBackground background, int decodeWidth = 0)
