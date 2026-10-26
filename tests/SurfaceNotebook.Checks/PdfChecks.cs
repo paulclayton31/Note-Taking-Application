@@ -34,6 +34,16 @@ internal static partial class Program
             }
             pdf.Save(fixture);
         }
+        var formPath = Path.Combine(root, "Form fields.pdf");
+        using (var form = new PdfDocument())
+        {
+            var page = form.AddPage();
+            var widget = new PdfSharp.Pdf.Annotations.PdfTextAnnotation(form) { Rectangle = new PdfRectangle(new XRect(40, 40, 100, 40)) };
+            widget.Elements.SetName("/Subtype", "/Widget"); page.Annotations.Add(widget); form.Save(formPath);
+        }
+        var formRejected = false;
+        try { Await(PdfService.ImportAsync(formPath)); } catch (InvalidDataException) { formRejected = true; }
+        Require(formRejected, "A PDF form was imported without preserving its field values.");
         var imported = Await(PdfService.ImportAsync(fixture));
         Require(imported.Count == 3 && imported[0].Width == 816 && imported[0].Height == 1056 && imported[1].Width > imported[1].Height,
             "PDF import lost page count, physical size, or landscape orientation.");

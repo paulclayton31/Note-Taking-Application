@@ -21,6 +21,9 @@ public static class PdfService
         using var original = PdfReader.Open(input, PdfDocumentOpenMode.Import);
         if (original.SecuritySettings.IsEncrypted) throw new InvalidDataException("Save an unlocked copy of this PDF before importing it.");
         if (original.PageCount is < 1 or > 200) throw new InvalidDataException("Import PDFs with 1–200 pages at a time.");
+        foreach (var page in original.Pages)
+            if (Enumerable.Range(0, page.Annotations.Count).Any(index => page.Annotations[index].Elements.GetName("/Subtype") == "/Widget"))
+                throw new InvalidDataException("This PDF contains form or signature fields. Print or flatten it to a regular PDF before importing.");
         lock (PdfiumDocument.Gate)
         {
             using var native = new PdfiumDocument(bytes);

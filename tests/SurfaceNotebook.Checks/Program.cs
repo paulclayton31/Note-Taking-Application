@@ -49,7 +49,6 @@ internal static partial class Program
             ExecuteCheck("CheckPenRail", () => CheckPenRail(Path.Combine(root, "pen-rail")));
             if (failures.Count > 0) throw new AggregateException("Regression checks failed.", failures);
             Console.WriteLine("PASS: migrations and backups; paper geometry/templates; ink and text history; autosave/recovery; pen-only input/palm suppression; notebook tabs, close-button layout at 100–200% scale, and last-page restoration; toolbar movement and saved placement; Home folders/search/stars; pen presets; touch zoom; independent page duplication and transactional reordering.");
-            Console.WriteLine($"CHECK EXIT STATE: {Environment.ExitCode}");
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
@@ -57,7 +56,6 @@ internal static partial class Program
         {
             // All paths are generated under this test's own directory.
             try { Directory.Delete(root, recursive: true); } catch (IOException) { }
-            Console.WriteLine("CHECK CLEANUP COMPLETE");
         }
     }
 
