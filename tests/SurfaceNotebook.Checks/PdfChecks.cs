@@ -33,7 +33,7 @@ internal static partial class Program
         var imported = Await(PdfService.ImportAsync(fixture));
         Require(imported.Count == 3 && imported[0].Width == 816 && imported[0].Height == 1056 && imported[1].Width > imported[1].Height,
             "PDF import lost page count, physical size, or landscape orientation.");
-        Require(!imported[0].Background!.RasterExport && imported[2].Background!.RasterExport, "PDF source/fallback export selection failed.");
+        Require(!imported[0].Background!.RasterExport && imported[2].Background!.RasterExport, $"PDF source/fallback export selection failed: {string.Join(", ", imported.Select(p => p.Background!.RasterExport))}.");
         var portable = Path.Combine(root, "Annotated.stempage");
         Await(PageStore.SaveAsync(portable, imported[0] with { Strokes = [SampleData()] }));
         var restored = Await(PageStore.LoadAsync(portable));

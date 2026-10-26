@@ -54,3 +54,5 @@ Use a notebook card's ••• menu to Copy, Duplicate, Move, Rename, or Delete
 Page actions in the header or a page's hold/right-click menu include Delete page. Deletion asks for confirmation and is permanent; the ink Undo arrow does not restore deleted pages or notebooks. Deleting the last page returns to the library; opening that empty notebook starts a fresh blank page. Deleting every notebook leaves an empty library until you create a new one.
 
 Close the final tab to return to the library, or right-click a tab for **Close all tabs**. Closing tabs saves notes and remembers each notebook's last page. The empty tab state survives restarting. Page navigation uses pixel scrolling with native touch panning and short mouse-wheel easing; system animation preferences are respected. Saved pen icons use quiet nib outlines with a color underline and retain 44-DIP touch targets.
+
+PDF import/export and vertical scratch-outs are described in the [PDF workflows guide](pdf-workflows.md).

@@ -42,7 +42,7 @@ public static class PdfService
             using var pdf = new MemoryStream(); single.Save(pdf, closeStream: false);
             // Forms, annotations, rotation and crop offsets use the same Windows-rendered
             // appearance on export. Ordinary pages retain source vectors and selectable text.
-            var raster = source.Rotate != 0 || source.CropBox != source.MediaBox || source.Annotations.Count > 0;
+            var raster = source.Rotate != 0 || (source.Elements.ContainsKey("/CropBox") && source.CropBox != source.MediaBox) || source.Annotations.Count > 0;
             var background = new PdfBackground(pdf.ToArray(), png.ToArray(), raster); background.Validate();
             totalBytes += background.SourcePdf.Length + background.PreviewPng.Length;
             if (totalBytes > 300_000_000) throw new InvalidDataException("This PDF is too large to import in one notebook. Split it into smaller PDFs.");
@@ -92,7 +92,7 @@ public static class PdfService
                     using var image = background.RasterExport ? XImage.FromStream(stream) : XPdfForm.FromStream(stream);
                     gfx.DrawImage(image, 0, 0, document.Width, document.Height);
                 }
-                else DrawPaper(gfx, document.Paper ?? PaperSettings.Default);
+                else DrawPaper(gfx, document.Paper ?? PaperSettings.Default with { Format = PaperFormat.Custom, CustomWidth = document.Width / 96, CustomHeight = document.Height / 96 });
                 foreach (var stroke in InkMapper.Restore(document))
                 {
                     var color = stroke.DrawingAttributes.Color;
