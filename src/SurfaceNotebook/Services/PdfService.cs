@@ -23,7 +23,10 @@ public static class PdfService
         if (original.SecuritySettings.IsEncrypted) throw new InvalidDataException("Save an unlocked copy of this PDF before importing it.");
         if (original.PageCount is < 1 or > 200) throw new InvalidDataException("Import PDFs with 1–200 pages at a time.");
         using var nativeInput = new MemoryStream(bytes, writable: false);
-        var native = await NativePdf.LoadFromStreamAsync(nativeInput.AsRandomAccessStream()).AsTask(cancellation);
+        cancellation.ThrowIfCancellationRequested();
+        using var nativeStream = nativeInput.AsRandomAccessStream();
+        var native = await NativePdf.LoadFromStreamAsync(nativeStream);
+        cancellation.ThrowIfCancellationRequested();
         var result = new List<PageDocument>(); long totalBytes = 0;
         for (var i = 0; i < original.PageCount; i++)
         {
@@ -34,8 +37,12 @@ public static class PdfService
             paper.Validate();
             using var rendered = new InMemoryRandomAccessStream();
             var scale = Math.Min(2, 3072 / Math.Max(page.Size.Width, page.Size.Height));
+            // Let an in-flight Windows render finish before disposing its page/stream.
+            // Canceling its task can otherwise race native rendering with disposal.
+            cancellation.ThrowIfCancellationRequested();
             await page.RenderToStreamAsync(rendered, new Windows.Data.Pdf.PdfPageRenderOptions
-            { DestinationWidth = (uint)Math.Ceiling(page.Size.Width * scale), DestinationHeight = (uint)Math.Ceiling(page.Size.Height * scale) }).AsTask(cancellation);
+            { DestinationWidth = (uint)Math.Ceiling(page.Size.Width * scale), DestinationHeight = (uint)Math.Ceiling(page.Size.Height * scale) });
+            cancellation.ThrowIfCancellationRequested();
             rendered.Seek(0);
             using var png = new MemoryStream(); await rendered.AsStreamForRead().CopyToAsync(png, cancellation);
             using var single = new PdfDocument(); var source = original.Pages[i]; single.AddPage(source);
