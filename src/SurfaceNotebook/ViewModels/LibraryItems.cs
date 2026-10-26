@@ -23,5 +23,13 @@ public sealed record PresetItem(PenPreset Preset, bool Selected)
     public string Name => Preset.Name;
     public string Color => Preset.Color;
     public string Description => Preset.Description;
+    public string PreviewPaper
+    {
+        get
+        {
+            var color = (Color)ColorConverter.ConvertFromString(Preset.Color);
+            return .2126 * color.R + .7152 * color.G + .0722 * color.B > 160 ? "#FF252B36" : "#FFFFFEFA";
+        }
+    }
 }
 public sealed record InkColorChoice(string Hex, string Name, bool Selected);

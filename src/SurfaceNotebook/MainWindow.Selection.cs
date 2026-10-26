@@ -44,6 +44,9 @@ public partial class MainWindow
         SelectionActionsButton.ContextMenu = selectionMenu;
         InkSurface.ContextMenuOpening += (_, e) =>
         {
+            // Typed objects retain their own native editing/delete menu.
+            for (var node = e.OriginalSource as DependencyObject; node is not null && node != InkSurface; node = VisualTreeHelper.GetParent(node))
+                if (node is TextBox) return;
             e.Handled = true;
             if (toolName == "Lasso" && !busy) OpenSelectionMenu(Mouse.GetPosition(InkSurface));
         };

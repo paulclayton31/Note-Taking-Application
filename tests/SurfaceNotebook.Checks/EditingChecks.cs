@@ -47,6 +47,13 @@ internal static partial class Program
             penButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); ArrangeWorkspace(window, 1440, 1000);
             Require(window.IsToolInspectorOpen && ((FrameworkElement)window.FindName("ContextPanel")).ActualWidth == 252,
                 "Tool settings did not open in a slim inspector.");
+            var swatches = (ItemsControl)window.FindName("ColorSwatches");
+            foreach (var swatch in Descendants<Button>(swatches))
+            {
+                var bounds = swatch.TransformToAncestor(swatches).TransformBounds(new Rect(swatch.RenderSize));
+                Require(swatch.ActualWidth >= 44 && bounds.Left >= 0 && bounds.Right <= swatches.ActualWidth + .1,
+                    "Color swatches were clipped or lost their touch targets.");
+            }
             Require(window.SetInkColor("#123abc") && ink.DefaultDrawingAttributes.Color == Color.FromRgb(0x12, 0x3a, 0xbc), "Custom pen color failed.");
             Require(!window.SetInkColor("oops") && ink.DefaultDrawingAttributes.Color == Color.FromRgb(0x12, 0x3a, 0xbc), "Invalid color changed the pen.");
             ((RadioButton)window.FindName("HighlighterButton")).IsChecked = true;

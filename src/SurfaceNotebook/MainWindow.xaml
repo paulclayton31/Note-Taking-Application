@@ -211,9 +211,11 @@
                                     <ItemsControl x:Name="QuickPenList">
                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate><DataTemplate>
-                                            <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="44" Height="44" Padding="9" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name, StringFormat=Use saved pen {0}}">
+                                            <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="44" Height="44" Padding="6" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name, StringFormat=Use saved pen {0}}">
                                                 <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></DataTrigger></Style.Triggers></Style></Button.Style>
-                                                <local:WorkspaceIcon Kind="Pen" Foreground="{Binding Color}" Width="23" Height="23"/>
+                                                <Border Background="{Binding PreviewPaper}" BorderBrush="{DynamicResource Muted}" BorderThickness=".6" CornerRadius="15" Width="30" Height="30">
+                                                    <local:WorkspaceIcon Kind="Pen" Foreground="{Binding Color}" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
                                             </Button>
                                         </DataTemplate></ItemsControl.ItemTemplate>
                                     </ItemsControl>
@@ -279,7 +281,7 @@
                                         <ItemsControl.ItemTemplate><DataTemplate>
                                             <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="64" Padding="5,8" ToolTip="{Binding Description}" Margin="0,0,3,5">
                                                 <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/></DataTrigger></Style.Triggers></Style></Button.Style>
-                                                <StackPanel><Ellipse Fill="{Binding Color}" Width="21" Height="21" Margin="0,0,0,7"/><TextBlock Text="{Binding Name}" FontSize="10" TextTrimming="CharacterEllipsis" MaxWidth="54" TextAlignment="Center"/></StackPanel>
+                                                <StackPanel><Ellipse Fill="{Binding Color}" Stroke="{DynamicResource Muted}" StrokeThickness=".7" Width="21" Height="21" Margin="0,0,0,7"/><TextBlock Text="{Binding Name}" FontSize="10" TextTrimming="CharacterEllipsis" MaxWidth="54" TextAlignment="Center"/></StackPanel>
                                                 <Button.ContextMenu><ContextMenu><MenuItem Header="Rename saved pen…" Tag="rename" Click="PresetAction_Click"/><MenuItem Header="Remove saved pen" Tag="remove" Click="PresetAction_Click"/></ContextMenu></Button.ContextMenu>
                                             </Button>
                                         </DataTemplate></ItemsControl.ItemTemplate>
@@ -298,7 +300,7 @@
                                     <TextBlock x:Name="ColorTitle" Text="Pen color" FontWeight="SemiBold"/>
                                     <TextBlock x:Name="ColorValue" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,8"/>
                                 <ItemsControl x:Name="ColorSwatches">
-                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="5"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="4"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate><DataTemplate>
                                         <Button Tag="{Binding Hex}" Click="Swatch_Click" Width="44" Height="44" Padding="9" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}">
                                             <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></DataTrigger></Style.Triggers></Style></Button.Style>

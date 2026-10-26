@@ -65,10 +65,6 @@ public partial class MainWindow
         if (InkSurface is null || ColorPicker is null || sender is not RadioButton button || !IsInitialized) return;
         CommitTextEditor();
         toolName = (string)button.Tag;
-        // The overflow tools live in a Popup, which has its own radio-button scope.
-        foreach (var other in new[] { PenButton, HighlighterButton, EraserButton, LassoButton, ShapeButton, TextButton, HandButton })
-            if (other != button) other.IsChecked = false;
-
         selectionMenu.IsOpen = false;
         if (toolName != "Text") selectedTextId = null;
         changingTool = true;
@@ -176,17 +172,15 @@ public partial class MainWindow
     {
         var hex = (string)((Button)sender).Tag;
         SetInkColor(hex);
-
     }
     private void ToolProperties_Click(object sender, RoutedEventArgs e)
-    {  selectionMenu.IsOpen = false; ToggleToolInspector(); }
+    { selectionMenu.IsOpen = false; ToggleToolInspector(); }
     private void HideToolbar_Click(object sender, RoutedEventArgs e)
     {
         toolbarHidden = !toolbarHidden;
         ToolbarFrame.Visibility = toolbarHidden ? Visibility.Collapsed : Visibility.Visible;
         RevealToolbar.Visibility = toolbarHidden ? Visibility.Visible : Visibility.Collapsed;
         CloseToolInspector();
-
     }
 
     private void TextCanvas_Down(object sender, MouseButtonEventArgs e)
