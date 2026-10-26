@@ -41,26 +41,18 @@ internal static partial class Program
         try
         {
             Require(((ItemsControl)window.FindName("QuickPenList")).Items.Count == 3, "Saved pens are missing from the writing palette.");
-            Require(((ItemsControl)window.FindName("ColorSwatches")).Items.Count == 18, "The color grid did not initialize.");
             var penButton = (RadioButton)window.FindName("PenButton");
             penButton.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = UIElement.PreviewMouseLeftButtonDownEvent });
             penButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); ArrangeWorkspace(window, 1440, 1000);
-            Require(window.IsToolInspectorOpen && ((FrameworkElement)window.FindName("ContextPanel")).ActualWidth == 252,
+            Require(window.IsToolInspectorOpen && ((FrameworkElement)window.FindName("ToolInspector")).ActualWidth == 64,
                 "Tool settings did not open in a slim inspector.");
-            var swatches = (ItemsControl)window.FindName("ColorSwatches");
-            foreach (var swatch in Descendants<Button>(swatches))
-            {
-                var bounds = swatch.TransformToAncestor(swatches).TransformBounds(new Rect(swatch.RenderSize));
-                Require(swatch.ActualWidth >= 44 && bounds.Left >= 0 && bounds.Right <= swatches.ActualWidth + .1,
-                    "Color swatches were clipped or lost their touch targets.");
-            }
             Require(window.SetInkColor("#123abc") && ink.DefaultDrawingAttributes.Color == Color.FromRgb(0x12, 0x3a, 0xbc), "Custom pen color failed.");
             Require(!window.SetInkColor("oops") && ink.DefaultDrawingAttributes.Color == Color.FromRgb(0x12, 0x3a, 0xbc), "Invalid color changed the pen.");
             ((RadioButton)window.FindName("HighlighterButton")).IsChecked = true;
             Require(window.SetInkColor("#DDEE11"), "Custom highlighter color failed.");
             ((RadioButton)window.FindName("PenButton")).IsChecked = true;
             Require(ink.DefaultDrawingAttributes.Color == Color.FromRgb(0x12, 0x3a, 0xbc), "Switching tools lost a custom pen color.");
-            var preset = window.SavePenPreset("Custom study pen"); window.ApplyPenPreset(preset.Id);
+            var preset = window.AddPen("Custom study pen"); window.ApplyPenPreset(preset.Id);
             Require(((ItemsControl)window.FindName("QuickPenList")).Items.OfType<PresetItem>().Any(p => p.Id == preset.Id && p.Selected),
                 "The active saved pen is not available on the palette.");
             Require(InkMapper.Capture(ink.Strokes).Strokes.Single() == original ||
@@ -71,15 +63,18 @@ internal static partial class Program
 
             foreach (var width in new[] { 640d, 960, 1440 })
             {
-                window.Width = width; ArrangeWorkspace(window, width, 1000);
+                window.Width = width; window.UpdateLayout();
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                var nativeWidth = window.ActualWidth; var nativeHeight = window.ActualHeight;
+                ArrangeWorkspace(window, nativeWidth, nativeHeight);
                 var stage = (FrameworkElement)window.FindName("MainStage");
                 var stageWidth = stage.ActualWidth;
-                window.ShowToolInspector(); ArrangeWorkspace(window, width, 1000);
-                if (width < 1280) Require(Math.Abs(stage.ActualWidth - stageWidth) < .1, "Compact tool settings narrowed the writing viewport.");
+                window.ShowToolInspector(); ArrangeWorkspace(window, nativeWidth, nativeHeight);
+                Require(Math.Abs(stage.ActualWidth - stageWidth) < .1, $"Tool rail changed writing width at {width}: before {stageWidth}, after {stage.ActualWidth}, context {((FrameworkElement)window.FindName("ContextPanel")).Visibility}.");
                 var toolbar = (FrameworkElement)window.FindName("ToolbarFrame");
                 Require(toolbar.ActualHeight <= 60 && toolbar.ActualWidth <= stage.ActualWidth - 23.9, "The writing palette wrapped or left the viewport.");
                 RequireToolbarReachable(window);
-                window.CloseToolInspector(); ArrangeWorkspace(window, width, 1000);
+                window.CloseToolInspector(); ArrangeWorkspace(window, nativeWidth, nativeHeight);
             }
             window.Width = 1440; ArrangeWorkspace(window, 1440, 1000);
             ((RadioButton)window.FindName("LassoButton")).IsChecked = true;
@@ -148,6 +143,11 @@ internal static partial class Program
     }
     private static void CheckScribbleEditing(string root)
     {
+        Stroke QuickScratch(double height) => new(new StylusPointCollection
+        { new StylusPoint(70, 100), new StylusPoint(190, 100 + height / 3), new StylusPoint(70, 100 + 2 * height / 3), new StylusPoint(190, 100 + height) });
+        Require(ScribbleGesture.IsScribble(QuickScratch(12)) && ScribbleGesture.IsScribble(QuickScratch(0)), "A quick three-pass scratch-out required too many reversals.");
+        var diagonal = QuickScratch(12); diagonal.Transform(new Matrix(Math.Cos(.7), Math.Sin(.7), -Math.Sin(.7), Math.Cos(.7), 0, 0), false);
+        Require(ScribbleGesture.IsScribble(diagonal), "Diagonal scratch-outs were harder to recognize.");
         Require(ScribbleGesture.IsScribble(Scribble(70, 96)), "A deliberate back-and-forth scribble was not recognized.");
         var vertical = Scribble(70, 96); vertical.Transform(new Matrix(0, 1, 1, 0, 0, 0), false);
         Require(ScribbleGesture.IsScribble(vertical), "Vertical scribble recognition failed.");
@@ -180,6 +180,13 @@ internal static partial class Program
         Click((Button)window.FindName("RedoButton")); Require(ink.Strokes.Count == 2, "Scribble erasing could not redo.");
         Click((Button)window.FindName("UndoButton")); Click((Button)window.FindName("UndoButton"));
         Require(ink.Strokes.Select(InkMapper.Identity).SequenceEqual(originalIds), "A second undo did not remove only the scribble.");
+        foreach (var quick in new[] { QuickScratch(12), QuickScratch(0) })
+        {
+            Collect(ink, quick);
+            Require(ink.Strokes.Count == 2, "A quick scratch-out did not erase handwriting with partial vertical coverage.");
+            Click((Button)window.FindName("UndoButton")); Click((Button)window.FindName("UndoButton"));
+            Require(ink.Strokes.Select(InkMapper.Identity).SequenceEqual(originalIds), "Undo lost content after a short scratch-out.");
+        }
         ((CheckBox)window.FindName("ScribbleEraseToggle")).IsChecked = false;
         Collect(ink, Scribble(70, 96)); Require(ink.Strokes.Count == 4, "Disabled scribble erasing still deleted content.");
         Click((Button)window.FindName("UndoButton"));

@@ -6,11 +6,11 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Download and run
 
-**[Surface Notebook v0.3.0](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.0)** is the stable release: a Home library with folders, a compact writing toolbar, tool customization sidebar, saved pens, improved color selection, lasso actions, and undoable scribble erasing. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md).
+**[Surface Notebook v0.3.1](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.1)** is the stable release: a Home library with folders, a compact writing toolbar, thin vertical tool rail, pens that save edits automatically, color-wheel selection, lasso actions, and easier undoable scribble erasing. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md).
 
-![Your notebook library](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0/home-light.png)
+![Your notebook library](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.1/home-light.png)
 
-[See the writing workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0/workspace-light.png) · [Tool customization sidebar](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0/tool-inspector.png)
+[See the writing workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.1/workspace-light.png) · [Tool customization sidebar](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.1/tool-inspector.png)
 
 **[Download the latest Windows app](https://github.com/paulclayton31/Note-Taking-Application/releases/latest)** from the repository's **Releases** section.
 
@@ -23,9 +23,9 @@ The automatically generated **Source code** downloads contain the project files.
 
 ## Project status
 
-**v0.3.0** refines the paper-first design of the **C# / .NET 10 / WPF notebook app**. The workspace retains v0.2's multiple notebooks/pages, ordered background autosave, committed-note recovery, and strictly pen-only writing. Fingers pan and zoom in every tool. The default pressure/curve settings remain intact.
+**v0.3.1** refines the paper-first design of the **C# / .NET 10 / WPF notebook app**. The workspace retains v0.2's multiple notebooks/pages, ordered background autosave, committed-note recovery, and strictly pen-only writing. Fingers pan and zoom in every tool. The default pressure/curve settings remain intact.
 
-The app supports pen/highlighter, stroke/precision erasing, native lasso transforms and copy/duplicate/delete/paste, geometric ink shapes, typed text, a draggable/dockable palette, a temporary tool inspector, custom ink colors, undoable scribble erasing, paper customization, notebook tabs, nested folders, recents, stars, search, saved pens, touch zoom, page duplication/reordering, and focus mode. Existing older libraries are upgraded with a consistent SQLite backup. v0.3.0 keeps preview.3's database schema; versions that do not support schema 3 cannot open the upgraded library. See the [release and upgrade notes](docs/releases/v0.3.0.md).
+The app supports pen/highlighter, stroke/precision erasing, native lasso transforms and copy/duplicate/delete/paste, geometric ink shapes, typed text, a draggable/dockable palette, a thin floating tool rail, automatic pen-edit saving, a color wheel, Fountain/Ball buttons, easier undoable scribble erasing, paper customization, notebook tabs, nested folders, recents, stars, search, saved pens, touch zoom, page duplication/reordering, and focus mode. Existing older libraries are upgraded with a consistent SQLite backup. v0.3.1 keeps preview.3's database schema; versions that do not support schema 3 cannot open the upgraded library. See the [release and upgrade notes](docs/releases/v0.3.1.md).
 
 The capabilities below describe the broader intended product. PDF annotation, STEM objects, AI, and cloud sync are future work. Physical pen/palm/touch validation is still required on each Surface model.
 

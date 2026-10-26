@@ -18,9 +18,9 @@ public partial class MainWindow
         if (busy || toolName != "Pen" || ScribbleEraseToggle.IsChecked != true || session is null ||
             !InkSurface.Strokes.Contains(gesture) || !ScribbleGesture.IsScribble(gesture)) return false;
         var path = gesture.StylusPoints.Select(p => p.ToPoint()).ToArray();
-        var bounds = gesture.GetBounds();
-        var erased = InkSurface.Strokes.Where(s => s != gesture && s.HitTest(bounds, 60) &&
-            ScribbleGesture.CrossesRepeatedly(path, s.GetBounds()) && s.HitTest(path, new EllipseStylusShape(8, 8))).ToList();
+        var bounds = gesture.GetBounds(); bounds.Inflate(6, 6);
+        var erased = InkSurface.Strokes.Where(s => s != gesture && s.HitTest(bounds, 30) &&
+            ScribbleGesture.CrossesRepeatedly(path, s.GetBounds()) && s.HitTest(path, new EllipseStylusShape(12, 12))).ToList();
         var replacements = new Dictionary<Guid, PageText>();
         foreach (var box in InkSurface.Children.OfType<TextBox>())
         {

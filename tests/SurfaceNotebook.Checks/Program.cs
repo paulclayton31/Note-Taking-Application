@@ -24,18 +24,27 @@ internal static partial class Program
         Directory.CreateDirectory(root);
         try
         {
-            CheckRoundTripAndValidation(root);
-            CheckHistory();
-            CheckPaperAndMigration(Path.Combine(root, "migration"));
-            CheckLibraryStorage(Path.Combine(root, "library-storage"));
-            CheckDatabase(Path.Combine(root, "database"));
-            CheckAutosave(Path.Combine(root, "writer"));
-            CheckCrashRecovery(Path.Combine(root, "crash"));
-            CheckWindow(Path.Combine(root, "ui"), args.FirstOrDefault());
-            CheckNotebookTabsAndToolbar(Path.Combine(root, "workspace-navigation"));
-            CheckHomePensZoomAndPages(Path.Combine(root, "library-workflows"));
-            CheckEditingTools(Path.Combine(root, "editing-tools"));
-            CheckScribbleEditing(Path.Combine(root, "scribble-editing"));
+            var failures = new List<Exception>();
+            void ExecuteCheck(string name, Action check)
+            {
+                try { check(); }
+                catch (Exception ex) { Console.Error.WriteLine($"FAIL: {name}: {ex}"); failures.Add(ex); }
+            }
+            ExecuteCheck("CheckRoundTripAndValidation", () => CheckRoundTripAndValidation(root));
+            ExecuteCheck("CheckHistory", () => CheckHistory());
+            ExecuteCheck("CheckPaperAndMigration", () => CheckPaperAndMigration(Path.Combine(root, "migration")));
+            ExecuteCheck("CheckLibraryStorage", () => CheckLibraryStorage(Path.Combine(root, "library-storage")));
+            ExecuteCheck("CheckDatabase", () => CheckDatabase(Path.Combine(root, "database")));
+            ExecuteCheck("CheckAutosave", () => CheckAutosave(Path.Combine(root, "writer")));
+            ExecuteCheck("CheckCrashRecovery", () => CheckCrashRecovery(Path.Combine(root, "crash")));
+            ExecuteCheck("CheckWindow", () => CheckWindow(Path.Combine(root, "ui"), args.FirstOrDefault()));
+            ExecuteCheck("CheckNotebookTabsAndToolbar", () => CheckNotebookTabsAndToolbar(Path.Combine(root, "workspace-navigation")));
+            ExecuteCheck("CheckHomePensZoomAndPages", () => CheckHomePensZoomAndPages(Path.Combine(root, "library-workflows")));
+            ExecuteCheck("CheckEditingTools", () => CheckEditingTools(Path.Combine(root, "editing-tools")));
+            ExecuteCheck("CheckScribbleEditing", () => CheckScribbleEditing(Path.Combine(root, "scribble-editing")));
+            ExecuteCheck("CheckColorWheel", () => CheckColorWheel());
+            ExecuteCheck("CheckPenRail", () => CheckPenRail(Path.Combine(root, "pen-rail")));
+            if (failures.Count > 0) throw new AggregateException("Regression checks failed.", failures);
             Console.WriteLine("PASS: migrations and backups; paper geometry/templates; ink and text history; autosave/recovery; pen-only input/palm suppression; notebook tabs, close-button layout at 100–200% scale, and last-page restoration; toolbar movement and saved placement; Home folders/search/stars; pen presets; touch zoom; independent page duplication and transactional reordering.");
             return 0;
         }

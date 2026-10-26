@@ -26,6 +26,7 @@ public partial class MainWindow
     {
         InitializeToolbarMovement();
         InitializeSelectionActions();
+        InitializePenEditor();
         Viewport.AddHandler(PreviewStylusDownEvent, new StylusDownEventHandler((_, e) =>
         {
             if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Stylus && toolName != "Hand") CloseToolInspector();
@@ -65,11 +66,12 @@ public partial class MainWindow
         if (InkSurface is null || ColorPicker is null || sender is not RadioButton button || !IsInitialized) return;
         CommitTextEditor();
         toolName = (string)button.Tag;
-        selectionMenu.IsOpen = false;
+        selectionMenu.IsOpen = false; PenEditorPopup.IsOpen = false; ToolOptionsPopup.IsOpen = false; AllPensPopup.IsOpen = false;
         if (toolName != "Text") selectedTextId = null;
         changingTool = true;
         try
         {
+            if (toolName == "Pen") LoadActivePenSettings();
             ThicknessSlider.Minimum = toolName is "Highlighter" or "Eraser" ? 4 : .5;
             ThicknessSlider.Maximum = toolName is "Highlighter" or "Eraser" ? 60 : 12;
             ThicknessSlider.Value = toolName switch { "Highlighter" => highlighterWidth, "Eraser" => eraserSize, _ => penWidth };
@@ -94,6 +96,7 @@ public partial class MainWindow
         ColorControls.Visibility = toolName is "Pen" or "Highlighter" or "Shape" or "Text" ? Visibility.Visible : Visibility.Collapsed;
         ThicknessControls.Visibility = toolName is "Pen" or "Highlighter" or "Shape" or "Eraser" ? Visibility.Visible : Visibility.Collapsed;
         PenStyleControls.Visibility = toolName == "Pen" ? Visibility.Visible : Visibility.Collapsed;
+        ScribbleEraseToggle.Visibility = toolName == "Pen" ? Visibility.Visible : Visibility.Collapsed;
         SavedPensPanel.Visibility = toolName == "Pen" ? Visibility.Visible : Visibility.Collapsed;
         EraserControls.Visibility = toolName == "Eraser" ? Visibility.Visible : Visibility.Collapsed;
         ShapeControls.Visibility = toolName == "Shape" ? Visibility.Visible : Visibility.Collapsed;
@@ -101,6 +104,7 @@ public partial class MainWindow
         ThicknessLabel.Text = toolName == "Eraser" ? "Eraser size" : "Thickness";
         RefreshSavedPens(); RefreshColorChoices(); UpdateSelectionActions();
         InputHint.Text = ToolHint.Text;
+        UpdateToolInspectorPlacement(ActualWidth);
     }
     private void ApplyPen()
     {
@@ -112,7 +116,7 @@ public partial class MainWindow
         InkSurface.DefaultDrawingAttributes = new DrawingAttributes
         {
             Color = color, Width = width, Height = width,
-            IgnorePressure = highlighter || toolName == "Shape" || PenStylePicker?.SelectedIndex == 1,
+            IgnorePressure = highlighter || toolName == "Shape" || BallStyleButton?.IsChecked == true,
             FitToCurve = toolName != "Shape", IsHighlighter = highlighter,
             StylusTip = highlighter ? StylusTip.Rectangle : StylusTip.Ellipse
         };
@@ -127,6 +131,7 @@ public partial class MainWindow
         Viewport.HandMode = toolName == "Hand";
         InkSurface.Cursor = toolName == "Hand" ? Cursors.Hand : toolName == "Text" ? Cursors.IBeam : Cursors.Pen;
         if (CurrentColor is not null) CurrentColor.Fill = new SolidColorBrush(color);
+        if (RailColor is not null) RailColor.Fill = new SolidColorBrush(color);
         RefreshColorChoices();
     }
     private void Color_Changed(object sender, SelectionChangedEventArgs e)
@@ -167,11 +172,6 @@ public partial class MainWindow
         if (updated == session.Texts[index]) return;
         session.Texts[index] = updated; session.History.Record(InkSurface.Strokes, session.Texts);
         SaveTextDraft(); RefreshHistory();
-    }
-    private void Swatch_Click(object sender, RoutedEventArgs e)
-    {
-        var hex = (string)((Button)sender).Tag;
-        SetInkColor(hex);
     }
     private void ToolProperties_Click(object sender, RoutedEventArgs e)
     { selectionMenu.IsOpen = false; ToggleToolInspector(); }

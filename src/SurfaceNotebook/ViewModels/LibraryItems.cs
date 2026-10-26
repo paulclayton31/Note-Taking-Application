@@ -32,4 +32,3 @@ public sealed record PresetItem(PenPreset Preset, bool Selected)
         }
     }
 }
-public sealed record InkColorChoice(string Hex, string Name, bool Selected);

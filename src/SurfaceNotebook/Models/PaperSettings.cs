@@ -51,7 +51,7 @@ public sealed record PenPreset(Guid Id, string Name, string Color, double Width,
 {
     public bool IsValid => Id != Guid.Empty && !string.IsNullOrWhiteSpace(Name) && Name.Length <= 80 &&
         PaperSettings.IsColor(Color) && double.IsFinite(Width) && Width >= .5 && Width <= 12;
-    public string Description => $"{Width:0.#} pt · {(Monoline ? "Monoline" : "Pressure")}";
+    public string Description => $"{Width:0.#} pt · {(Monoline ? "Ball · monoline" : "Fountain · pressure")}";
     public static List<PenPreset> Defaults =>
     [
         new(new Guid("31b22a24-42df-4636-8e6c-bd2367fa2e11"), "Midnight", "#FF24324A", 2.5),
