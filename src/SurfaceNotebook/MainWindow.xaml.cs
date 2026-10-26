@@ -185,6 +185,9 @@ public partial class MainWindow : Window
     {
         if (session is null || writer is null || currentPageId is not Guid id) return;
         var document = CaptureCurrent();
+        var index = pages.FindIndex(p => p.Id == id);
+        if (index >= 0 && (pages[index].IsPdf != (document.Background is not null) || pages[index].Paper != document.Paper))
+            pages[index] = pages[index] with { IsPdf = document.Background is not null, Paper = document.Paper };
         session.StrokeIds.Clear(); session.StrokeIds.UnionWith(InkSurface.Strokes.Select(InkMapper.Identity));
         writer.Write(db => db.ReplacePage(id, document));
         if (history) session.History.Record(InkSurface.Strokes, session.Texts);

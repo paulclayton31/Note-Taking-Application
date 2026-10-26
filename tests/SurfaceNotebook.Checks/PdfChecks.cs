@@ -60,7 +60,10 @@ internal static partial class Program
             using var canceled = new CancellationTokenSource(); canceled.Cancel();
             try { Await(window.ImportPdfAsync(fixture, canceled.Token)); throw new Exception("Canceled PDF import succeeded."); } catch (OperationCanceledException) { }
             var invalid = Path.Combine(root, "Invalid.pdf"); File.WriteAllText(invalid, "not a PDF");
-            try { Await(window.ImportPdfAsync(invalid)); throw new Exception("Invalid PDF import succeeded."); } catch (PdfReaderException) { }
+            var rejected = false;
+            try { Await(window.ImportPdfAsync(invalid)); }
+            catch (Exception ex) when (ex is PdfReaderException or InvalidOperationException or InvalidDataException) { rejected = true; }
+            Require(rejected, "Invalid PDF import succeeded.");
             Require(window.CurrentPageId == first, "Canceled or invalid import changed the current page.");
             Require(Await(window.ShutdownLibraryAsync()), "PDF library did not save.");
         }

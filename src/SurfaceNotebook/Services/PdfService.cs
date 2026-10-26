@@ -102,7 +102,7 @@ public static class PdfService
                 foreach (var text in document.Texts ?? [])
                 {
                     var formatted = new FormattedText(text.Text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                        new Typeface("Segoe UI"), text.FontSize, Brushes.Black, 1) { MaxTextWidth = Math.Max(1, text.Width - 4) };
+                        new Typeface("Segoe UI Variable, Segoe UI"), text.FontSize, Brushes.Black, 1) { MaxTextWidth = Math.Max(1, text.Width - 4) };
                     var color = (Color)ColorConverter.ConvertFromString(text.Color);
                     DrawGeometry(gfx, formatted.BuildGeometry(new Point(text.X + 2, text.Y + 2)), XColor.FromArgb(color.A, color.R, color.G, color.B));
                 }
@@ -120,6 +120,7 @@ public static class PdfService
     {
         var flattened = geometry.GetFlattenedPathGeometry(.12, ToleranceType.Absolute);
         var path = new XGraphicsPath { FillMode = flattened.FillRule == FillRule.EvenOdd ? XFillMode.Alternate : XFillMode.Winding };
+        var any = false;
         foreach (var figure in flattened.Figures)
         {
             var points = new List<XPoint> { new(figure.StartPoint.X, figure.StartPoint.Y) };
@@ -129,9 +130,11 @@ public static class PdfService
                 else if (segment is LineSegment line) points.Add(new XPoint(line.Point.X, line.Point.Y));
             }
             if (points.Count < 2) continue;
-            path.StartFigure(); path.AddLines(points.ToArray()); if (figure.IsClosed) path.CloseFigure();
+            any = true;
+            var transformed = points.Select(p => flattened.Transform.Transform(new Point(p.X, p.Y))).Select(p => new XPoint(p.X, p.Y)).ToArray();
+            path.StartFigure(); path.AddLines(transformed); if (figure.IsClosed) path.CloseFigure();
         }
-        gfx.DrawPath(new XSolidBrush(color), path);
+        if (any) gfx.DrawPath(new XSolidBrush(color), path);
     }
     private static void DrawPaper(XGraphics gfx, PaperSettings paper)
     {
