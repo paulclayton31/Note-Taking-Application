@@ -29,7 +29,7 @@ public partial class MainWindow
     }
     private void ZoomMenu_Click(object sender, RoutedEventArgs e)
     {
-        ToolPopup.IsOpen = false; UpdateZoomControls(); ZoomPopup.IsOpen = !ZoomPopup.IsOpen;
+        CloseToolInspector(); selectionMenu.IsOpen = false; UpdateZoomControls(); ZoomPopup.IsOpen = !ZoomPopup.IsOpen;
     }
     private void ZoomSlider_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     { if (!updatingZoom && ready && !busy) SetZoomPercent(e.NewValue); }

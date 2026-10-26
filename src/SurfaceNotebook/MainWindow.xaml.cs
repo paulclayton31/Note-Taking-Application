@@ -136,6 +136,13 @@ public partial class MainWindow : Window
         ContextPanel.IsEnabled = !value;
         HomeView.IsEnabled = !value;
         InkSurface.IsEnabled = !value;
+        ToolbarFrame.IsEnabled = !value;
+        if (value)
+        {
+            CloseToolInspector(); selectionMenu.IsOpen = false;
+            EditNotice.Visibility = Visibility.Collapsed; editNoticeTimer.Stop(); selectionPointerDown = null;
+        }
+        UpdateSelectionActions();
         if (!value) { RefreshHistory(); UpdateSaveStatus(); }
     }
 
@@ -187,6 +194,7 @@ public partial class MainWindow : Window
     private void Redo_Click(object sender, RoutedEventArgs e) => ApplyHistory(undo: false);
     private void ApplyHistory(bool undo)
     {
+        EditNotice.Visibility = Visibility.Collapsed; editNoticeTimer.Stop(); selectionMenu.IsOpen = false;
         CommitTextEditor();
         if (session is null || currentPageId is null ||
             (undo ? !session.History.CanUndo : !session.History.CanRedo)) return;
@@ -196,6 +204,7 @@ public partial class MainWindow : Window
         finally { restoring = false; }
         RenderTexts();
         SaveFullPage(history: false);
+        UpdateSelectionActions();
     }
 
     public async Task ActivatePageAsync(Guid id)
@@ -383,7 +392,7 @@ public partial class MainWindow : Window
     }
     public async Task<bool> ShutdownLibraryAsync()
     {
-        CommitTextEditor(); SaveCurrentView(); SavePreferences(); thumbnailTimer.Stop(); textTimer.Stop(); writingTimer.Stop();
+        CommitTextEditor(); SaveCurrentView(); SavePreferences(); thumbnailTimer.Stop(); textTimer.Stop(); writingTimer.Stop(); editNoticeTimer.Stop();
         if (writer is null) return true;
         if (!writer.Initialized.IsCompletedSuccessfully) { writer.Dispose(); return true; }
         if (!await writer.FinishAsync(TimeSpan.FromSeconds(10))) return false;
@@ -413,14 +422,23 @@ public partial class MainWindow : Window
         if (e.Key == Key.F11) { ToggleFocus(); e.Handled = true; return; }
         if (e.Key == Key.Escape)
         {
-            if (ZoomPopup.IsOpen) ZoomPopup.IsOpen = false;
-            else if (ToolPopup.IsOpen) ToolPopup.IsOpen = false;
+            if (selectionMenu.IsOpen) selectionMenu.IsOpen = false;
+            else if (ZoomPopup.IsOpen) ZoomPopup.IsOpen = false;
+            else if (IsToolInspectorOpen) CloseToolInspector();
             else if (textEditor is not null) CommitTextEditor();
             else if (ContextPanel.Visibility == Visibility.Visible) CloseContextPanel();
             else if (focusMode) ToggleFocus();
             e.Handled = true; return;
         }
         if (busy) return;
+        if (Keyboard.FocusedElement is not TextBox && toolName == "Lasso")
+        {
+            Action? action = Keyboard.Modifiers == ModifierKeys.Control ? e.Key switch
+            {
+                Key.C => CopySelectedObjects, Key.D => DuplicateSelectedObjects, Key.V => () => PasteSelectedObjects(), _ => null
+            } : Keyboard.Modifiers == ModifierKeys.None && e.Key is Key.Delete or Key.Back ? DeleteSelectedObjects : null;
+            if (action is not null) { RunSelectionAction(action); e.Handled = true; return; }
+        }
         if (Keyboard.Modifiers == ModifierKeys.Control)
         {
             switch (e.Key)
@@ -436,11 +454,12 @@ public partial class MainWindow : Window
         }
         else if (Keyboard.Modifiers == ModifierKeys.Alt && e.Key is Key.Up or Key.Down)
         { _ = NavigatePageAsync(e.Key == Key.Up ? -1 : 1); }
-        else if (Keyboard.Modifiers == ModifierKeys.None && Keyboard.FocusedElement is not TextBox and not ComboBox && !ToolPopup.IsOpen)
+        else if (Keyboard.Modifiers == ModifierKeys.None && Keyboard.FocusedElement is not TextBox and not ComboBox && !IsToolInspectorOpen)
         {
             var button = e.Key switch { Key.P => PenButton, Key.H => HighlighterButton, Key.E => EraserButton, Key.L => LassoButton,
                 Key.S => ShapeButton, Key.T => TextButton, Key.V => HandButton, _ => null };
-            if (button is null) return; button.IsChecked = true;
+            if (button is null) return;
+            if (button.IsChecked == true) ToggleToolInspector(); else button.IsChecked = true;
         }
         else return;
         e.Handled = true;

@@ -23,7 +23,7 @@ public partial class MainWindow
         {
             e.Handled = true;
             if (toolbarTouchId is not null || toolbarPen is not null) return;
-            ToolPopup.IsOpen = false;
+            CloseToolInspector();
             toolbarTouchId = e.TouchDevice.Id; toolbarPointerPrevious = e.GetTouchPoint(MainStage).Position;
             if (e.TouchDevice.IsActive) e.TouchDevice.Capture(ToolbarGrip);
         };
@@ -51,7 +51,7 @@ public partial class MainWindow
             if (e.StylusDevice.TabletDevice.Type != TabletDeviceType.Stylus) return;
             e.Handled = true;
             if (toolbarTouchId is not null || toolbarPen is not null) return;
-            ToolPopup.IsOpen = false; toolbarPen = e.StylusDevice; toolbarPointerPrevious = e.GetPosition(MainStage);
+            CloseToolInspector(); toolbarPen = e.StylusDevice; toolbarPointerPrevious = e.GetPosition(MainStage);
             e.StylusDevice.Capture(ToolbarGrip);
         };
         ToolbarGrip.PreviewStylusMove += (_, e) =>
@@ -80,9 +80,17 @@ public partial class MainWindow
         Math.Max(0, MainStage.ActualHeight - ToolbarFrame.ActualHeight - 24));
     private void ApplyToolbarPosition()
     {
+        if (MainStage.ActualWidth > 0) ToolbarFrame.MaxWidth = Math.Max(64, MainStage.ActualWidth - 24);
+        QuickPenStrip.Visibility = MainStage.ActualWidth >= 860 ? Visibility.Visible : Visibility.Collapsed;
         var travel = ToolbarTravel;
         toolbarTranslation.X = travel.X * toolbarPosition.Horizontal;
         toolbarTranslation.Y = travel.Y * toolbarPosition.Vertical;
+    }
+    private void Toolbar_MouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (ToolbarScroll.ScrollableWidth <= 0) return;
+        ToolbarScroll.ScrollToHorizontalOffset(ToolbarScroll.HorizontalOffset - e.Delta);
+        e.Handled = true;
     }
     private void MoveToolbarPointer(Point point)
     {
@@ -91,7 +99,7 @@ public partial class MainWindow
     }
     private void MoveToolbarBy(double x, double y)
     {
-        ToolPopup.IsOpen = false;
+        CloseToolInspector();
         var travel = ToolbarTravel;
         toolbarPosition = new ToolbarPosition(
             travel.X > 0 ? Math.Clamp(toolbarTranslation.X + x, 0, travel.X) / travel.X : toolbarPosition.Horizontal,
@@ -102,12 +110,12 @@ public partial class MainWindow
     {
         toolbarPosition = new ToolbarPosition(.5, bottom ? 1 : 0);
         preferences = preferences with { ToolbarBottom = bottom };
-        ApplyToolbarPosition(); SavePreferences(); ToolPopup.IsOpen = false;
+        ApplyToolbarPosition(); SavePreferences(); CloseToolInspector();
     }
     private void DockToolbarTop_Click(object sender, RoutedEventArgs e) => SetToolbarDock(false);
     private void DockToolbarBottom_Click(object sender, RoutedEventArgs e) => SetToolbarDock(true);
     private void Toolbar_DragDelta(object sender, DragDeltaEventArgs e) => MoveToolbarBy(e.HorizontalChange, e.VerticalChange);
-    private void Toolbar_DragCompleted(object sender, DragCompletedEventArgs e) { ToolPopup.IsOpen = false; SavePreferences(); }
+    private void Toolbar_DragCompleted(object sender, DragCompletedEventArgs e) { CloseToolInspector(); SavePreferences(); }
     private void ToolbarGrip_KeyDown(object sender, KeyEventArgs e)
     {
         if (Keyboard.Modifiers is not ModifierKeys.None and not ModifierKeys.Shift) return;

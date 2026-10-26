@@ -31,6 +31,7 @@ public partial class MainWindow
             eraserSize = double.IsFinite(settings.EraserSize) ? Math.Clamp(settings.EraserSize, 4, 60) : 24;
             PenStylePicker.SelectedIndex = settings.Monoline ? 1 : 0;
             EraserModePicker.SelectedIndex = settings.PrecisionEraser ? 1 : 0;
+            ScribbleEraseToggle.IsChecked = settings.ScribbleErase;
             SelectInkColor(penColor); ThicknessSlider.Value = penWidth;
             activePreset = settings.ActivePreset;
         }
@@ -48,7 +49,8 @@ public partial class MainWindow
         ColorPicker.SelectedItem = match;
     }
     private WritingPreferences CaptureWritingPreferences() => new(savedPens.ToList(), activePreset, penColor, penWidth,
-        PenStylePicker?.SelectedIndex == 1, highlighterColor, highlighterWidth, eraserSize, EraserModePicker?.SelectedIndex == 1);
+        PenStylePicker?.SelectedIndex == 1, highlighterColor, highlighterWidth, eraserSize, EraserModePicker?.SelectedIndex == 1,
+        ScribbleEraseToggle?.IsChecked != false);
     private void WritingSettingsChanged()
     {
         if (!ready || changingTool || restoringWriting) return;
@@ -64,11 +66,16 @@ public partial class MainWindow
     private void RefreshSavedPens()
     {
         if (SavedPenList is null) return;
-        SavedPenList.ItemsSource = savedPens.Select(p => new PresetItem(p, p.Id == activePreset)).ToList();
+        var items = savedPens.Select(p => new PresetItem(p, toolName == "Pen" && p.Id == activePreset)).ToList();
+        SavedPenList.ItemsSource = items;
+        var quick = items.Take(3).ToList();
+        if (items.FirstOrDefault(p => p.Selected) is { } selected && !quick.Contains(selected)) quick[^1] = selected;
+        QuickPenList.ItemsSource = quick;
         var preset = savedPens.FirstOrDefault(p => p.Id == activePreset);
         CurrentPenDescription.Text = $"{preset?.Name ?? "Current pen"} · {penWidth.ToString("0.#", CultureInfo.CurrentCulture)} pt · {(PenStylePicker.SelectedIndex == 1 ? "Monoline" : "Pressure")}";
         ThicknessValue.Text = ThicknessSlider.Value.ToString("0.#", CultureInfo.CurrentCulture);
     }
+    private void ScribbleErase_Changed(object sender, RoutedEventArgs e) => WritingSettingsChanged();
     public PenPreset SavePenPreset(string name)
     {
         ValidateName(name);
@@ -98,11 +105,11 @@ public partial class MainWindow
     }
     private void ApplyPreset_Click(object sender, RoutedEventArgs e)
     {
-        ApplyPenPreset((Guid)((Button)sender).Tag); ToolPopup.IsOpen = false;
+        ApplyPenPreset((Guid)((Button)sender).Tag);
     }
     private void SavePreset_Click(object sender, RoutedEventArgs e)
     {
-        ToolPopup.IsOpen = false;
+        CloseToolInspector();
         var name = NameDialog.Ask(this, "Save pen", $"Study pen {savedPens.Count + 1}");
         if (name is not null) try { SavePenPreset(name); } catch (Exception ex) { ShowError(ex); }
     }
@@ -111,7 +118,7 @@ public partial class MainWindow
         var item = (MenuItem)sender;
         if (item.Parent is not ContextMenu menu || menu.PlacementTarget is not Button button || button.Tag is not Guid id) return;
         if ((string)item.Tag == "remove") { RemovePenPreset(id); return; }
-        var preset = savedPens.First(p => p.Id == id); ToolPopup.IsOpen = false;
+        var preset = savedPens.First(p => p.Id == id); CloseToolInspector();
         var name = NameDialog.Ask(this, "Rename saved pen", preset.Name);
         if (name is null) return;
         if (savedPens.Any(p => p.Id != id && p.Name.Equals(name, StringComparison.OrdinalIgnoreCase))) { ShowError(new ArgumentException("Choose a different pen name.")); return; }

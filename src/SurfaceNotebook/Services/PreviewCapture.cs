@@ -30,6 +30,10 @@ public static class PreviewCapture
             window.SetDarkTheme(false);
             window.ShowWorkspace();
             await CaptureAsync(window, Path.Combine(outputDirectory, "workspace-light.png"), 1440, 1000);
+            window.ShowToolInspector();
+            await CaptureAsync(window, Path.Combine(outputDirectory, "tool-inspector.png"), 1440, 1000);
+            await CaptureAsync(window, Path.Combine(outputDirectory, "tool-inspector-portrait.png"), 960, 1440);
+            window.CloseToolInspector();
             window.SetDarkTheme(true);
             await CaptureAsync(window, Path.Combine(outputDirectory, "workspace-dark.png"), 1440, 1000);
             window.SetDarkTheme(false); window.ShowPaperPreview();

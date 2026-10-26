@@ -16,6 +16,13 @@ jobs:
         run: dotnet build SurfaceNotebook.slnx --configuration Release
       - name: Check page storage, history, and WPF initialization
         run: dotnet run --project tests/SurfaceNotebook.Checks --configuration Release --no-build
+      - name: Render the writing workspace and tool inspector
+        run: dotnet run --project src/SurfaceNotebook --configuration Release --no-build -- --capture-preview artifacts/preview
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SurfaceNotebook-interface-preview
+          path: artifacts/preview/
+          if-no-files-found: error
       - name: Publish portable x64 prototype
         run: dotnet publish src/SurfaceNotebook --configuration Release --runtime win-x64 --self-contained true --output artifacts/win-x64
       - uses: actions/upload-artifact@v4
