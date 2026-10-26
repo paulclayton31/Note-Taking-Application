@@ -67,7 +67,7 @@ internal static partial class Program
                 var stage = (FrameworkElement)window.FindName("MainStage");
                 var stageWidth = stage.ActualWidth;
                 window.ShowToolInspector(); ArrangeWorkspace(window, width, 1000);
-                Require(Math.Abs(stage.ActualWidth - stageWidth) < .1, "Compact tool settings narrowed the writing viewport.");
+                Require(Math.Abs(stage.ActualWidth - stageWidth) < .1, $"Tool rail changed writing width at {width}: before {stageWidth}, after {stage.ActualWidth}, context {((FrameworkElement)window.FindName("ContextPanel")).Visibility}.");
                 var toolbar = (FrameworkElement)window.FindName("ToolbarFrame");
                 Require(toolbar.ActualHeight <= 60 && toolbar.ActualWidth <= stage.ActualWidth - 23.9, "The writing palette wrapped or left the viewport.");
                 RequireToolbarReachable(window);
