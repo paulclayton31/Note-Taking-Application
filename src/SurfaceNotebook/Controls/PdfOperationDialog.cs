@@ -10,7 +10,7 @@ public static class PdfOperationDialog
     {
         using var cancellation = new CancellationTokenSource();
         var status = new TextBlock { Text = "Preparing…", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 16) };
-        var cancel = new Button { Content = "Cancel", HorizontalAlignment = HorizontalAlignment.Right, MinWidth = 88, Margin = new Thickness(0, 18, 0, 0) };
+        var cancel = new Button { Content = "Cancel", IsCancel = true, HorizontalAlignment = HorizontalAlignment.Right, MinWidth = 88, Margin = new Thickness(0, 18, 0, 0) };
         var panel = new StackPanel { Margin = new Thickness(24) };
         panel.Children.Add(status); panel.Children.Add(new ProgressBar { IsIndeterminate = true, Height = 4 }); panel.Children.Add(cancel);
         var dialog = new Window { Owner = owner, Title = title, Width = 390, SizeToContent = SizeToContent.Height, ResizeMode = ResizeMode.NoResize,

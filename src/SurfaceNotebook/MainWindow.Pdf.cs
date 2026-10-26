@@ -25,7 +25,7 @@ public partial class MainWindow
             var book = new NotebookSummary(Guid.NewGuid(), name, imported[0].Paper, folder);
             var source = new NotebookCopy(book, imported.Select((doc, index) => new DuplicatedPage(
                 new PageSummary(Guid.NewGuid(), book.Id, $"Page {index + 1}", index, null, doc.Paper, IsPdf: true), doc)).ToList());
-            var copy = await writer.MutateAsync(db => db.PasteNotebook(source, name, folder));
+            var copy = await writer.MutateAsync(db => db.PasteNotebook(source, name, folder, cancellation));
             bindingSelection = true;
             try { notebooks.Add(copy.Notebook); } finally { bindingSelection = false; }
             pages.AddRange(copy.Pages.Select(p => p.Page));

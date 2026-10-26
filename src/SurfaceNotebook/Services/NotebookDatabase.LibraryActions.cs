@@ -5,11 +5,13 @@ namespace SurfaceNotebook.Services;
 
 public sealed partial class NotebookDatabase
 {
-    public NotebookCopy PasteNotebook(NotebookCopy source, string name, Guid? folder)
+    public NotebookCopy PasteNotebook(NotebookCopy source, string name, Guid? folder, CancellationToken cancellation = default)
     {
+        cancellation.ThrowIfCancellationRequested();
         var notebook = source.Notebook with { Id = Guid.NewGuid(), Name = name, FolderId = folder, Favorite = false, LastOpened = 0 };
         var copies = source.Pages.Select((item, index) =>
         {
+            cancellation.ThrowIfCancellationRequested();
             var document = item.Document with
             {
                 Strokes = item.Document.Strokes.Select(s => s with { Id = Guid.NewGuid() }).ToList(),
@@ -22,6 +24,7 @@ public sealed partial class NotebookDatabase
             ("$id", notebook.Id.ToString()), ("$name", name), ("$paper", JsonSerializer.Serialize(notebook.Paper)), ("$folder", SqlId(folder)));
         foreach (var copy in copies)
         {
+            cancellation.ThrowIfCancellationRequested();
             Execute("INSERT INTO pages(id,notebook_id,name,position,view_json,paper_json,objects_json,background_json) VALUES($id,$book,$name,$position,$view,$paper,$texts,$background);", transaction,
                 ("$id", copy.Page.Id.ToString()), ("$book", notebook.Id.ToString()), ("$name", copy.Page.Name), ("$position", copy.Page.Position),
                 ("$view", JsonSerializer.Serialize(copy.Page.View)), ("$paper", JsonSerializer.Serialize(copy.Document.Paper)), ("$texts", JsonSerializer.Serialize(copy.Document.Texts ?? [])),
@@ -33,7 +36,7 @@ public sealed partial class NotebookDatabase
                     ("$page", copy.Page.Id.ToString()), ("$id", stroke.Id.ToString()), ("$ordinal", i), ("$data", JsonSerializer.Serialize(stroke)));
             }
         }
-        transaction.Commit();
+        cancellation.ThrowIfCancellationRequested(); transaction.Commit();
         return new NotebookCopy(notebook, copies);
     }
 

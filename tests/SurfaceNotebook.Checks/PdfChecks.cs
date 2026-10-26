@@ -67,6 +67,13 @@ internal static partial class Program
                 var progress = new ImmediateProgress(message => { if (message.Contains("page 2 of")) midway.Cancel(); });
                 try { Await(window.ImportPdfAsync(fixture, midway.Token, progress)); throw new Exception("Mid-import cancellation succeeded."); } catch (OperationCanceledException) { }
             }
+            using (var atSave = new CancellationTokenSource())
+            {
+                var progress = new ImmediateProgress(message => { if (message.StartsWith("Saving PDF")) atSave.Cancel(); });
+                try { Await(window.ImportPdfAsync(fixture, atSave.Token, progress)); throw new Exception("Cancellation at PDF commit succeeded."); } catch (OperationCanceledException) { }
+                Require(((FrameworkElement)window.FindName("SaveErrorBanner")).Visibility != Visibility.Visible,
+                    "Canceling a PDF import was reported as an autosave failure.");
+            }
             var invalid = Path.Combine(root, "Invalid.pdf"); File.WriteAllText(invalid, "not a PDF");
             var rejected = false;
             try { Await(window.ImportPdfAsync(invalid)); }
@@ -103,8 +110,9 @@ internal static partial class Program
                 "Canceled or invalid import left partial notebooks.");
             Require(db.Snapshot.Pages.Single(p => p.Id == first).IsPdf && db.LoadPage(first).Background is not null && db.LoadPage(first).Strokes.Count == 1,
                 "PDF background or annotation did not survive restart.");
+            var beforeCopy = db.LoadPage(first);
             var copy = db.DuplicatePage(first, Guid.NewGuid(), "PDF copy");
-            Require(copy.Document.Background!.SourcePdf.SequenceEqual(imported[0].Background!.SourcePdf), "Database duplication lost source PDF content.");
+            Require(copy.Document.Background!.SourcePdf.SequenceEqual(beforeCopy.Background!.SourcePdf), "Database duplication lost source PDF content.");
             var source = new NotebookCopy(db.Snapshot.Notebooks.Single(n => n.Id == notebook), db.Snapshot.Pages.Where(p => p.NotebookId == notebook)
                 .OrderBy(p => p.Position).Select(p => new DuplicatedPage(p, db.LoadPage(p.Id))).ToList());
             var notebookCopy = db.PasteNotebook(source, "PDF notebook copy", null);
