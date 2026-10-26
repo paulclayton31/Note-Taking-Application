@@ -79,6 +79,11 @@ public sealed class AutosaveWriter : IDisposable
                         Changed?.Invoke();
                         break;
                     }
+                    catch (OperationCanceledException ex) when (!work.RetryAllFailures)
+                    {
+                        Volatile.Write(ref error, null); Interlocked.Decrement(ref pending);
+                        work.Completion.SetCanceled(ex.CancellationToken); Changed?.Invoke(); break;
+                    }
                     catch (Exception ex) when (work.RetryAllFailures || ex is IOException or UnauthorizedAccessException ||
                         ex is SqliteException sql && (!work.Mutation || sql.SqliteErrorCode is 5 or 6 or 10 or 13 or 14))
                     {

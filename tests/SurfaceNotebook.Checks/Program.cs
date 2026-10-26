@@ -42,6 +42,7 @@ internal static partial class Program
             ExecuteCheck("CheckHomePensZoomAndPages", () => CheckHomePensZoomAndPages(Path.Combine(root, "library-workflows")));
             ExecuteCheck("CheckEditingTools", () => CheckEditingTools(Path.Combine(root, "editing-tools")));
             ExecuteCheck("CheckScribbleEditing", () => CheckScribbleEditing(Path.Combine(root, "scribble-editing")));
+            ExecuteCheck("CheckPdfWorkflows", () => CheckPdfWorkflows(Path.Combine(root, "pdf-workflows")));
             ExecuteCheck("CheckPageScrolling", () => CheckPageScrolling(Path.Combine(root, "page-scroll")));
             ExecuteCheck("CheckLibraryActions", () => CheckLibraryActions(Path.Combine(root, "library-actions")));
             ExecuteCheck("CheckColorWheel", () => CheckColorWheel());

@@ -38,6 +38,10 @@ public partial class App : Application
                 content.UpdateLayout();
                 var bitmap = new RenderTargetBitmap(1180, 900, 96, 96, PixelFormats.Pbgra32);
                 bitmap.Render(content);
+                var pdfPath = Path.Combine(directory, "startup-check.pdf");
+                var paper = Models.PaperSettings.Default;
+                await PdfService.ExportAsync(pdfPath, [new Models.PageDocument(Models.PageDocument.CurrentVersion, paper.Width, paper.Height, [], paper)], "Startup check");
+                if ((await PdfService.ImportAsync(pdfPath)).Count != 1) throw new IOException("Bundled PDF rendering verification failed.");
                 if (!await window.ShutdownLibraryAsync()) throw new IOException("Notebook startup verification could not flush storage.");
                 Shutdown(0);
             }

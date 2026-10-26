@@ -187,6 +187,20 @@ internal static partial class Program
             Click((Button)window.FindName("UndoButton")); Click((Button)window.FindName("UndoButton"));
             Require(ink.Strokes.Select(InkMapper.Identity).SequenceEqual(originalIds), "Undo lost content after a short scratch-out.");
         }
+        foreach (var x in new[] { 110d, 130d })
+        {
+            var verticalMark = new Stroke(new StylusPointCollection(Enumerable.Range(0, 6).Select(i =>
+                new StylusPoint(x + i * 2, i % 2 == 0 ? 78 : 138, .5f))));
+            Require(ScribbleGesture.IsScribble(verticalMark), "An up-and-down scratch was not recognized.");
+            Collect(ink, verticalMark);
+            Require(ink.Strokes.Count == 2 && ink.Strokes.Select(InkMapper.Identity).SequenceEqual(originalIds.Skip(1)),
+                "A vertical scratch missed handwriting or erased a long diagram.");
+            Click((Button)window.FindName("UndoButton"));
+            Require(ink.Strokes.Count == 4, "Undo failed to restore vertical scratch-out content and mark.");
+            Click((Button)window.FindName("RedoButton")); Require(ink.Strokes.Count == 2, "Vertical scratch-out could not redo.");
+            Click((Button)window.FindName("UndoButton")); Click((Button)window.FindName("UndoButton"));
+            Require(ink.Strokes.Select(InkMapper.Identity).SequenceEqual(originalIds), "A second Undo lost vertical scratch-out content.");
+        }
         ((CheckBox)window.FindName("ScribbleEraseToggle")).IsChecked = false;
         Collect(ink, Scribble(70, 96)); Require(ink.Strokes.Count == 4, "Disabled scribble erasing still deleted content.");
         Click((Button)window.FindName("UndoButton"));

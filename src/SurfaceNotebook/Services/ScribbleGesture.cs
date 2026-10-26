@@ -19,7 +19,7 @@ public static class ScribbleGesture
             var offset = point - center;
             xx += offset.X * offset.X; xy += offset.X * offset.Y; yy += offset.Y * offset.Y;
         }
-        // Work in the gesture's own axis, so a diagonal scratch is as easy as a horizontal one.
+        // Work in the gesture's own axis: horizontal, vertical, and diagonal scratches are equivalent.
         var angle = .5 * Math.Atan2(2 * xy, xx - yy);
         var axis = new Vector(Math.Cos(angle), Math.Sin(angle));
         var projected = points.Select(p => Vector.Multiply(p - center, axis)).ToArray();
@@ -78,6 +78,14 @@ public static class ScribbleGesture
         }
         if ((points[^1] - previous).Length > .1) points.Add(previous);
         return points;
+    }
+
+    public static bool IsLocalTarget(Stroke gesture, Stroke target)
+    {
+        var scratch = gesture.GetBounds(); var bounds = target.GetBounds();
+        // A narrow vertical scratch can cover only a small fraction of a connected
+        // word. Accept that overlap, but protect long diagram lines crossing it.
+        return Math.Max(bounds.Width, bounds.Height) <= Math.Max(240, Math.Max(scratch.Width, scratch.Height) * 3);
     }
 
     public static bool CrossesRepeatedly(IReadOnlyList<Point> path, Rect target)

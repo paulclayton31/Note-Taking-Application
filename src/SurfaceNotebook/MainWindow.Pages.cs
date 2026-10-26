@@ -35,7 +35,7 @@ public partial class MainWindow
                 if (pages[i].NotebookId == original.NotebookId && pages[i].Position >= copy.Page.Position)
                     pages[i] = pages[i] with { Position = pages[i].Position + 1 };
             pages.Add(copy.Page);
-            sessions[id] = new PageSession(InkMapper.Restore(copy.Document), copy.Document.Paper, copy.Document.Texts);
+            sessions[id] = new PageSession(InkMapper.Restore(copy.Document), copy.Document.Paper, copy.Document.Texts, copy.Document.Background);
             if (copy.Page.View is not null) views[id] = copy.Page.View;
             await ActivatePageAsync(id);
             return id;

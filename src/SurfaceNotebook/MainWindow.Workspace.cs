@@ -305,6 +305,7 @@ public partial class MainWindow
     public void ApplyPaper(PaperSettings paper, bool entireNotebook)
     {
         if (writer is null || session is null || currentPageId is not Guid id) return;
+        if (session.Background is not null) return;
         paper.Validate(); CommitTextEditor();
         var notebookId = pages.First(p => p.Id == id).NotebookId;
         if (entireNotebook)
@@ -321,6 +322,8 @@ public partial class MainWindow
         {
             var page = pages[i];
             if (entireNotebook ? page.NotebookId != notebookId : page.Id != id) continue;
+            if (sessions.TryGetValue(page.Id, out var pdfSession) && pdfSession.Background is not null) continue;
+            if (page.IsPdf) continue;
             pages[i] = page with { Paper = paper };
             if (sessions.TryGetValue(page.Id, out var cached)) cached.Paper = paper;
             thumbnails.Remove(page.Id);
@@ -399,7 +402,8 @@ public partial class MainWindow
         using (var dc = drawing.Open())
         {
             dc.PushClip(new RectangleGeometry(new Rect(0, 0, paper.Width, paper.Height)));
-            PaperSurface.Draw(dc, paper, new Size(paper.Width, paper.Height));
+            if (document.Background is { } background) dc.DrawImage(PdfService.LoadPreview(background, 200), new Rect(0, 0, paper.Width, paper.Height));
+            else PaperSurface.Draw(dc, paper, new Size(paper.Width, paper.Height));
             InkMapper.Restore(document).Draw(dc);
             foreach (var text in document.Texts ?? [])
             {

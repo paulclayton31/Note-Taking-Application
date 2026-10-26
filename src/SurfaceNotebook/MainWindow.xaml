@@ -102,7 +102,7 @@
                                         <Grid.ContextMenu>
                                         <ContextMenu Opened="PageMenu_Opened">
                                             <MenuItem Header="Rename page…" Click="RenamePage_Click"/>
-                                            <MenuItem Header="Duplicate page" Click="DuplicatePage_Click"/><MenuItem Header="Delete page…" Click="DeletePage_Click" Foreground="{DynamicResource Danger}"/>
+                                            <MenuItem Header="Duplicate page" Click="DuplicatePage_Click"/><MenuItem Header="Export page as PDF…" Click="ExportPdf_Click"/><MenuItem Header="Delete page…" Click="DeletePage_Click" Foreground="{DynamicResource Danger}"/>
                                             <Separator/>
                                             <MenuItem Header="Move earlier" Tag="earlier" Click="MovePage_Click"/>
                                             <MenuItem Header="Move later" Tag="later" Click="MovePage_Click"/>
@@ -133,7 +133,7 @@
                             <TextBlock Text="LOCAL LIBRARY" Style="{StaticResource Caption}" FontSize="9" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             <Button DockPanel.Dock="Right" Click="LibraryMenu_Click" ToolTip="Library actions" Padding="10">
                                 <local:WorkspaceIcon Kind="More" Foreground="{DynamicResource Muted}" Width="18" Height="18"/>
-                                <Button.ContextMenu><ContextMenu><MenuItem Header="Rename notebook…" Click="RenameNotebook_Click"/><MenuItem Header="Copy notebook" Tag="copy" Click="NotebookAction_Click"/><MenuItem Header="Duplicate notebook" Tag="duplicate" Click="NotebookAction_Click"/><Separator/><MenuItem Header="Delete notebook…" Tag="delete" Click="NotebookAction_Click" Foreground="{DynamicResource Danger}"/><MenuItem Header="Import page…" Click="Import_Click"/><MenuItem Header="Export current page…" Click="Export_Click"/><Separator/><MenuItem Header="Save now    Ctrl+S" Click="Flush_Click"/></ContextMenu></Button.ContextMenu>
+                                <Button.ContextMenu><ContextMenu><MenuItem Header="Rename notebook…" Click="RenameNotebook_Click"/><MenuItem Header="Copy notebook" Tag="copy" Click="NotebookAction_Click"/><MenuItem Header="Duplicate notebook" Tag="duplicate" Click="NotebookAction_Click"/><Separator/><MenuItem Header="Delete notebook…" Tag="delete" Click="NotebookAction_Click" Foreground="{DynamicResource Danger}"/><MenuItem Header="Import PDF as notebook…" Click="ImportPdf_Click"/><MenuItem Header="Export notebook as PDF…" Tag="notebook" Click="ExportPdf_Click"/><Separator/><MenuItem Header="Import portable page…" Click="Import_Click"/><MenuItem Header="Export current page…" Click="Export_Click"/><Separator/><MenuItem Header="Save now    Ctrl+S" Click="Flush_Click"/></ContextMenu></Button.ContextMenu>
                             </Button>
                         </DockPanel>
                     </StackPanel>
@@ -157,7 +157,7 @@
                                     <MenuItem Header="Duplicate page" Click="DuplicatePage_Click"/><MenuItem Header="Delete page…" Click="DeletePage_Click" Foreground="{DynamicResource Danger}"/>
                                     <Separator/><MenuItem Header="Move earlier" Tag="earlier" Click="MovePage_Click"/>
                                     <MenuItem Header="Move later" Tag="later" Click="MovePage_Click"/>
-                                    <Separator/><MenuItem Header="Export page…" Click="Export_Click"/>
+                                    <Separator/><MenuItem Header="Export page as PDF…" Click="ExportPdf_Click"/><MenuItem Header="Export notebook as PDF…" Tag="notebook" Click="ExportPdf_Click"/><Separator/><MenuItem Header="Export portable page…" Click="Export_Click"/>
                                 </ContextMenu>
                             </Button.ContextMenu>
                         </Button>
@@ -172,6 +172,7 @@
                             <Border Background="#0D141C30" Margin="-1,3,-1,-4" CornerRadius="2" IsHitTestVisible="False"/>
                             <Border Background="#09141C30" Margin="-3,7,-3,-9" CornerRadius="3" IsHitTestVisible="False"/>
                             <local:PaperSurface x:Name="PaperBackground"/>
+                            <Image x:Name="PdfPageImage" Stretch="Fill" IsHitTestVisible="False"/>
                             <local:PenCanvas x:Name="InkSurface" Background="Transparent" ClipToBounds="True" EditingMode="Ink" EditingModeInverted="EraseByStroke" UseCustomCursor="False"/>
                         </Grid>
                     </local:PageViewport>

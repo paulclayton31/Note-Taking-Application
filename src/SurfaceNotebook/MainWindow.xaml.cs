@@ -23,11 +23,12 @@ public partial class MainWindow : Window
         public InkHistory History { get; } = new();
         public PaperSettings Paper { get; set; }
         public List<PageText> Texts { get; set; }
+        public PdfBackground? Background { get; }
         public HashSet<Guid> StrokeIds { get; } = [];
         public long Visited { get; set; }
-        public PageSession(StrokeCollection strokes, PaperSettings? paper = null, List<PageText>? texts = null)
+        public PageSession(StrokeCollection strokes, PaperSettings? paper = null, List<PageText>? texts = null, PdfBackground? background = null)
         {
-            Strokes = strokes; Paper = paper ?? PaperSettings.Default; Texts = texts ?? [];
+            Strokes = strokes; Paper = paper ?? PaperSettings.Default; Texts = texts ?? []; Background = background;
             StrokeIds.UnionWith(strokes.Select(InkMapper.Identity));
             History.Reset(strokes, Texts);
         }
@@ -178,12 +179,15 @@ public partial class MainWindow : Window
     private PageDocument CaptureCurrent()
     {
         var paper = session?.Paper ?? PaperSettings.Default;
-        return InkMapper.Capture(InkSurface.Strokes) with { Width = paper.Width, Height = paper.Height, Paper = paper, Texts = session?.Texts.ToList() ?? [] };
+        return InkMapper.Capture(InkSurface.Strokes) with { Width = paper.Width, Height = paper.Height, Paper = paper, Texts = session?.Texts.ToList() ?? [], Background = session?.Background };
     }
     private void SaveFullPage(bool history = true)
     {
         if (session is null || writer is null || currentPageId is not Guid id) return;
         var document = CaptureCurrent();
+        var index = pages.FindIndex(p => p.Id == id);
+        if (index >= 0 && (pages[index].IsPdf != (document.Background is not null) || pages[index].Paper != document.Paper))
+            pages[index] = pages[index] with { IsPdf = document.Background is not null, Paper = document.Paper };
         session.StrokeIds.Clear(); session.StrokeIds.UnionWith(InkSurface.Strokes.Select(InkMapper.Identity));
         writer.Write(db => db.ReplacePage(id, document));
         if (history) session.History.Record(InkSurface.Strokes, session.Texts);
@@ -230,7 +234,7 @@ public partial class MainWindow : Window
             if (!sessions.TryGetValue(id, out var next))
             {
                 var document = await writer.ReadAsync(db => db.LoadPage(id)).WaitAsync(TimeSpan.FromSeconds(10));
-                next = new PageSession(InkMapper.Restore(document), document.Paper, document.Texts);
+                next = new PageSession(InkMapper.Restore(document), document.Paper, document.Texts, document.Background);
                 sessions[id] = next;
             }
             var page = pages.First(p => p.Id == id);
@@ -278,6 +282,9 @@ public partial class MainWindow : Window
         var paper = session?.Paper ?? PaperSettings.Default;
         PageHost.Width = paper.Width; PageHost.Height = paper.Height;
         PaperBackground.Paper = paper;
+        PaperBackground.Visibility = session?.Background is null ? Visibility.Visible : Visibility.Collapsed;
+        PdfPageImage.Source = session?.Background is { } background ? PdfService.LoadPreview(background) : null;
+        PaperButton.IsEnabled = session?.Background is null;
         Viewport.ConfigurePaper(paper.Width, paper.Height);
     }
     private void SaveCurrentView()
@@ -368,7 +375,7 @@ public partial class MainWindow : Window
             var imported = new PageSession(strokes, document.Paper ?? PaperSettings.Default with
             {
                 Format = PaperFormat.Custom, CustomWidth = document.Width / 96, CustomHeight = document.Height / 96
-            }, document.Texts);
+            }, document.Texts, document.Background);
             sessions[id] = imported; session = imported; SetStrokes(strokes);
             ConfigurePaper(); RenderTexts(); Viewport.FitPage(); BindNavigation();
             SaveFullPage(history: false);

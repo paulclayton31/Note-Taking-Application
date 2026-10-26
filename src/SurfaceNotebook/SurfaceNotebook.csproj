@@ -6,9 +6,13 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <Version>0.3.2</Version>
+    <Version>0.3.3</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.13" />
+    <PackageReference Include="PDFsharp-WPF" Version="6.2.4" />
+    <PackageReference Include="bblanchon.PDFium.Win32" Version="158.0.8111" />
+    <EmbeddedResource Include="../../THIRD_PARTY_NOTICES.md" Link="THIRD_PARTY_NOTICES.md" />
+    <EmbeddedResource Include="../../licenses/PDFium-NOTICES.txt" Link="PDFium-NOTICES.txt" />
   </ItemGroup>
 </Project>
