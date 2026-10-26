@@ -17,6 +17,7 @@ internal static partial class Program
     private static void CheckPdfWorkflows(string root)
     {
         Directory.CreateDirectory(root);
+        var artifacts = Path.Combine(Environment.CurrentDirectory, "artifacts", "pdf-preview"); Directory.CreateDirectory(artifacts);
         var fixture = Path.Combine(root, "Course handout.pdf");
         using (var pdf = new PdfDocument())
         {
@@ -58,6 +59,7 @@ internal static partial class Program
             Await(window.DeletePageAsync(duplicated));
             Await(window.ActivatePageAsync(first));
             Await(window.ExportPdfAsync(output, entireNotebook: true));
+            Await(PreviewCapture.CaptureAsync(window, Path.Combine(artifacts, "pdf-workspace.png"), 1440, 1000));
             var single = Path.Combine(root, "Single.pdf"); Await(window.ExportPdfAsync(single, entireNotebook: false));
             using (var verify = PdfReader.Open(single, PdfDocumentOpenMode.Import)) Require(verify.PageCount == 1, "Single-page PDF export included other pages.");
             using var canceled = new CancellationTokenSource(); canceled.Cancel();
@@ -84,7 +86,6 @@ internal static partial class Program
         }
         finally { Await(window.ShutdownLibraryAsync()); }
         var exported = Await(PdfService.ImportAsync(output));
-        var artifacts = Path.Combine(Environment.CurrentDirectory, "artifacts", "pdf-preview"); Directory.CreateDirectory(artifacts);
         File.Copy(output, Path.Combine(artifacts, "annotated-notebook.pdf"), true);
         File.Copy(fixture, Path.Combine(artifacts, "source-handout.pdf"), true);
         for (var i = 0; i < 3; i++)
@@ -110,6 +111,9 @@ internal static partial class Program
                 "Canceled or invalid import left partial notebooks.");
             Require(db.Snapshot.Pages.Single(p => p.Id == first).IsPdf && db.LoadPage(first).Background is not null && db.LoadPage(first).Strokes.Count == 1,
                 "PDF background or annotation did not survive restart.");
+            db.SaveNotebookPaper(notebook, PaperSettings.Default with { Pattern = PaperPattern.Dots });
+            var landscape = db.Snapshot.Pages.Where(p => p.NotebookId == notebook).OrderBy(p => p.Position).Skip(1).First();
+            Require(db.LoadPage(landscape.Id).Width == imported[1].Width, "Notebook paper settings resized a fixed PDF page.");
             var beforeCopy = db.LoadPage(first);
             var copy = db.DuplicatePage(first, Guid.NewGuid(), "PDF copy");
             Require(copy.Document.Background!.SourcePdf.SequenceEqual(beforeCopy.Background!.SourcePdf), "Database duplication lost source PDF content.");
