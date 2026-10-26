@@ -79,20 +79,7 @@ internal static partial class Program
             Require(slider.Value > 4.5 && window.SavedPens.Single(p => p.Id == addedId).Width == slider.Value, "Vertical thickness changes did not save.");
             slider.Value = 4.5;
 
-            foreach (var size in new[] { new Size(1440, 1000), new Size(960, 1440), new Size(640, 560), new Size(720, 700) })
-            {
-                window.CloseToolInspector(); window.Width = size.Width; window.Height = size.Height;
-                ArrangeWorkspace(window, size.Width, size.Height);
-                var stage = (FrameworkElement)window.FindName("MainStage"); var width = stage.ActualWidth;
-                window.ShowToolInspector(); ArrangeWorkspace(window, size.Width, size.Height);
-                var rail = (FrameworkElement)window.FindName("ToolInspector");
-                var bounds = rail.TransformToAncestor(stage).TransformBounds(new Rect(rail.RenderSize));
-                var more = (Button)window.FindName("RailOptionsButton");
-                var moreBounds = more.TransformToAncestor(stage).TransformBounds(new Rect(more.RenderSize));
-                Require(rail.ActualWidth == 64 && stage.ActualWidth == width && bounds.Right <= stage.ActualWidth && bounds.Bottom <= stage.ActualHeight &&
-                    moreBounds.Bottom <= stage.ActualHeight - 11 && slider.ActualHeight >= 96,
-                    $"The tool rail clipped controls or narrowed the page at {size}: rail {bounds}, more {moreBounds}, stage {stage.RenderSize}.");
-            }
+            CheckRailLayouts(root + "-layouts");
             window.Width = 640; window.Height = 560; ArrangeWorkspace(window, 640, 560); window.ShowToolInspector(); ArrangeWorkspace(window, 640, 560);
             Click((Button)window.FindName("RailPensButton"));
             Require(allPens.IsOpen && ((ItemsControl)window.FindName("AllPenList")).Items.Count == window.SavedPens.Count,
@@ -114,6 +101,28 @@ internal static partial class Program
         reopened.RemovePenPreset(reopened.SavedPens[0].Id);
         Require(reopened.SavedPens.Count == 1, "Removing the last pen left no editable pen.");
         Require(Await(reopened.ShutdownLibraryAsync()), "The reopened pen library did not close.");
+    }
+    private static void CheckRailLayouts(string root)
+    {
+        var window = new MainWindow(root); Await(window.InitializeLibraryAsync()); window.ShowWorkspace();
+        try
+        {
+            foreach (var size in new[] { new Size(1440, 1000), new Size(960, 1440), new Size(640, 560), new Size(720, 700) })
+            {
+                window.CloseToolInspector();
+                Await(PreviewCapture.CaptureAsync(window, System.IO.Path.Combine(root, $"rail-{size.Width}.png"), (int)size.Width, (int)size.Height));
+                var stage = (FrameworkElement)window.FindName("MainStage"); var width = stage.ActualWidth;
+                window.ShowToolInspector(); ArrangeWorkspace(window, size.Width, size.Height);
+                var rail = (FrameworkElement)window.FindName("ToolInspector");
+                var bounds = rail.TransformToAncestor(stage).TransformBounds(new Rect(rail.RenderSize));
+                var more = (Button)window.FindName("RailOptionsButton");
+                var moreBounds = more.TransformToAncestor(stage).TransformBounds(new Rect(more.RenderSize));
+                Require(rail.ActualWidth == 64 && Math.Abs(stage.ActualWidth - width) < .1 && bounds.Right <= stage.ActualWidth && bounds.Bottom <= stage.ActualHeight &&
+                    moreBounds.Bottom <= stage.ActualHeight - 11 && ((Slider)window.FindName("ThicknessSlider")).ActualHeight >= 96,
+                    $"The tool rail clipped controls or narrowed the page at {size}: rail {bounds}, more {moreBounds}, stage {stage.RenderSize}.");
+            }
+        }
+        finally { Require(Await(window.ShutdownLibraryAsync()), "Layout fixture did not close."); }
     }
     private static void CheckColorWheel()
     {

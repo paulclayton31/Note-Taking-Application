@@ -52,7 +52,8 @@ public partial class MainWindow
             ColorTitle.Text = adding ? "Add pen" : toolName == "Highlighter" ? "Highlighter color" : "Ink color";
             NewPenOptions.Visibility = adding ? Visibility.Visible : Visibility.Collapsed;
             NewPenName.Text = NextPenName(); NewFountainButton.IsChecked = true;
-            PenColorWheel.SelectedColor = (Color)ColorConverter.ConvertFromString(toolName == "Highlighter" ? highlighterColor : penColor);
+            PenColorWheel.SelectedColor = adding ? Controls.ColorWheel.FromHsv(220, .8, 1)
+                : (Color)ColorConverter.ConvertFromString(toolName == "Highlighter" ? highlighterColor : penColor);
             PenBrightnessSlider.Value = PenColorWheel.Brightness;
             CustomColorBox.Text = PenColorWheel.SelectedColor.ToString(); ColorValue.Text = ShortColor(CustomColorBox.Text);
             ColorValidation.Text = ""; CommitPenButton.Content = adding ? "Add pen" : "Done";

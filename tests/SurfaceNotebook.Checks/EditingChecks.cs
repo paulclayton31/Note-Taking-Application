@@ -63,15 +63,18 @@ internal static partial class Program
 
             foreach (var width in new[] { 640d, 960, 1440 })
             {
-                window.Width = width; ArrangeWorkspace(window, width, 1000);
+                window.Width = width; window.UpdateLayout();
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                var nativeWidth = window.ActualWidth; var nativeHeight = window.ActualHeight;
+                ArrangeWorkspace(window, nativeWidth, nativeHeight);
                 var stage = (FrameworkElement)window.FindName("MainStage");
                 var stageWidth = stage.ActualWidth;
-                window.ShowToolInspector(); ArrangeWorkspace(window, width, 1000);
+                window.ShowToolInspector(); ArrangeWorkspace(window, nativeWidth, nativeHeight);
                 Require(Math.Abs(stage.ActualWidth - stageWidth) < .1, $"Tool rail changed writing width at {width}: before {stageWidth}, after {stage.ActualWidth}, context {((FrameworkElement)window.FindName("ContextPanel")).Visibility}.");
                 var toolbar = (FrameworkElement)window.FindName("ToolbarFrame");
                 Require(toolbar.ActualHeight <= 60 && toolbar.ActualWidth <= stage.ActualWidth - 23.9, "The writing palette wrapped or left the viewport.");
                 RequireToolbarReachable(window);
-                window.CloseToolInspector(); ArrangeWorkspace(window, width, 1000);
+                window.CloseToolInspector(); ArrangeWorkspace(window, nativeWidth, nativeHeight);
             }
             window.Width = 1440; ArrangeWorkspace(window, 1440, 1000);
             ((RadioButton)window.FindName("LassoButton")).IsChecked = true;
