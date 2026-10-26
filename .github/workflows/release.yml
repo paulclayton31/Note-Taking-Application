@@ -7,6 +7,12 @@ on:
       - release-version.txt
       - .github/workflows/release.yml
       - scripts/publish-release.ps1
+  pull_request:
+    paths:
+      - release-version.txt
+      - .github/workflows/release.yml
+      - scripts/publish-release.ps1
+      - src/SurfaceNotebook/SurfaceNotebook.csproj
   workflow_dispatch:
 
 permissions:
@@ -24,6 +30,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      - name: Validate release metadata
+        shell: pwsh
+        run: |
+          $releaseVersion = (Get-Content -Raw release-version.txt).Trim()
+          [xml]$project = Get-Content -Raw src/SurfaceNotebook/SurfaceNotebook.csproj
+          if ([string]$project.Project.PropertyGroup.Version -ne $releaseVersion) { throw 'Application and release versions do not match' }
+          if (-not (Test-Path "docs/releases/v$releaseVersion.md")) { throw 'Release notes are missing' }
       - name: Build and check the application
         shell: pwsh
         run: |
@@ -38,6 +51,9 @@ jobs:
           foreach ($architecture in @('x64', 'arm64')) {
             dotnet publish src/SurfaceNotebook -c Release -r "win-$architecture" --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:PublishTrimmed=false -p:DebugType=None -p:DebugSymbols=false -o "artifacts/release-$architecture"
             if ($LASTEXITCODE -ne 0) { throw "Publish failed for $architecture" }
+            $reportedVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo((Resolve-Path "artifacts/release-$architecture/SurfaceNotebook.exe").Path).ProductVersion
+            $releaseVersion = (Get-Content -Raw release-version.txt).Trim()
+            if (($reportedVersion -split '\+')[0] -ne $releaseVersion) { throw "Unexpected $architecture executable version: $reportedVersion" }
             Copy-Item -LiteralPath "artifacts/release-$architecture/SurfaceNotebook.exe" -Destination "release-assets/SurfaceNotebook-windows-$architecture.exe"
           }
           $checksums = Get-ChildItem release-assets/*.exe | Sort-Object Name | ForEach-Object {
@@ -66,7 +82,7 @@ jobs:
             throw 'Preview capture timed out'
           }
           if ($appProcess.ExitCode -ne 0) { throw "Preview capture failed: $($appProcess.ExitCode)" }
-          foreach ($image in @('home-light.png', 'home-dark.png', 'workspace-light.png', 'workspace-dark.png', 'paper-settings.png', 'focus-mode.png', 'portrait.png', 'compact-window.png')) {
+          foreach ($image in @('home-light.png', 'home-dark.png', 'workspace-light.png', 'workspace-dark.png', 'paper-settings.png', 'focus-mode.png', 'portrait.png', 'compact-window.png', 'tool-inspector.png', 'tool-inspector-portrait.png')) {
             if (-not (Test-Path -LiteralPath (Join-Path $outputDirectory $image))) { throw "Missing screenshot: $image" }
           }
       - uses: actions/upload-artifact@v4
@@ -76,6 +92,7 @@ jobs:
           if-no-files-found: error
 
   publish:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: package
     runs-on: ubuntu-latest
     permissions:

@@ -1,6 +1,6 @@
-# Writing tools: development changes
+# v0.3.0 writing tools
 
-These changes are on the development branch and are not part of the published preview.3 executables.
+Included in the stable v0.3.0 release. See the [release notes and downloads](releases/v0.3.0.md).
 
 ## Toolbar and tool inspector
 

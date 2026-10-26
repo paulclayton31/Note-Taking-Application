@@ -6,13 +6,11 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Download and run
 
-**New: [Try v0.3.0-preview.3](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.0-preview.3)** — a dedicated Home library with folders, a compact single-row header, touch zoom, saved pens, and page duplication/reordering. Download the named x64 or ARM64 executable from that release. [Preview guide and shortcuts](docs/v0.3-workspace.md).
+**[Surface Notebook v0.3.0](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.0)** is the stable release: a Home library with folders, a compact writing toolbar, tool customization sidebar, saved pens, improved color selection, lasso actions, and undoable scribble erasing. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md).
 
-![Your notebook library](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0-preview.3/home-light.png)
+![Your notebook library](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0/home-light.png)
 
-[See the writing workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0-preview.3/workspace-light.png)
-
-The stable v0.2 release remains available below.
+[See the writing workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0/workspace-light.png) · [Tool customization sidebar](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.0/tool-inspector.png)
 
 **[Download the latest Windows app](https://github.com/paulclayton31/Note-Taking-Application/releases/latest)** from the repository's **Releases** section.
 
@@ -25,9 +23,9 @@ The automatically generated **Source code** downloads contain the project files.
 
 ## Project status
 
-**v0.3.0-preview.3** refines the paper-first design of the **C# / .NET 10 / WPF notebook app**. The workspace retains v0.2's multiple notebooks/pages, ordered background autosave, committed-note recovery, and strictly pen-only writing. Fingers pan and zoom in every tool. The default pressure/curve settings remain intact.
+**v0.3.0** refines the paper-first design of the **C# / .NET 10 / WPF notebook app**. The workspace retains v0.2's multiple notebooks/pages, ordered background autosave, committed-note recovery, and strictly pen-only writing. Fingers pan and zoom in every tool. The default pressure/curve settings remain intact.
 
-The preview supports pen/highlighter, stroke/precision erasing, native lasso transforms, geometric ink shapes, typed text, a draggable/dockable palette, paper customization, notebook tabs, nested folders, recents, stars, search, saved pens, touch zoom, page duplication/reordering, and focus mode. Existing libraries are upgraded with a consistent SQLite backup; older versions cannot directly open the upgraded library. See the [upgrade notes](docs/releases/v0.3.0-preview.3.md).
+The app supports pen/highlighter, stroke/precision erasing, native lasso transforms and copy/duplicate/delete/paste, geometric ink shapes, typed text, a draggable/dockable palette, a temporary tool inspector, custom ink colors, undoable scribble erasing, paper customization, notebook tabs, nested folders, recents, stars, search, saved pens, touch zoom, page duplication/reordering, and focus mode. Existing older libraries are upgraded with a consistent SQLite backup. v0.3.0 keeps preview.3's database schema; versions that do not support schema 3 cannot open the upgraded library. See the [release and upgrade notes](docs/releases/v0.3.0.md).
 
 The capabilities below describe the broader intended product. PDF annotation, STEM objects, AI, and cloud sync are future work. Physical pen/palm/touch validation is still required on each Surface model.
 
@@ -37,7 +35,7 @@ To start with the .NET 10 SDK installed:
 dotnet run --project src/SurfaceNotebook
 ```
 
-See the [v0.3 preview guide](docs/v0.3-workspace.md) and [v0.2 storage background](docs/v0.2-notebooks.md). Use the library's **…** menu to import older `.stempage` files or export the current page. Notebook edits save automatically; wait for **All changes saved** before a forced shutdown.
+See the [v0.3 workspace guide](docs/v0.3-workspace.md), [writing tools guide](docs/writing-tools.md), and [v0.2 storage background](docs/v0.2-notebooks.md). Use the library's **…** menu to import older `.stempage` files or export the current page. Notebook edits save automatically; wait for **All changes saved** before a forced shutdown.
 
 ## Vision
 
