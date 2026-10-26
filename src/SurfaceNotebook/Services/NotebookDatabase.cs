@@ -27,7 +27,7 @@ public sealed partial class NotebookDatabase : IDisposable
             connection.Open();
             Execute("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;");
             var version = Convert.ToInt32(Scalar("PRAGMA user_version;"));
-            if (version is < 0 or > 3) throw new InvalidDataException("This notebook library requires a newer app version.");
+            if (version is < 0 or > 4) throw new InvalidDataException("This notebook library requires a newer app version.");
             // Take a consistent SQLite backup before the first v0.2 library migration.
             var backupPath = Path.Combine(directory, "library-v02-backup.db");
             if (version == 1 && !File.Exists(backupPath))
@@ -62,6 +62,13 @@ public sealed partial class NotebookDatabase : IDisposable
                     """, migration);
                 migration.Commit();
             }
+            if (version < 4)
+            {
+                Backup(Path.Combine(directory, "library-v032-backup.db"));
+                using var migration = connection.BeginTransaction();
+                Execute("ALTER TABLE pages ADD COLUMN background_json TEXT; PRAGMA user_version=4;", migration);
+                migration.Commit();
+            }
             if (!string.Equals(Convert.ToString(Scalar("PRAGMA quick_check;")), "ok", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Notebook integrity check failed. Your library has been left in place.");
             var recovered = GetState("clean_shutdown") == "false";
@@ -75,11 +82,11 @@ public sealed partial class NotebookDatabase : IDisposable
                     reader.IsDBNull(2) ? null : JsonSerializer.Deserialize<PaperSettings>(reader.GetString(2)),
                     reader.IsDBNull(3) ? null : Guid.Parse(reader.GetString(3)), reader.GetInt32(4) != 0, reader.GetInt64(5)));
             var pages = new List<PageSummary>();
-            using (var command = Command("SELECT id,notebook_id,name,position,view_json,paper_json FROM pages ORDER BY position,rowid;"))
+            using (var command = Command("SELECT id,notebook_id,name,position,view_json,paper_json,background_json IS NOT NULL FROM pages ORDER BY position,rowid;"))
             using (var reader = command.ExecuteReader())
                 while (reader.Read()) pages.Add(new PageSummary(Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)),
                     reader.GetString(2), reader.GetInt32(3), reader.IsDBNull(4) ? null : JsonSerializer.Deserialize<PageView>(reader.GetString(4)),
-                    reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<PaperSettings>(reader.GetString(5))));
+                    reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<PaperSettings>(reader.GetString(5)), reader.GetInt32(6) != 0));
             var last = Guid.TryParse(GetState("last_page"), out var id) && pages.Any(p => p.Id == id) ? id : pages.FirstOrDefault()?.Id ?? Guid.Empty;
             SetState("clean_shutdown", "false");
             var preferences = GetState("workspace");
@@ -130,7 +137,7 @@ public sealed partial class NotebookDatabase : IDisposable
     {
         paper.Validate();
         using var transaction = connection.BeginTransaction();
-        Execute("UPDATE notebooks SET paper_json=$paper WHERE id=$id; UPDATE pages SET paper_json=$paper WHERE notebook_id=$id;", transaction,
+        Execute("UPDATE notebooks SET paper_json=$paper WHERE id=$id; UPDATE pages SET paper_json=$paper WHERE notebook_id=$id AND background_json IS NULL;", transaction,
             ("$id", id.ToString()), ("$paper", JsonSerializer.Serialize(paper)));
         transaction.Commit();
     }
@@ -160,8 +167,8 @@ public sealed partial class NotebookDatabase : IDisposable
         using var transaction = connection.BeginTransaction();
         var paper = page.Paper ?? (page.Width == PageDocument.DefaultWidth && page.Height == PageDocument.DefaultHeight
             ? PaperSettings.Default : PaperSettings.Default with { Format = PaperFormat.Custom, CustomWidth = page.Width / 96, CustomHeight = page.Height / 96 });
-        Execute("UPDATE pages SET paper_json=$paper,objects_json=$texts WHERE id=$page;", transaction,
-            ("$page", id.ToString()), ("$paper", JsonSerializer.Serialize(paper)), ("$texts", JsonSerializer.Serialize(page.Texts ?? [])));
+        Execute("UPDATE pages SET paper_json=$paper,objects_json=$texts,background_json=$background WHERE id=$page;", transaction,
+            ("$page", id.ToString()), ("$paper", JsonSerializer.Serialize(paper)), ("$texts", JsonSerializer.Serialize(page.Texts ?? [])), ("$background", page.Background is null ? DBNull.Value : JsonSerializer.Serialize(page.Background)));
         Execute("DELETE FROM strokes WHERE page_id=$page;", transaction, ("$page", id.ToString()));
         for (var index = 0; index < page.Strokes.Count; index++)
         {
@@ -182,7 +189,9 @@ public sealed partial class NotebookDatabase : IDisposable
         var objectsJson = Convert.ToString(Scalar("SELECT objects_json FROM pages WHERE id=$page;", ("$page", page.ToString())));
         var paper = string.IsNullOrEmpty(paperJson) ? PaperSettings.Default : JsonSerializer.Deserialize<PaperSettings>(paperJson) ?? PaperSettings.Default;
         var texts = string.IsNullOrEmpty(objectsJson) ? [] : JsonSerializer.Deserialize<List<PageText>>(objectsJson) ?? [];
-        var document = new PageDocument(PageDocument.CurrentVersion, paper.Width, paper.Height, strokes, paper, texts);
+        var backgroundJson = Convert.ToString(Scalar("SELECT background_json FROM pages WHERE id=$page;", ("$page", page.ToString())));
+        var background = string.IsNullOrEmpty(backgroundJson) ? null : JsonSerializer.Deserialize<PdfBackground>(backgroundJson);
+        var document = new PageDocument(PageDocument.CurrentVersion, paper.Width, paper.Height, strokes, paper, texts, background);
         document.Validate(enforceSizeLimits: false);
         return document;
     }
@@ -223,14 +232,14 @@ public sealed partial class NotebookDatabase : IDisposable
             Strokes = original.Strokes.Select(s => s with { Id = Guid.NewGuid() }).ToList(),
             Texts = original.Texts?.Select(t => t with { Id = Guid.NewGuid() }).ToList()
         };
-        var page = new PageSummary(destination, notebook, name, position, view, document.Paper);
+        var page = new PageSummary(destination, notebook, name, position, view, document.Paper, document.Background is not null);
         using var transaction = connection.BeginTransaction();
         Execute("UPDATE pages SET position=position+1 WHERE notebook_id=$book AND position >= $position;", transaction,
             ("$book", notebook.ToString()), ("$position", position));
-        Execute("INSERT INTO pages(id,notebook_id,name,position,view_json,paper_json,objects_json) VALUES($id,$book,$name,$position,$view,$paper,$texts);", transaction,
+        Execute("INSERT INTO pages(id,notebook_id,name,position,view_json,paper_json,objects_json,background_json) VALUES($id,$book,$name,$position,$view,$paper,$texts,$background);", transaction,
             ("$id", destination.ToString()), ("$book", notebook.ToString()), ("$name", name), ("$position", position),
             ("$view", JsonSerializer.Serialize(view)), ("$paper", JsonSerializer.Serialize(document.Paper)),
-            ("$texts", JsonSerializer.Serialize(document.Texts ?? [])));
+            ("$texts", JsonSerializer.Serialize(document.Texts ?? [])), ("$background", document.Background is null ? DBNull.Value : JsonSerializer.Serialize(document.Background)));
         for (var i = 0; i < document.Strokes.Count; i++)
         {
             var stroke = document.Strokes[i];

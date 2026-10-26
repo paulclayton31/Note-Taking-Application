@@ -22,9 +22,10 @@ public sealed partial class NotebookDatabase
             ("$id", notebook.Id.ToString()), ("$name", name), ("$paper", JsonSerializer.Serialize(notebook.Paper)), ("$folder", SqlId(folder)));
         foreach (var copy in copies)
         {
-            Execute("INSERT INTO pages(id,notebook_id,name,position,view_json,paper_json,objects_json) VALUES($id,$book,$name,$position,$view,$paper,$texts);", transaction,
+            Execute("INSERT INTO pages(id,notebook_id,name,position,view_json,paper_json,objects_json,background_json) VALUES($id,$book,$name,$position,$view,$paper,$texts,$background);", transaction,
                 ("$id", copy.Page.Id.ToString()), ("$book", notebook.Id.ToString()), ("$name", copy.Page.Name), ("$position", copy.Page.Position),
-                ("$view", JsonSerializer.Serialize(copy.Page.View)), ("$paper", JsonSerializer.Serialize(copy.Document.Paper)), ("$texts", JsonSerializer.Serialize(copy.Document.Texts ?? [])));
+                ("$view", JsonSerializer.Serialize(copy.Page.View)), ("$paper", JsonSerializer.Serialize(copy.Document.Paper)), ("$texts", JsonSerializer.Serialize(copy.Document.Texts ?? [])),
+                ("$background", copy.Document.Background is null ? DBNull.Value : JsonSerializer.Serialize(copy.Document.Background)));
             for (var i = 0; i < copy.Document.Strokes.Count; i++)
             {
                 var stroke = copy.Document.Strokes[i];

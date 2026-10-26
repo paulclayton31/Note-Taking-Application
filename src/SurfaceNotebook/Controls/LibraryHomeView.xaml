@@ -54,6 +54,7 @@
                     <TextBlock x:Name="LibrarySubtitle" Text="A little structure. More room to think." FontSize="12" Foreground="{DynamicResource Muted}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <Button x:Name="ImportPdfButton" Click="ImportPdf_Click" ToolTip="Import a PDF as a notebook" Margin="0,0,8,0" AutomationProperties.Name="Import PDF"><local:WorkspaceIcon Kind="Import" Foreground="{DynamicResource Muted}"/></Button>
                     <Button x:Name="PasteNotebookButton" Click="PasteNotebook_Click" IsEnabled="False" ToolTip="Paste the copied notebook into this folder" Margin="0,0,8,0" AutomationProperties.Name="Paste notebook"><local:WorkspaceIcon Kind="Paste" Foreground="{DynamicResource Muted}"/></Button>
                     <Button x:Name="NewFolderButton" Click="NewFolder_Click" ToolTip="New folder" BorderBrush="{DynamicResource Stroke}" Margin="0,0,8,0"><local:WorkspaceIcon Kind="FolderPlus" Foreground="{DynamicResource Muted}"/></Button>
                     <Button x:Name="NewNotebookButton" Click="NewNotebook_Click" Style="{StaticResource PrimaryButton}">

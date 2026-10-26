@@ -3,7 +3,7 @@ namespace SurfaceNotebook.Models;
 public sealed record NotebookSummary(Guid Id, string Name, PaperSettings? Paper = null,
     Guid? FolderId = null, bool Favorite = false, long LastOpened = 0);
 public sealed record FolderSummary(Guid Id, string Name, Guid? ParentId = null);
-public sealed record PageSummary(Guid Id, Guid NotebookId, string Name, int Position, PageView? View, PaperSettings? Paper = null);
+public sealed record PageSummary(Guid Id, Guid NotebookId, string Name, int Position, PageView? View, PaperSettings? Paper = null, bool IsPdf = false);
 public sealed record LibrarySnapshot(List<NotebookSummary> Notebooks, List<PageSummary> Pages,
     Guid LastPageId, bool RecoveredSession, WorkspacePreferences? Preferences = null, List<FolderSummary>? Folders = null);
 public sealed record StoredStroke(InkStroke Stroke, int Ordinal);

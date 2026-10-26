@@ -8,18 +8,20 @@ public sealed record InkStroke(Guid Id, string Color, double Width, bool FitToCu
     List<InkPoint> Points, double? Height = null, bool IsHighlighter = false, bool IgnorePressure = false, bool RectangleTip = false);
 
 public sealed record PageDocument(int Version, double Width, double Height,
-    List<InkStroke> Strokes, PaperSettings? Paper = null, List<PageText>? Texts = null)
+    List<InkStroke> Strokes, PaperSettings? Paper = null, List<PageText>? Texts = null, PdfBackground? Background = null)
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
     public const double DefaultWidth = 816;
     public const double DefaultHeight = 1056;
 
     public void Validate(bool enforceSizeLimits = true)
     {
-        if (Version is not 1 and not CurrentVersion)
+        if (Version is not 1 and not 2 and not CurrentVersion)
             throw new InvalidDataException($"Unsupported page version: {Version}.");
         if (!double.IsFinite(Width) || !double.IsFinite(Height) || Width < 288 || Height < 288 || Width > 3456 || Height > 3456)
             throw new InvalidDataException("Invalid page dimensions.");
+        Background?.Validate();
+        if (Background is not null && Version < 3) throw new InvalidDataException("PDF backgrounds require page version 3.");
         Paper?.Validate();
         if (Paper is not null && (Math.Abs(Paper.Width - Width) > 0.01 || Math.Abs(Paper.Height - Height) > 0.01))
             throw new InvalidDataException("Paper dimensions do not match the page.");

@@ -19,7 +19,7 @@ public partial class MainWindow
             !InkSurface.Strokes.Contains(gesture) || !ScribbleGesture.IsScribble(gesture)) return false;
         var path = gesture.StylusPoints.Select(p => p.ToPoint()).ToArray();
         var bounds = gesture.GetBounds(); bounds.Inflate(6, 6);
-        var erased = InkSurface.Strokes.Where(s => s != gesture && s.HitTest(bounds, 30) &&
+        var erased = InkSurface.Strokes.Where(s => s != gesture && ScribbleGesture.IsLocalTarget(gesture, s) && s.HitTest(bounds, 8) &&
             ScribbleGesture.CrossesRepeatedly(path, s.GetBounds()) && s.HitTest(path, new EllipseStylusShape(12, 12))).ToList();
         var replacements = new Dictionary<Guid, PageText>();
         foreach (var box in InkSurface.Children.OfType<TextBox>())

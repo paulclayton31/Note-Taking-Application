@@ -29,6 +29,7 @@ public partial class MainWindow
             if (name is not null) try { await CreateFolderAsync(name, homeFolder); } catch (Exception ex) { ShowError(ex); }
         };
         HomeView.ResumeRequested += ShowWorkspace;
+        HomeView.ImportPdfRequested += () => ImportPdf_Click(this, new RoutedEventArgs());
         HomeView.PasteRequested += async () =>
         {
             try { await PasteNotebookAsync(homeFolder); } catch (Exception ex) { ShowError(ex); }

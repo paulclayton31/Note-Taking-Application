@@ -18,6 +18,8 @@ public partial class LibraryHomeView : UserControl
     public event Action? NewFolderRequested;
     public event Action? ResumeRequested;
     public event Action? PasteRequested;
+    public event Action? ImportPdfRequested;
+    private void ImportPdf_Click(object sender, RoutedEventArgs e) => ImportPdfRequested?.Invoke();
     public void SetPasteAvailable(bool available) => PasteNotebookButton.IsEnabled = available;
     private void PasteNotebook_Click(object sender, RoutedEventArgs e) => PasteRequested?.Invoke();
     public event Action<string, Guid>? ActionRequested;
