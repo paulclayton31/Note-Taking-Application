@@ -33,6 +33,12 @@ internal static partial class Program
             list.RaiseEvent(wheel); Await(Task.Delay(300)); list.UpdateLayout();
             Require(wheel.Handled && viewer.VerticalOffset > 0 && viewer.VerticalOffset < 100,
                 $"A small wheel step snapped a page instead of moving by pixels: {viewer.VerticalOffset}.");
+            var source = list.ItemsSource;
+            var selected = (SurfaceNotebook.ViewModels.NavigationPage)list.Items[2];
+            var stableOffset = viewer.VerticalOffset;
+            list.SelectedItem = selected; Await(WaitForPageAsync(window, selected.Id)); ArrangeWorkspace(window);
+            Require(ReferenceEquals(source, list.ItemsSource) && Math.Abs(viewer.VerticalOffset - stableOffset) < 1,
+                "Selecting a page rebuilt or jumped the page list.");
             var before = viewer.VerticalOffset;
             list.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, -120) { RoutedEvent = Mouse.PreviewMouseWheelEvent });
             list.RaiseEvent(new MouseWheelEventArgs(Mouse.PrimaryDevice, Environment.TickCount, -120) { RoutedEvent = Mouse.PreviewMouseWheelEvent });
