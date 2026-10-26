@@ -15,7 +15,16 @@ jobs:
       - name: Build
         run: dotnet build SurfaceNotebook.slnx --configuration Release
       - name: Check page storage, history, and WPF initialization
-        run: dotnet run --project tests/SurfaceNotebook.Checks --configuration Release --no-build
+        shell: pwsh
+        run: |
+          $checkAssembly = Get-ChildItem tests/SurfaceNotebook.Checks/bin/Release/*/SurfaceNotebook.Checks.dll | Select-Object -First 1
+          & dotnet $checkAssembly.FullName
+          $checkExit = $LASTEXITCODE
+          Write-Host "Application check exit code: $checkExit"
+          if ($checkExit -ne 0) {
+            Get-WinEvent -FilterHashtable @{LogName='Application'; StartTime=(Get-Date).AddMinutes(-3)} -ErrorAction SilentlyContinue | Where-Object { $_.ProviderName -in @('Application Error', '.NET Runtime', 'Windows Error Reporting') } | Select-Object -First 4 -ExpandProperty Message | Write-Host
+            throw "Application checks exited with $checkExit"
+          }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
