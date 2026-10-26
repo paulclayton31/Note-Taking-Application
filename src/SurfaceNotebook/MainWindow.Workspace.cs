@@ -165,6 +165,7 @@ public partial class MainWindow
         if (busy) return;
         var tab = openNotebooks.FirstOrDefault(n => n.Id == notebookId); if (tab is null) return;
         var index = openNotebooks.IndexOf(tab);
+        var stayAtHome = homeVisible;
         if (openNotebooks.Count == 1)
         {
             CloseAllNotebookTabs(); return;
@@ -178,6 +179,7 @@ public partial class MainWindow
         bindingSelection = true;
         try { openNotebooks.Remove(tab); }
         finally { bindingSelection = false; }
+        if (stayAtHome) ShowHome();
         BindNavigation();
         SavePreferences();
     }

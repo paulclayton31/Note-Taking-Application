@@ -90,8 +90,11 @@ internal static partial class Program
         picker.SelectedItem = picker.Items.OfType<NotebookSummary>().Single(n => n.Id == bookB);
         Await(WaitForPageAsync(window, other));
         Require(tabs.Items.Count == 2, "Reopening a notebook did not restore its tab.");
+        window.ShowHome();
         Await(window.CloseNotebookTabAsync(bookB));
-        Require(window.CurrentPageId == lastA && tabs.Items.Count == 1, "Closing the active tab did not restore the neighboring notebook's last page.");
+        Require(window.IsHomeVisible && window.CurrentPageId == lastA && tabs.Items.Count == 1,
+            "Closing a tab from the library changed screens or lost the neighbor's last page.");
+        window.ShowWorkspace();
         ArrangeWorkspace(window);
         var finalClose = Descendants<Button>(tabs).Single(b => b.Tag is Guid id && id == bookA);
         Require(finalClose.IsEnabled, "The final tab close button is disabled.");
