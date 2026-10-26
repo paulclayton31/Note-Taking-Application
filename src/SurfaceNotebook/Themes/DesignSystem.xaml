@@ -238,6 +238,24 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <Style x:Key="VerticalToolSlider" TargetType="Slider" BasedOn="{StaticResource {x:Type Slider}}">
+        <Setter Property="Orientation" Value="Vertical"/>
+        <Setter Property="Width" Value="44"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Slider">
+                    <Grid Margin="0,9">
+                        <Border Width="4" Background="{DynamicResource Stroke}" CornerRadius="2" HorizontalAlignment="Center"/>
+                        <Track x:Name="PART_Track" Orientation="Vertical" IsDirectionReversed="False" Minimum="{TemplateBinding Minimum}" Maximum="{TemplateBinding Maximum}" Value="{TemplateBinding Value}">
+                            <Track.DecreaseRepeatButton><RepeatButton Command="Slider.DecreaseLarge" Focusable="False"><RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Width="4" Background="{DynamicResource AccentFill}" HorizontalAlignment="Center" CornerRadius="2"/></ControlTemplate></RepeatButton.Template></RepeatButton></Track.DecreaseRepeatButton>
+                            <Track.Thumb><Thumb Width="44" Height="32"><Thumb.Template><ControlTemplate TargetType="Thumb"><Grid Background="Transparent"><Border Width="20" Height="20" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource AccentFill}" BorderThickness="3" CornerRadius="10"/></Grid></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
+                            <Track.IncreaseRepeatButton><RepeatButton Command="Slider.IncreaseLarge" Focusable="False"><RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Background="Transparent"/></ControlTemplate></RepeatButton.Template></RepeatButton></Track.IncreaseRepeatButton>
+                        </Track>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
     <Style TargetType="ScrollBar">
         <Setter Property="Width" Value="8"/>
         <Setter Property="Template">

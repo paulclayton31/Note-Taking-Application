@@ -147,13 +147,15 @@ internal static partial class Program
         CheckTabCloseLayout(window, notebook.Id, root);
         ((ComboBox)window.FindName("ColorPicker")).SelectedIndex = 3;
         ((Slider)window.FindName("ThicknessSlider")).Value = 4.5;
-        ((ComboBox)window.FindName("PenStylePicker")).SelectedIndex = 1;
-        var preset = window.SavePenPreset("Lab outline");
+        ((RadioButton)window.FindName("BallStyleButton")).IsChecked = true;
+        var preset = window.AddPen("Lab outline");
         ((Slider)window.FindName("ThicknessSlider")).Value = 2;
-        ((ComboBox)window.FindName("PenStylePicker")).SelectedIndex = 0;
+        ((RadioButton)window.FindName("FountainStyleButton")).IsChecked = true;
         window.ApplyPenPreset(preset.Id);
-        Require(ink.DefaultDrawingAttributes.Width == 4.5 && ink.DefaultDrawingAttributes.IgnorePressure && ink.DefaultDrawingAttributes.Color.G == 135,
-            "Saved pen did not restore color, width, and style.");
+        Require(ink.DefaultDrawingAttributes.Width == 2 && !ink.DefaultDrawingAttributes.IgnorePressure && ink.DefaultDrawingAttributes.Color.G == 135,
+            "Edits to a pen did not save automatically.");
+        ((Slider)window.FindName("ThicknessSlider")).Value = 4.5;
+        ((RadioButton)window.FindName("BallStyleButton")).IsChecked = true;
         Require(InkMapper.Capture(ink.Strokes).Strokes.Single().Points.SequenceEqual(original.Strokes.Single().Points) && ink.Strokes[0].DrawingAttributes.Color == Colors.Blue,
             "Changing presets altered existing handwriting.");
         // A dismissible popup needs a visible owner HWND for mouse capture.

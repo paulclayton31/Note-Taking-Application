@@ -8,7 +8,7 @@ $releaseNotes = "docs/releases/$releaseTag.md"
 if (-not (Test-Path -LiteralPath $releaseNotes)) { throw "Missing release notes: $releaseNotes" }
 $releaseAssets = @(Get-ChildItem -LiteralPath 'release-assets' -File)
 $expectedNames = @('SurfaceNotebook-windows-x64.exe', 'SurfaceNotebook-windows-arm64.exe', 'SHA256SUMS.txt',
-    'home-light.png', 'home-dark.png', 'workspace-light.png', 'workspace-dark.png', 'paper-settings.png', 'focus-mode.png', 'portrait.png', 'compact-window.png', 'tool-inspector.png', 'tool-inspector-portrait.png')
+    'home-light.png', 'home-dark.png', 'workspace-light.png', 'workspace-dark.png', 'paper-settings.png', 'focus-mode.png', 'portrait.png', 'compact-window.png', 'tool-inspector.png', 'tool-inspector-portrait.png', 'tool-inspector-dark.png', 'add-pen.png')
 foreach ($assetName in $expectedNames) {
     if ($releaseAssets.Name -notcontains $assetName) { throw "Missing release asset: $assetName" }
 }

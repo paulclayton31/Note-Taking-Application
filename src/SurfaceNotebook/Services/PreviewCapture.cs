@@ -33,9 +33,13 @@ public static class PreviewCapture
             window.ShowToolInspector();
             await CaptureAsync(window, Path.Combine(outputDirectory, "tool-inspector.png"), 1440, 1000);
             await CaptureAsync(window, Path.Combine(outputDirectory, "tool-inspector-portrait.png"), 960, 1440);
+            await CaptureElementAsync(window.PrepareAddPenPreview(), Path.Combine(outputDirectory, "add-pen.png"));
             window.CloseToolInspector();
             window.SetDarkTheme(true);
             await CaptureAsync(window, Path.Combine(outputDirectory, "workspace-dark.png"), 1440, 1000);
+            window.ShowToolInspector();
+            await CaptureAsync(window, Path.Combine(outputDirectory, "tool-inspector-dark.png"), 1440, 1000);
+            window.CloseToolInspector();
             window.SetDarkTheme(false); window.ShowPaperPreview();
             await CaptureAsync(window, Path.Combine(outputDirectory, "paper-settings.png"), 1440, 1000);
             ((FrameworkElement)window.FindName("ContextPanel")).Visibility = Visibility.Collapsed;
@@ -65,6 +69,15 @@ public static class PreviewCapture
         await Dispatcher.Yield(DispatcherPriority.Render);
         content.UpdateLayout();
         var image = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32); image.Render(content);
+        var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image));
+        using var stream = File.Create(file); png.Save(stream);
+    }
+    private static async Task CaptureElementAsync(FrameworkElement element, string file)
+    {
+        element.Measure(new Size(300, 1000)); element.Arrange(new Rect(element.DesiredSize)); element.UpdateLayout();
+        await Dispatcher.Yield(DispatcherPriority.Render);
+        var image = new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth), (int)Math.Ceiling(element.ActualHeight), 96, 96, PixelFormats.Pbgra32);
+        image.Render(element);
         var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image));
         using var stream = File.Create(file); png.Save(stream);
     }

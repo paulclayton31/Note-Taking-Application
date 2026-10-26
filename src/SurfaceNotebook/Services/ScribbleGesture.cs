@@ -9,34 +9,75 @@ public static class ScribbleGesture
 {
     public static bool IsScribble(Stroke stroke)
     {
-        var points = stroke.StylusPoints;
-        if (points.Count < 7 || points.Count > 50000) return false;
-        var bounds = new Rect(points[0].ToPoint(), points[0].ToPoint());
-        double length = 0, horizontal = 0, vertical = 0;
-        for (var i = 1; i < points.Count; i++)
-        {
-            var delta = points[i].ToPoint() - points[i - 1].ToPoint();
-            bounds.Union(points[i].ToPoint());
-            length += delta.Length; horizontal += Math.Abs(delta.X); vertical += Math.Abs(delta.Y);
-        }
-        var major = Math.Max(bounds.Width, bounds.Height); var minor = Math.Min(bounds.Width, bounds.Height);
-        if (major < 24 || major > 320 || minor < 8 || minor > 140 || minor > major * .75 || length < major * 5) return false;
-        var useX = bounds.Width >= bounds.Height;
-        if ((useX ? horizontal : vertical) < length * .8) return false;
-        var threshold = Math.Max(6, major * .3);
-        double extreme = useX ? points[0].X : points[0].Y;
-        var direction = 0; var reversals = 0;
+        if (stroke.StylusPoints.Count < 4 || stroke.StylusPoints.Count > 50000) return false;
+        var points = Resample(stroke);
+        if (points.Count < 4) return false;
+        var center = new Point(points.Average(p => p.X), points.Average(p => p.Y));
+        double xx = 0, xy = 0, yy = 0, length = 0;
         foreach (var point in points)
         {
-            var value = useX ? point.X : point.Y;
+            var offset = point - center;
+            xx += offset.X * offset.X; xy += offset.X * offset.Y; yy += offset.Y * offset.Y;
+        }
+        // Work in the gesture's own axis, so a diagonal scratch is as easy as a horizontal one.
+        var angle = .5 * Math.Atan2(2 * xy, xx - yy);
+        var axis = new Vector(Math.Cos(angle), Math.Sin(angle));
+        var projected = points.Select(p => Vector.Multiply(p - center, axis)).ToArray();
+        var perpendicular = points.Select(p => Vector.Multiply(p - center, new Vector(-axis.Y, axis.X))).ToArray();
+        var span = projected.Max() - projected.Min();
+        var crossSpan = perpendicular.Max() - perpendicular.Min();
+        double travel = 0;
+        for (var i = 1; i < points.Count; i++)
+        { length += (points[i] - points[i - 1]).Length; travel += Math.Abs(projected[i] - projected[i - 1]); }
+        if (span < 16 || span > 500 || crossSpan > 180 || crossSpan > span * .8 ||
+            length < span * 2.55 || travel < length * .7) return false;
+        var threshold = Math.Max(3, span * .18);
+        var extreme = projected[0]; var extremeIndex = 0;
+        var direction = 0; var reversals = 0;
+        for (var i = 1; i < points.Count; i++)
+        {
+            var value = projected[i];
             if (direction == 0)
             {
-                if (Math.Abs(value - extreme) >= threshold) { direction = Math.Sign(value - extreme); extreme = value; }
+                if (Math.Abs(value - extreme) >= threshold) { direction = Math.Sign(value - extreme); extreme = value; extremeIndex = i; }
             }
-            else if ((value - extreme) * direction > 0) extreme = value;
-            else if ((extreme - value) * direction >= threshold) { reversals++; direction = -direction; extreme = value; }
+            else if ((value - extreme) * direction > 0) { extreme = value; extremeIndex = i; }
+            else if ((extreme - value) * direction >= threshold)
+            {
+                if (SharpTurn(points, extremeIndex, Math.Min(6, span * .1))) reversals++;
+                direction = -direction; extreme = value; extremeIndex = i;
+            }
         }
-        return reversals >= 5;
+        return reversals >= 2;
+    }
+    private static bool SharpTurn(IReadOnlyList<Point> points, int index, double window)
+    {
+        var before = index; var after = index; double distance = 0;
+        while (before > 0 && distance < window) { distance += (points[before] - points[before - 1]).Length; before--; }
+        distance = 0;
+        while (after < points.Count - 1 && distance < window) { distance += (points[after + 1] - points[after]).Length; after++; }
+        var incoming = points[index] - points[before]; var outgoing = points[after] - points[index];
+        if (incoming.Length < 1 || outgoing.Length < 1) return false;
+        return Vector.Multiply(incoming, outgoing) / (incoming.Length * outgoing.Length) < .25;
+    }
+    private static List<Point> Resample(Stroke stroke)
+    {
+        const double step = 2;
+        var points = new List<Point> { stroke.StylusPoints[0].ToPoint() };
+        var previous = points[0]; double remaining = step;
+        foreach (var point in stroke.StylusPoints.Skip(1).Select(p => p.ToPoint()))
+        {
+            var delta = point - previous;
+            while (delta.Length >= remaining && points.Count < 6000)
+            {
+                previous += delta * (remaining / delta.Length); points.Add(previous);
+                delta = point - previous; remaining = step;
+            }
+            if (points.Count >= 6000) return [];
+            remaining -= delta.Length; previous = point;
+        }
+        if ((points[^1] - previous).Length > .1) points.Add(previous);
+        return points;
     }
 
     public static bool CrossesRepeatedly(IReadOnlyList<Point> path, Rect target)
@@ -48,7 +89,7 @@ public static class ScribbleGesture
         {
             var hit = Intersects(path[i - 1], path[i], target);
             if (hit && (!previousHit || !target.Contains(path[i - 1]))) runs++;
-            if (runs >= 3) return true;
+            if (runs >= 2) return true;
             previousHit = hit; allInside &= target.Contains(path[i]);
         }
         return allInside;

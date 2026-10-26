@@ -1,42 +1,48 @@
-# v0.3.0 writing tools
+# v0.3.1 writing tools
 
-Included in the stable v0.3.0 release. See the [release notes and downloads](releases/v0.3.0.md).
+See the [release notes and downloads](releases/v0.3.1.md).
 
-## Toolbar and tool inspector
+## Thin tool rail
 
-All seven tools remain on the writing palette. Tap a tool to switch immediately; tap the active tool again to open or close its slim customization sidebar. The settings button does the same. Starting a pen stroke or editing text dismisses tool settings. Fingers continue to navigate without producing ink.
+All seven tools remain on the writing palette. Tap a tool to switch, then tap the active tool again to open or close its vertical rail. The settings button does the same. The rail is 64 DIPs wide, roughly the thickness of the main toolbar, and floats above the page without narrowing the writing viewport. Starting a pen stroke or editing text dismisses it.
 
-The inspector shows the current tool's settings: saved pens, thickness, a color swatch grid with a selected-color indicator, custom hex colors, pressure/monoline, precision erasing, shapes, or text size. Color accepts `#RRGGBB` or `#AARRGGBB`. Pen and highlighter retain separate colors. The palette's color button opens the inspector at the color section.
+Pens appear as colored buttons. Swipe the pen list to reach more; short windows replace the list with a button that opens all pens. The **+** button adds a pen. Drag the vertical thickness slider to change width. **Fountain** enables pressure-sensitive ink; **Ball** uses monoline. The ellipsis opens less-used options, including scribble erasing, precision erasing, shapes, text size, and toolbar docking.
 
-Three saved pens are available directly on the palette in spacious layouts. Applying another saved pen brings it into that quick-access group. All saved pens remain available in the inspector. Narrow layouts keep a single row; swipe the palette or use the mouse wheel if its tools overflow. Existing dragging, docking, keyboard shortcuts, and saved placement remain supported.
+The main palette still supports dragging, docking, keyboard movement, and saved position. It keeps one row in narrow windows; swipe horizontally or use the mouse wheel if tools overflow.
 
-Below 1280 DIPs, tool settings overlay the right side of the workspace, preserving the writing viewport's width. On wider windows they occupy a narrow adjacent column. The inspector closes as writing begins; paper settings still use their explicit Apply workflow.
+## Pens save their edits
+
+Select a pen, then change its thickness, color, or style. The pen updates immediately and saves automatically. Switching to another pen and back restores the edited settings; closing/reopening retains them. There is no separate Save current pen action. Existing handwriting keeps its original color, width, and pressure.
+
+**Add pen** opens a color wheel and lets you choose a name and Fountain/Ball style. Only the Add pen button commits it. Closing the picker before adding leaves existing pens unchanged. Up to 24 pens are supported. Long-press/right-click a rail pen to rename or remove it; the app keeps at least one pen available.
+
+The color button recolors the selected pen automatically. The wheel chooses hue and saturation, with a brightness slider for darker/lighter ink. Optional hex input accepts `#RRGGBB` or `#AARRGGBB`. Pen and highlighter colors remain independent. The wheel supports pen, touch, mouse, arrow keys, and the hex field.
+
+v0.3.0 could detach the current settings from the selected saved pen. When necessary, v0.3.1 preserves those current settings as a recovered pen alongside the existing pens. The library schema does not change.
 
 ## Lasso selection actions
 
-Circle ink and/or typed objects with the lasso. Tap inside the selection with the pen or mouse, tap it with a finger after moving the pen out of range, or tap the small selection-actions button. Choose **Copy**, **Duplicate**, or **Delete**. **Paste** inserts a copied selection on the current page. Right-click and the keyboard shortcuts below are also available.
+Circle ink and/or typed objects with the lasso. Tap inside the selection with the pen or mouse, tap with a finger after moving the pen out of range, or tap the selection-actions button. Choose Copy, Duplicate, Delete, or Paste. Copies work across pages and receive independent identities. Duplicate, delete, and paste each form one undoable edit.
 
 | Action | Shortcut in lasso mode |
 | --- | --- |
-| Copy selection | Ctrl+C |
-| Duplicate selection | Ctrl+D |
-| Delete selection | Delete / Backspace |
-| Paste copied objects | Ctrl+V |
+| Copy | Ctrl+C |
+| Duplicate | Ctrl+D |
+| Delete | Delete / Backspace |
+| Paste | Ctrl+V |
 
-Duplicates and pasted objects receive new identities and become selected so they can be moved. Ink pressure/style and typed content are preserved. Copy also supplies standard ink data and plain typed text to the Windows clipboard. Copying leaves the selection intact; duplicate, delete, and paste each form one undoable edit and save through the normal ordered worker.
+Finger dragging continues to pan. Pinching, canceled touch capture, and palm contact with the pen in range do not open selection actions. Pen dragging and handles retain native movement/resizing.
 
-A finger tap opens the menu without panning. Finger dragging continues to pan; a pinch, lost/canceled touch capture, or palm contact with the pen in range does not open the menu. Pen dragging and selection handles retain native WPF movement/resizing.
+## Easier scribble erasing
 
-## Scribble to erase
+With Pen selected, use a short scratch-out of about three back-and-forth passes over handwriting or typed words. v0.3.1 needs fewer reversals, accepts diagonal and flatter scratches, and is more forgiving when crossing the middle of handwritten strokes. Recognition considers the path in its own direction and still requires repeated sharp reversals and contact with existing content.
 
-With **Pen** selected, a tight repeated back-and-forth scribble can erase covered handwriting or typed words. Detection runs after pen-up and requires several substantial reversals. A single strike-through, underline, small jitter, circular doodle, large diagram, highlighter stroke, or scribble on blank paper remains ink. Existing ink must be mostly covered and repeatedly crossed; long strokes extending outside the region are preserved. Typed-word removal preserves other words and line breaks.
+Single strike-throughs, underlines, tiny jitter, waves, circular doodles, highlighter marks, and scratches on blank paper remain ordinary ink in the regression fixtures. Long ink strokes mostly outside the scratched region are preserved. Typed-word removal preserves neighboring words and line breaks.
 
-The scribble itself disappears when it erases something. A short **Scribble erased · Undo** notice appears, and the normal back arrow/Ctrl+Z works. **One Undo restores both the erased content and the scribble.** This preserves an intentional mark if recognition was unwanted. A second Undo removes just that mark. Redo reapplies the erase.
-
-Turn **Scribble to erase** off in pen settings to keep every scribble as ink. This preference is saved with the library. No notebook schema migration is needed.
+When a scratch erases content, its mark disappears and a short Undo notice appears. **One Undo restores the erased content and the scratch itself.** A second Undo removes just the scratch. Redo reapplies the erase. Disable Scribble to erase from the rail's ellipsis menu when desired.
 
 ## Verification
 
-The Windows check harness covers custom colors and presets, inspector geometry, compact toolbar reachability, mixed ink/text duplication, deletion, clipboard paste across pages, object identities/pressure, touch menu arbitration, conservative scribble recognition, blank-paper/disabled behavior, typed-word removal, undo/redo, and restart persistence.
+Windows checks cover independent pen edits across switches/restarts, legacy current-pen recovery, add/cancel behavior, wheel color/touch input, pressure style, vertical-slider commands, short-window rail reachability, mixed lasso operations, short/flat/diagonal scratches, undo/redo, and durable storage.
 
-Physical Surface testing remains necessary for pen tap versus drag, palm suppression, gesture comfort, handwritten letters/formula doodles, display scaling, and long writing sessions. Include both handwriting and intended scribbles while tuning detection; false deletion must always remain recoverable with Undo.
+Physical Surface testing remains necessary for handwriting variety, pen/palm behavior, scratch-out comfort, and sustained lecture use. Undo remains available when a real mark is interpreted as erasing.
