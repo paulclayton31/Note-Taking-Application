@@ -92,8 +92,13 @@ internal static partial class Program
         Require(tabs.Items.Count == 2, "Reopening a notebook did not restore its tab.");
         Await(window.CloseNotebookTabAsync(bookB));
         Require(window.CurrentPageId == lastA && tabs.Items.Count == 1, "Closing the active tab did not restore the neighboring notebook's last page.");
-        Await(window.CloseNotebookTabAsync(bookA));
-        Require(tabs.Items.Count == 1, "Closing the only tab left the workspace without a document.");
+        ArrangeWorkspace(window);
+        var finalClose = Descendants<Button>(tabs).Single(b => b.Tag is Guid id && id == bookA);
+        Require(finalClose.IsEnabled, "The final tab close button is disabled.");
+        finalClose.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+        Require(tabs.Items.Count == 0 && window.IsHomeVisible && window.CurrentPageId is null, "Closing the final tab did not return to the library.");
+        Await(window.ActivateNotebookAsync(bookA));
+        Require(window.CurrentPageId == lastA && tabs.Items.Count == 1, "Reopening after closing all tabs lost the remembered page.");
 
         ArrangeWorkspace(window);
         // Attach the real window to an offscreen HWND for input hit testing.

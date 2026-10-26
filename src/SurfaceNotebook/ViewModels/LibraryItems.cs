@@ -23,6 +23,7 @@ public sealed record PresetItem(PenPreset Preset, bool Selected)
     public string Name => Preset.Name;
     public string Color => Preset.Color;
     public string Description => Preset.Description;
+    public string Icon => Preset.Monoline ? "BallPen" : "FountainPen";
     public string PreviewPaper
     {
         get

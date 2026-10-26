@@ -54,6 +54,7 @@
                     <TextBlock x:Name="LibrarySubtitle" Text="A little structure. More room to think." FontSize="12" Foreground="{DynamicResource Muted}"/>
                 </StackPanel>
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
+                    <Button x:Name="PasteNotebookButton" Click="PasteNotebook_Click" IsEnabled="False" ToolTip="Paste the copied notebook into this folder" Margin="0,0,8,0" AutomationProperties.Name="Paste notebook"><local:WorkspaceIcon Kind="Paste" Foreground="{DynamicResource Muted}"/></Button>
                     <Button x:Name="NewFolderButton" Click="NewFolder_Click" ToolTip="New folder" BorderBrush="{DynamicResource Stroke}" Margin="0,0,8,0"><local:WorkspaceIcon Kind="FolderPlus" Foreground="{DynamicResource Muted}"/></Button>
                     <Button x:Name="NewNotebookButton" Click="NewNotebook_Click" Style="{StaticResource PrimaryButton}">
                         <StackPanel Orientation="Horizontal"><local:WorkspaceIcon Kind="Plus" Foreground="White" Width="17" Height="17" Margin="0,0,8,0"/><TextBlock Text="New notebook" Foreground="White" FontWeight="SemiBold"/></StackPanel>
@@ -126,7 +127,7 @@
                                     </Button>
                                     <Button Click="More_Click" ToolTip="Notebook actions" Tag="{Binding Id}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,6,12" Padding="10">
                                         <local:WorkspaceIcon Kind="More" Foreground="{DynamicResource Muted}" Width="18" Height="18"/>
-                                        <Button.ContextMenu><ContextMenu><MenuItem Header="Rename notebook…" Tag="rename-notebook" Click="Action_Click"/><MenuItem Header="Star / unstar notebook" Tag="favorite-notebook" Click="Action_Click"/><Separator/><MenuItem Header="Move to folder…" Tag="move-notebook" Click="Action_Click"/></ContextMenu></Button.ContextMenu>
+                                        <Button.ContextMenu><ContextMenu><MenuItem Header="Rename notebook…" Tag="rename-notebook" Click="Action_Click"/><MenuItem Header="Star / unstar notebook" Tag="favorite-notebook" Click="Action_Click"/><Separator/><MenuItem Header="Move to folder…" Tag="move-notebook" Click="Action_Click"/><MenuItem Header="Copy notebook" Tag="copy-notebook" Click="Action_Click"/><MenuItem Header="Duplicate notebook" Tag="duplicate-notebook" Click="Action_Click"/><Separator/><MenuItem Header="Delete notebook…" Tag="delete-notebook" Click="Action_Click" Foreground="{DynamicResource Danger}"/></ContextMenu></Button.ContextMenu>
                                     </Button>
                                 </Grid>
                             </Border>

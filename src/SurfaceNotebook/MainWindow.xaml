@@ -33,6 +33,7 @@
                 <Grid x:Name="TabsHost" Grid.Column="1" VerticalAlignment="Center">
                 <Border x:Name="TabStrip" Background="Transparent" BorderBrush="{DynamicResource Stroke}" BorderThickness="0">
                     <ListBox x:Name="DocumentTabs" Height="48" Padding="0" HorizontalAlignment="Left" MaxWidth="{Binding ActualWidth, ElementName=TabsHost}" shell:WindowChrome.IsHitTestVisibleInChrome="True" SelectionChanged="Tab_Changed" PreviewMouseWheel="Tabs_MouseWheel" ScrollViewer.HorizontalScrollBarVisibility="Hidden" ScrollViewer.VerticalScrollBarVisibility="Disabled" ScrollViewer.PanningMode="HorizontalOnly">
+                        <ListBox.ContextMenu><ContextMenu><MenuItem Header="Close all tabs" Click="CloseAllTabs_Click"/></ContextMenu></ListBox.ContextMenu>
                         <ListBox.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ListBox.ItemsPanel>
                         <ListBox.ItemContainerStyle>
                             <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}"><Setter Property="Height" Value="44"/><Setter Property="Padding" Value="10,0,0,0"/><Setter Property="Margin" Value="5,2,0,2"/><Setter Property="VerticalContentAlignment" Value="Center"/></Style>
@@ -43,7 +44,6 @@
                                     <local:WorkspaceIcon Kind="Notebook" Foreground="{DynamicResource Muted}" Width="15" Height="15" Margin="0,0,8,0"/>
                                     <TextBlock Text="{Binding Name}" MaxWidth="155" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
                                     <Button Click="CloseTab_Click" Tag="{Binding Id}" ToolTip="Close notebook tab" AutomationProperties.Name="{Binding Name, StringFormat=Close {0}}" Height="40" Width="40" MinHeight="40" MinWidth="40" Padding="0" Margin="4,0,0,0" VerticalAlignment="Center">
-                                        <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Items.Count, ElementName=DocumentTabs}" Value="1"><Setter Property="IsEnabled" Value="False"/></DataTrigger></Style.Triggers></Style></Button.Style>
                                         <Path Data="M1,1 L11,11 M1,11 L11,1" Width="12" Height="12" Stretch="None" Stroke="{DynamicResource Muted}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
                                     </Button>
                                 </StackPanel>
@@ -78,7 +78,7 @@
                     </DockPanel>
                     <ComboBox x:Name="NotebookPicker" Grid.Row="1" SelectionChanged="Notebook_Changed" Margin="0,0,0,12" ToolTip="Switch notebook">
                         <ComboBox.ItemTemplate><DataTemplate><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/></DataTemplate></ComboBox.ItemTemplate>
-                        <ComboBox.ContextMenu><ContextMenu><MenuItem Header="Rename notebook" Click="RenameNotebook_Click"/></ContextMenu></ComboBox.ContextMenu>
+                        <ComboBox.ContextMenu><ContextMenu><MenuItem Header="Rename notebook" Click="RenameNotebook_Click"/><MenuItem Header="Copy notebook" Tag="copy" Click="NotebookAction_Click"/><MenuItem Header="Duplicate notebook" Tag="duplicate" Click="NotebookAction_Click"/><Separator/><MenuItem Header="Delete notebook…" Tag="delete" Click="NotebookAction_Click" Foreground="{DynamicResource Danger}"/></ContextMenu></ComboBox.ContextMenu>
                     </ComboBox>
                     <Grid Grid.Row="2" Margin="0,0,0,18">
                         <TextBox x:Name="SearchBox" Padding="36,10,10,10" TextChanged="Search_Changed" ToolTip="Search page names in this notebook"/>
@@ -93,7 +93,8 @@
                         <DockPanel><Button DockPanel.Dock="Right" Click="DismissRecovery_Click" ToolTip="Dismiss recovery notice" Padding="8"><local:WorkspaceIcon Kind="Close" Width="14" Height="14" Foreground="{DynamicResource Accent}"/></Button><TextBlock Text="Your saved notes were recovered." TextWrapping="Wrap" Foreground="{DynamicResource Accent}" FontSize="11" VerticalAlignment="Center"/></DockPanel>
                     </Border>
                     <Grid Grid.Row="5">
-                        <ListBox x:Name="PageList" SelectionChanged="Page_Changed" ScrollViewer.PanningMode="VerticalOnly"
+                        <ListBox x:Name="PageList" SelectionChanged="Page_Changed" ScrollViewer.PanningMode="VerticalOnly" VirtualizingPanel.ScrollUnit="Pixel" VirtualizingPanel.VirtualizationMode="Recycling"
+                                 local:SmoothScroll.Enabled="True" ScrollViewer.CanContentScroll="True"
                                  AllowDrop="True" DragOver="PageList_DragOver" Drop="PageList_Drop" DragLeave="PageList_DragLeave">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
@@ -101,7 +102,7 @@
                                         <Grid.ContextMenu>
                                         <ContextMenu Opened="PageMenu_Opened">
                                             <MenuItem Header="Rename page…" Click="RenamePage_Click"/>
-                                            <MenuItem Header="Duplicate page" Click="DuplicatePage_Click"/>
+                                            <MenuItem Header="Duplicate page" Click="DuplicatePage_Click"/><MenuItem Header="Delete page…" Click="DeletePage_Click" Foreground="{DynamicResource Danger}"/>
                                             <Separator/>
                                             <MenuItem Header="Move earlier" Tag="earlier" Click="MovePage_Click"/>
                                             <MenuItem Header="Move later" Tag="later" Click="MovePage_Click"/>
@@ -132,7 +133,7 @@
                             <TextBlock Text="LOCAL LIBRARY" Style="{StaticResource Caption}" FontSize="9" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             <Button DockPanel.Dock="Right" Click="LibraryMenu_Click" ToolTip="Library actions" Padding="10">
                                 <local:WorkspaceIcon Kind="More" Foreground="{DynamicResource Muted}" Width="18" Height="18"/>
-                                <Button.ContextMenu><ContextMenu><MenuItem Header="Rename notebook…" Click="RenameNotebook_Click"/><MenuItem Header="Import page…" Click="Import_Click"/><MenuItem Header="Export current page…" Click="Export_Click"/><Separator/><MenuItem Header="Save now    Ctrl+S" Click="Flush_Click"/></ContextMenu></Button.ContextMenu>
+                                <Button.ContextMenu><ContextMenu><MenuItem Header="Rename notebook…" Click="RenameNotebook_Click"/><MenuItem Header="Copy notebook" Tag="copy" Click="NotebookAction_Click"/><MenuItem Header="Duplicate notebook" Tag="duplicate" Click="NotebookAction_Click"/><Separator/><MenuItem Header="Delete notebook…" Tag="delete" Click="NotebookAction_Click" Foreground="{DynamicResource Danger}"/><MenuItem Header="Import page…" Click="Import_Click"/><MenuItem Header="Export current page…" Click="Export_Click"/><Separator/><MenuItem Header="Save now    Ctrl+S" Click="Flush_Click"/></ContextMenu></Button.ContextMenu>
                             </Button>
                         </DockPanel>
                     </StackPanel>
@@ -148,12 +149,12 @@
                     </StackPanel>
                     <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="FavoriteButton" Click="Favorite_Click" ToolTip="Favorite this page" Padding="12"><local:WorkspaceIcon Kind="Star" Foreground="{DynamicResource Muted}" Width="17" Height="17"/></Button>
-                        <Button x:Name="PageActionsButton" Click="LibraryMenu_Click" ToolTip="Page actions · duplicate, reorder, rename" Padding="12">
+                        <Button x:Name="PageActionsButton" Click="LibraryMenu_Click" ToolTip="Page actions · duplicate, delete, reorder, rename" Padding="12">
                             <local:WorkspaceIcon Kind="More" Foreground="{DynamicResource Muted}" Width="17" Height="17"/>
                             <Button.ContextMenu>
                                 <ContextMenu Opened="PageMenu_Opened">
                                     <MenuItem Header="Rename page…" Click="RenamePage_Click"/>
-                                    <MenuItem Header="Duplicate page" Click="DuplicatePage_Click"/>
+                                    <MenuItem Header="Duplicate page" Click="DuplicatePage_Click"/><MenuItem Header="Delete page…" Click="DeletePage_Click" Foreground="{DynamicResource Danger}"/>
                                     <Separator/><MenuItem Header="Move earlier" Tag="earlier" Click="MovePage_Click"/>
                                     <MenuItem Header="Move later" Tag="later" Click="MovePage_Click"/>
                                     <Separator/><MenuItem Header="Export page…" Click="Export_Click"/>
@@ -213,10 +214,8 @@
                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate><DataTemplate>
                                             <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="44" Height="44" Padding="6" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name, StringFormat=Use saved pen {0}}">
-                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></DataTrigger></Style.Triggers></Style></Button.Style>
-                                                <Border Background="{Binding PreviewPaper}" BorderBrush="{DynamicResource Muted}" BorderThickness=".6" CornerRadius="15" Width="30" Height="30">
-                                                    <local:WorkspaceIcon Kind="Pen" Foreground="{Binding Color}" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                                </Border>
+                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="Transparent"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                                <Grid Width="30" Height="30"><local:WorkspaceIcon Kind="{Binding Icon}" Foreground="{DynamicResource Muted}" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Top"/><Border Background="{Binding Color}" BorderBrush="{DynamicResource Stroke}" BorderThickness=".4" Height="3" Width="17" CornerRadius="1.5" VerticalAlignment="Bottom" Margin="0,0,0,2"/></Grid>
                                             </Button>
                                         </DataTemplate></ItemsControl.ItemTemplate>
                                     </ItemsControl>
@@ -240,8 +239,8 @@
                                     <ItemsControl x:Name="SavedPenList">
                                         <ItemsControl.ItemTemplate><DataTemplate>
                                             <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="44" Height="44" Padding="6" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name, StringFormat=Use pen {0}}">
-                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></DataTrigger></Style.Triggers></Style></Button.Style>
-                                                <Border Background="{Binding PreviewPaper}" BorderBrush="{DynamicResource Muted}" BorderThickness=".6" CornerRadius="15" Width="30" Height="30"><local:WorkspaceIcon Kind="Pen" Foreground="{Binding Color}" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="Transparent"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                                <Grid Width="30" Height="30"><local:WorkspaceIcon Kind="{Binding Icon}" Foreground="{DynamicResource Muted}" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Top"/><Border Background="{Binding Color}" BorderBrush="{DynamicResource Stroke}" BorderThickness=".4" Height="3" Width="17" CornerRadius="1.5" VerticalAlignment="Bottom" Margin="0,0,0,2"/></Grid>
                                                 <Button.ContextMenu><ContextMenu><MenuItem Header="Rename pen…" Tag="rename" Click="PresetAction_Click"/><MenuItem Header="Remove pen" Tag="remove" Click="PresetAction_Click"/></ContextMenu></Button.ContextMenu>
                                             </Button>
                                         </DataTemplate></ItemsControl.ItemTemplate>
@@ -274,7 +273,7 @@
                                 <ScrollViewer MaxHeight="360" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
                                     <ItemsControl x:Name="AllPenList">
                                         <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate><DataTemplate><Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="68" Padding="4,8" ToolTip="{Binding Description}"><StackPanel><Ellipse Fill="{Binding Color}" Stroke="{DynamicResource Muted}" StrokeThickness=".7" Width="22" Height="22"/><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" MaxWidth="58" FontSize="10" Margin="0,6,0,0" TextAlignment="Center"/></StackPanel><Button.ContextMenu><ContextMenu><MenuItem Header="Rename pen…" Tag="rename" Click="PresetAction_Click"/><MenuItem Header="Remove pen" Tag="remove" Click="PresetAction_Click"/></ContextMenu></Button.ContextMenu></Button></DataTemplate></ItemsControl.ItemTemplate>
+                                        <ItemsControl.ItemTemplate><DataTemplate><Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="68" Padding="4,8" ToolTip="{Binding Description}"><StackPanel><Grid Width="30" Height="28"><local:WorkspaceIcon Kind="{Binding Icon}" Foreground="{DynamicResource Muted}" HorizontalAlignment="Center"/><Border Background="{Binding Color}" BorderBrush="{DynamicResource Stroke}" BorderThickness=".4" Width="17" Height="3" CornerRadius="1.5" VerticalAlignment="Bottom"/></Grid><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" MaxWidth="58" FontSize="10" Margin="0,6,0,0" TextAlignment="Center"/></StackPanel><Button.ContextMenu><ContextMenu><MenuItem Header="Rename pen…" Tag="rename" Click="PresetAction_Click"/><MenuItem Header="Remove pen" Tag="remove" Click="PresetAction_Click"/></ContextMenu></Button.ContextMenu></Button></DataTemplate></ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                 </ScrollViewer><Button Click="AddPen_Click" Content="Add pen…" Margin="0,10,0,0"/>
                             </StackPanel>

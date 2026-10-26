@@ -120,12 +120,18 @@ public partial class MainWindow
         }
         return null;
     }
-    public Task ActivateNotebookAsync(Guid notebookId)
+    public async Task ActivateNotebookAsync(Guid notebookId)
     {
         var page = notebookPages.TryGetValue(notebookId, out var remembered)
             ? pages.FirstOrDefault(p => p.Id == remembered && p.NotebookId == notebookId) : null;
         page ??= pages.Where(p => p.NotebookId == notebookId).OrderBy(p => p.Position).FirstOrDefault();
-        return page is null ? Task.CompletedTask : ActivatePageAsync(page.Id);
+        if (page is null && writer is not null && notebooks.FirstOrDefault(n => n.Id == notebookId) is { } notebook)
+        {
+            page = new PageSummary(Guid.NewGuid(), notebookId, "Page 1", 0, null, notebook.Paper);
+            await writer.MutateAsync(db => { db.CreatePage(page); return true; });
+            pages.Add(page);
+        }
+        if (page is not null) await ActivatePageAsync(page.Id);
     }
     private async void CloseTab_Click(object sender, RoutedEventArgs e)
     {
@@ -135,9 +141,13 @@ public partial class MainWindow
     }
     public async Task CloseNotebookTabAsync(Guid notebookId)
     {
-        if (busy || openNotebooks.Count <= 1) return;
+        if (busy) return;
         var tab = openNotebooks.FirstOrDefault(n => n.Id == notebookId); if (tab is null) return;
         var index = openNotebooks.IndexOf(tab);
+        if (openNotebooks.Count == 1)
+        {
+            CloseAllNotebookTabs(); return;
+        }
         if (pages.FirstOrDefault(p => p.Id == currentPageId)?.NotebookId == notebookId)
         {
             var neighbor = openNotebooks[index == openNotebooks.Count - 1 ? index - 1 : index + 1];
@@ -149,6 +159,15 @@ public partial class MainWindow
         finally { bindingSelection = false; }
         BindNavigation();
         SavePreferences();
+    }
+    private void CloseAllTabs_Click(object sender, RoutedEventArgs e) => CloseAllNotebookTabs();
+    public void CloseAllNotebookTabs()
+    {
+        if (busy) return;
+        ShowHome(); ClearActivePage();
+        bindingSelection = true;
+        try { openNotebooks.Clear(); } finally { bindingSelection = false; }
+        RefreshHome(); SavePreferences();
     }
     private void SavePreferences()
     {

@@ -98,7 +98,17 @@ public partial class MainWindow : Window
         var startAtHome = preferences.HomeVisible;
         RecoveryBanner.Visibility = library.RecoveredSession ? Visibility.Visible : Visibility.Collapsed;
         ready = true;
-        try { await ActivatePageAsync(library.LastPageId); if (startAtHome) ShowHome(); }
+        try
+        {
+            if (library.LastPageId == Guid.Empty || preferences.OpenNotebooks is { Count: 0 })
+            { SetBusy(false); ShowHome(); }
+            else
+            {
+                var initial = openNotebooks.Count > 0 && !openNotebooks.Any(n => pages.Any(p => p.Id == library.LastPageId && p.NotebookId == n.Id))
+                    ? pages.First(p => p.NotebookId == openNotebooks[0].Id).Id : library.LastPageId;
+                await ActivatePageAsync(initial); if (startAtHome) ShowHome();
+            }
+        }
         catch { ready = false; SetBusy(true); throw; }
     }
     private async void Window_Loaded(object sender, RoutedEventArgs e)
