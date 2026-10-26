@@ -39,7 +39,8 @@ public partial class MainWindow
         CommitTextEditor(); SaveCurrentView();
         if (currentPageId is Guid id && session is not null) UpdateThumbnail(id, CaptureCurrent());
         homeVisible = true;
-        ToolPopup.IsOpen = false; ZoomPopup.IsOpen = false;
+        CloseToolInspector(); ZoomPopup.IsOpen = false; selectionMenu.IsOpen = false;
+        EditNotice.Visibility = Visibility.Collapsed; editNoticeTimer.Stop(); UpdateSelectionActions();
         EditorRoot.Visibility = Visibility.Collapsed; HomeView.Visibility = Visibility.Visible;
         FocusButton.IsEnabled = false;
         HomeButton.SetResourceReference(System.Windows.Controls.Control.BackgroundProperty, "Selected");
@@ -52,6 +53,7 @@ public partial class MainWindow
         HomeView.Visibility = Visibility.Collapsed; EditorRoot.Visibility = Visibility.Visible;
         FocusButton.IsEnabled = true; HomeButton.Background = Brushes.Transparent;
         if (currentPageId is not null) BindNavigation();
+        UpdateSelectionActions();
         SavePreferences();
     }
     private string FolderPath(Guid? id)

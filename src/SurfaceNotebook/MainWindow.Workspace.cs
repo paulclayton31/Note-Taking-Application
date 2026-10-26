@@ -188,7 +188,7 @@ public partial class MainWindow
         var previousView = Viewport.View;
         var previousSize = new Size(Viewport.ActualWidth, Viewport.ActualHeight);
         var previousPage = currentPageId;
-        CommitTextEditor(); ToolPopup.IsOpen = false; ZoomPopup.IsOpen = false;
+        CommitTextEditor(); CloseToolInspector(); ZoomPopup.IsOpen = false; selectionMenu.IsOpen = false;
         focusMode = !focusMode;
         if (focusMode)
         {
@@ -208,6 +208,7 @@ public partial class MainWindow
         Dispatcher.BeginInvoke(() =>
         {
             ApplyToolbarPosition();
+            UpdateSelectionActions();
             if (!homeVisible && currentPageId == previousPage)
             {
                 Viewport.SetView(previousView.Pan((Viewport.ActualWidth - previousSize.Width) / 2, (Viewport.ActualHeight - previousSize.Height) / 2));
@@ -231,6 +232,7 @@ public partial class MainWindow
         PaperButtonLabel.Visibility = width < 900 ? Visibility.Collapsed : Visibility.Visible;
         if (width < 1020 && ContextPanel.Visibility == Visibility.Visible) NavigationPanel.Visibility = Visibility.Collapsed;
         ApplyToolbarPosition();
+        UpdateToolInspectorPlacement(width);
     }
     private static void AnimatePanel(FrameworkElement panel)
     {
@@ -242,14 +244,18 @@ public partial class MainWindow
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
     private void Paper_Click(object sender, RoutedEventArgs e)
     {
-        if (ContextPanel.Visibility == Visibility.Visible) { CloseContextPanel(); return; }
-        CommitTextEditor(); ToolPopup.IsOpen = false;
+        if (ContextPanel.Visibility == Visibility.Visible && PaperSettingsEditor.Visibility == Visibility.Visible) { CloseContextPanel(); return; }
+        CommitTextEditor(); CloseToolInspector(); selectionMenu.IsOpen = false;
         PaperSettingsEditor.Load(session?.Paper ?? PaperSettings.Default);
+        ToolInspector.Visibility = Visibility.Collapsed; PaperSettingsEditor.Visibility = Visibility.Visible;
+        ContextPanel.Width = 312; Grid.SetColumn(ContextPanel, 2);
         if (ActualWidth < 1280) NavigationPanel.Visibility = Visibility.Collapsed;
         ContextPanel.Visibility = Visibility.Visible; AnimatePanel(ContextPanel);
     }
     internal void ShowPaperPreview()
     {
+        ToolInspector.Visibility = Visibility.Collapsed; PaperSettingsEditor.Visibility = Visibility.Visible;
+        ContextPanel.Width = 312; Grid.SetColumn(ContextPanel, 2);
         PaperSettingsEditor.Load(session?.Paper ?? PaperSettings.Default);
         ContextPanel.Visibility = Visibility.Visible;
     }

@@ -34,6 +34,8 @@ internal static partial class Program
             CheckWindow(Path.Combine(root, "ui"), args.FirstOrDefault());
             CheckNotebookTabsAndToolbar(Path.Combine(root, "workspace-navigation"));
             CheckHomePensZoomAndPages(Path.Combine(root, "library-workflows"));
+            CheckEditingTools(Path.Combine(root, "editing-tools"));
+            CheckScribbleEditing(Path.Combine(root, "scribble-editing"));
             Console.WriteLine("PASS: migrations and backups; paper geometry/templates; ink and text history; autosave/recovery; pen-only input/palm suppression; notebook tabs, close-button layout at 100–200% scale, and last-page restoration; toolbar movement and saved placement; Home folders/search/stars; pen presets; touch zoom; independent page duplication and transactional reordering.");
             return 0;
         }

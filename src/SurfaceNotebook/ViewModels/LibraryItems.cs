@@ -24,3 +24,4 @@ public sealed record PresetItem(PenPreset Preset, bool Selected)
     public string Color => Preset.Color;
     public string Description => Preset.Description;
 }
+public sealed record InkColorChoice(string Hex, string Name, bool Selected);

@@ -176,7 +176,7 @@
                     </local:PageViewport>
                     <Border x:Name="ToolbarFrame" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12" Background="{DynamicResource Surface}"
                             BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="14" Padding="5"
-                            MaxWidth="{Binding ActualWidth, ElementName=MainStage}">
+                            >
                         <DockPanel LastChildFill="True">
                             <Thumb x:Name="ToolbarGrip" DockPanel.Dock="Left" Width="44" MinHeight="44" Focusable="True" Cursor="SizeAll"
                                    AutomationProperties.Name="Move writing toolbar" DragDelta="Toolbar_DragDelta" DragCompleted="Toolbar_DragCompleted"
@@ -194,85 +194,49 @@
                                     </ControlTemplate>
                                 </Thumb.Template>
                             </Thumb>
-                            <WrapPanel x:Name="Toolbar" VerticalAlignment="Center">
-                                <RadioButton x:Name="PenButton" GroupName="Tools" Tag="Pen" IsChecked="True" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Pen · P"><local:WorkspaceIcon Kind="Pen" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
-                                <RadioButton x:Name="HighlighterButton" GroupName="Tools" Tag="Highlighter" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Highlighter · H"><local:WorkspaceIcon Kind="Highlight" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
-                                <RadioButton x:Name="EraserButton" GroupName="Tools" Tag="Eraser" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Eraser · E"><local:WorkspaceIcon Kind="Eraser" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
-                                <RadioButton x:Name="LassoButton" GroupName="Tools" Tag="Lasso" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Select ink · L"><local:WorkspaceIcon Kind="Lasso" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
-                                <RadioButton x:Name="ShapeButton" GroupName="Tools" Tag="Shape" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Shapes · S"><local:WorkspaceIcon Kind="Shape" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
-                                <RadioButton x:Name="TextButton" GroupName="Tools" Tag="Text" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Text · T"><local:WorkspaceIcon Kind="Text" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
-                                <RadioButton x:Name="HandButton" GroupName="Tools" Tag="Hand" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Hand / pan · V"><local:WorkspaceIcon Kind="Hand" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                            <ScrollViewer x:Name="ToolbarScroll" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly" PreviewMouseWheel="Toolbar_MouseWheel">
+                            <StackPanel x:Name="Toolbar" Orientation="Horizontal" VerticalAlignment="Center">
+                                <RadioButton x:Name="PenButton" PreviewMouseLeftButtonDown="Tool_PointerDown" PreviewKeyDown="Tool_PreviewKeyDown" Click="Tool_Click" GroupName="Tools" Tag="Pen" IsChecked="True" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Pen · P"><local:WorkspaceIcon Kind="Pen" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="HighlighterButton" PreviewMouseLeftButtonDown="Tool_PointerDown" PreviewKeyDown="Tool_PreviewKeyDown" Click="Tool_Click" GroupName="Tools" Tag="Highlighter" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Highlighter · H"><local:WorkspaceIcon Kind="Highlight" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="EraserButton" PreviewMouseLeftButtonDown="Tool_PointerDown" PreviewKeyDown="Tool_PreviewKeyDown" Click="Tool_Click" GroupName="Tools" Tag="Eraser" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Eraser · E"><local:WorkspaceIcon Kind="Eraser" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="LassoButton" PreviewMouseLeftButtonDown="Tool_PointerDown" PreviewKeyDown="Tool_PreviewKeyDown" Click="Tool_Click" GroupName="Tools" Tag="Lasso" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Select ink · L"><local:WorkspaceIcon Kind="Lasso" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="ShapeButton" PreviewMouseLeftButtonDown="Tool_PointerDown" PreviewKeyDown="Tool_PreviewKeyDown" Click="Tool_Click" GroupName="Tools" Tag="Shape" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Shapes · S"><local:WorkspaceIcon Kind="Shape" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="TextButton" PreviewMouseLeftButtonDown="Tool_PointerDown" PreviewKeyDown="Tool_PreviewKeyDown" Click="Tool_Click" GroupName="Tools" Tag="Text" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Text · T"><local:WorkspaceIcon Kind="Text" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
+                                <RadioButton x:Name="HandButton" PreviewMouseLeftButtonDown="Tool_PointerDown" PreviewKeyDown="Tool_PreviewKeyDown" Click="Tool_Click" GroupName="Tools" Tag="Hand" Checked="Tool_Changed" Style="{StaticResource ToolRadio}" ToolTip="Hand / pan · V"><local:WorkspaceIcon Kind="Hand" Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/></RadioButton>
                                 <Border Width="1" Height="24" Background="{DynamicResource Stroke}" Margin="7,10"/>
                                 <Button x:Name="UndoButton" Click="Undo_Click" Padding="12" ToolTip="Undo · Ctrl+Z"><local:WorkspaceIcon Kind="Undo" Foreground="{DynamicResource Muted}"/></Button>
                                 <Button x:Name="RedoButton" Click="Redo_Click" Padding="12" ToolTip="Redo · Ctrl+Y"><local:WorkspaceIcon Kind="Redo" Foreground="{DynamicResource Muted}"/></Button>
                                 <Border Width="1" Height="24" Background="{DynamicResource Stroke}" Margin="7,10"/>
-                                <Button x:Name="PropertiesButton" Click="ToolProperties_Click" Padding="10" ToolTip="Tool properties and toolbar position">
-                                    <StackPanel Orientation="Horizontal"><Ellipse x:Name="CurrentColor" Fill="#FF24324A" Width="19" Height="19" Stroke="#554B5360" StrokeThickness="1"/><local:WorkspaceIcon Kind="Down" Foreground="{DynamicResource Muted}" Width="12" Height="12" Margin="7,0,0,0"/></StackPanel>
-                                </Button>
-                            </WrapPanel>
-                        </DockPanel>
-                    </Border>
-                    <Button x:Name="RevealToolbar" Visibility="Collapsed" Click="HideToolbar_Click" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,12,0,0" Background="{DynamicResource Surface}" ToolTip="Show writing tools"><local:WorkspaceIcon Kind="Pen" Foreground="{DynamicResource Accent}"/></Button>
-                    <Popup x:Name="ToolPopup" PlacementTarget="{Binding ElementName=PropertiesButton}" Placement="Bottom" StaysOpen="False" AllowsTransparency="True" PopupAnimation="Fade" VerticalOffset="8">
-                        <Border Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="12" Padding="20" Width="300">
-                            <ScrollViewer MaxHeight="560" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
-                            <StackPanel>
-                                <TextBlock x:Name="ToolTitle" Text="Pen" FontSize="17" FontWeight="SemiBold"/>
-                                <TextBlock x:Name="ToolHint" Text="Pressure-sensitive ink" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,18" TextWrapping="Wrap"/>
-                                <StackPanel x:Name="SavedPensPanel" Margin="0,0,0,16">
-                                    <TextBlock Text="YOUR PENS" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
-                                    <ItemsControl x:Name="SavedPenList">
-                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                <Border x:Name="QuickPenStrip" BorderBrush="{DynamicResource Stroke}" BorderThickness="1,0,0,0" Margin="4,0" Padding="7,0,0,0">
+                                    <ItemsControl x:Name="QuickPenList">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate><DataTemplate>
-                                            <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="78" Padding="5,8" ToolTip="{Binding Description}" Margin="0,0,3,5">
-                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/></DataTrigger></Style.Triggers></Style></Button.Style>
-                                                <StackPanel><Ellipse Fill="{Binding Color}" Width="21" Height="21" Margin="0,0,0,7"/><TextBlock Text="{Binding Name}" FontSize="10" TextTrimming="CharacterEllipsis" MaxWidth="65" TextAlignment="Center"/></StackPanel>
-                                                <Button.ContextMenu><ContextMenu><MenuItem Header="Rename saved pen…" Tag="rename" Click="PresetAction_Click"/><MenuItem Header="Remove saved pen" Tag="remove" Click="PresetAction_Click"/></ContextMenu></Button.ContextMenu>
+                                            <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="44" Height="44" Padding="9" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name, StringFormat=Use saved pen {0}}">
+                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                                <local:WorkspaceIcon Kind="Pen" Foreground="{Binding Color}" Width="23" Height="23"/>
                                             </Button>
                                         </DataTemplate></ItemsControl.ItemTemplate>
                                     </ItemsControl>
-                                    <TextBlock x:Name="CurrentPenDescription" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,8"/>
-                                    <Button x:Name="SavePenButton" Click="SavePreset_Click" Content="Save current pen…" HorizontalContentAlignment="Left" BorderBrush="{DynamicResource Stroke}" FontSize="12"/>
-                                </StackPanel>
-                                <StackPanel x:Name="ColorControls">
-                                    <TextBlock Text="INK COLOR" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
-                                    <ComboBox x:Name="ColorPicker" SelectedIndex="0" SelectionChanged="Color_Changed" AutomationProperties.Name="Ink color">
-                                        <ComboBoxItem Content="Midnight" Tag="#FF24324A"/><ComboBoxItem Content="Indigo" Tag="#FF5C55B3"/><ComboBoxItem Content="Rose" Tag="#FFCE3F53"/><ComboBoxItem Content="Teal" Tag="#FF248779"/><ComboBoxItem Content="Amber" Tag="#FFE7B944"/><ComboBoxItem Content="Sky" Tag="#FF4D8EC9"/><ComboBoxItem Content="White" Tag="#FFFFFFFF"/>
-                                    </ComboBox>
-                                    <WrapPanel Margin="0,9,0,12">
-                                        <Button Tag="#FF24324A" Click="Swatch_Click" ToolTip="Midnight" Padding="10"><Ellipse Fill="#24324A" Width="23" Height="23"/></Button>
-                                        <Button Tag="#FF5C55B3" Click="Swatch_Click" ToolTip="Indigo" Padding="10"><Ellipse Fill="#5C55B3" Width="23" Height="23"/></Button>
-                                        <Button Tag="#FFCE3F53" Click="Swatch_Click" ToolTip="Rose" Padding="10"><Ellipse Fill="#CE3F53" Width="23" Height="23"/></Button>
-                                        <Button Tag="#FF248779" Click="Swatch_Click" ToolTip="Teal" Padding="10"><Ellipse Fill="#248779" Width="23" Height="23"/></Button>
-                                        <Button Tag="#FFE7B944" Click="Swatch_Click" ToolTip="Amber" Padding="10"><Ellipse Fill="#E7B944" Width="23" Height="23"/></Button>
-                                    </WrapPanel>
-                                </StackPanel>
-                                <StackPanel x:Name="ThicknessControls">
-                                    <DockPanel><TextBlock x:Name="ThicknessLabel" Text="Thickness" Foreground="{DynamicResource Muted}"/><TextBlock x:Name="ThicknessValue" Text="2.5" HorizontalAlignment="Right"/></DockPanel>
-                                    <Slider x:Name="ThicknessSlider" AutomationProperties.Name="Tool thickness" Minimum="0.5" Maximum="12" Value="2.5" TickFrequency=".5" IsSnapToTickEnabled="True" ValueChanged="Thickness_Changed" Margin="0,10,0,18" Height="44"/>
-                                </StackPanel>
-                                <StackPanel x:Name="PenStyleControls">
-                                    <TextBlock Text="PEN STYLE" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
-                                    <ComboBox x:Name="PenStylePicker" SelectedIndex="0" SelectionChanged="Properties_Changed"><ComboBoxItem Content="Pressure"/><ComboBoxItem Content="Monoline"/></ComboBox>
-                                </StackPanel>
-                                <StackPanel x:Name="EraserControls" Visibility="Collapsed">
-                                    <ComboBox x:Name="EraserModePicker" SelectedIndex="0" SelectionChanged="Properties_Changed"><ComboBoxItem Content="Erase whole strokes"/><ComboBoxItem Content="Precision eraser"/></ComboBox>
-                                </StackPanel>
-                                <StackPanel x:Name="ShapeControls" Visibility="Collapsed">
-                                    <ComboBox x:Name="ShapePicker" SelectedIndex="0"><ComboBoxItem Content="Line"/><ComboBoxItem Content="Rectangle"/><ComboBoxItem Content="Ellipse"/><ComboBoxItem Content="Arrow"/></ComboBox>
-                                </StackPanel>
-                                <StackPanel x:Name="TextControls" Visibility="Collapsed">
-                                    <TextBlock Text="TEXT SIZE" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
-                                    <ComboBox x:Name="TextSizePicker" SelectedIndex="1" SelectionChanged="Properties_Changed"><ComboBoxItem Content="16"/><ComboBoxItem Content="20"/><ComboBoxItem Content="28"/><ComboBoxItem Content="36"/></ComboBox>
-                                </StackPanel>
-                                <Border Height="1" Background="{DynamicResource Stroke}" Margin="0,18,0,10"/>
-                                <Button x:Name="DockToolbarTopButton" Click="DockToolbarTop_Click" HorizontalContentAlignment="Left" Content="Move toolbar to top" FontSize="12"/>
-                                <Button x:Name="DockToolbarBottomButton" Click="DockToolbarBottom_Click" HorizontalContentAlignment="Left" Content="Move toolbar to bottom" FontSize="12"/>
-                                <Button Click="HideToolbar_Click" HorizontalContentAlignment="Left" Content="Hide writing tools" FontSize="12"/>
+                                </Border>
+                                <Button x:Name="ColorButton" Click="ColorMenu_Click" Width="44" Height="44" Padding="10" ToolTip="Choose ink color">
+                                    <Ellipse x:Name="CurrentColor" Fill="#FF24324A" Width="22" Height="22" Stroke="{DynamicResource Muted}" StrokeThickness="1"/>
+                                </Button>
+                                <Button x:Name="PropertiesButton" Click="ToolProperties_Click" Width="44" Height="44" Padding="11" ToolTip="Customize the active tool · saved pens, colors, and settings">
+                                    <local:WorkspaceIcon x:Name="MoreToolIcon" Kind="Settings" Foreground="{DynamicResource Accent}"/>
+                                </Button>
                             </StackPanel>
                             </ScrollViewer>
-                        </Border>
-                    </Popup>
+                        </DockPanel>
+                    </Border>
+                    <Button x:Name="RevealToolbar" Visibility="Collapsed" Click="HideToolbar_Click" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,12,0,0" Background="{DynamicResource Surface}" ToolTip="Show writing tools"><local:WorkspaceIcon Kind="Pen" Foreground="{DynamicResource Accent}"/></Button>
+
+
+                    <Button x:Name="SelectionActionsButton" Visibility="Collapsed" Click="SelectionActions_Click" HorizontalAlignment="Left" VerticalAlignment="Top" Padding="12,8" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Accent}" ToolTip="Copy, duplicate, or delete the selection">
+                        <StackPanel Orientation="Horizontal"><TextBlock x:Name="SelectionCount" Text="Selection" VerticalAlignment="Center"/><local:WorkspaceIcon Kind="More" Foreground="{DynamicResource Accent}" Width="18" Height="18" Margin="10,0,0,0"/></StackPanel>
+                    </Button>
+                    <Border x:Name="EditNotice" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="16" Padding="12,4" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="10">
+                        <StackPanel Orientation="Horizontal"><TextBlock Text="Scribble erased" Foreground="{DynamicResource Ink}" VerticalAlignment="Center" Margin="0,0,14,0"/><Button Click="Undo_Click" Content="Undo" Foreground="{DynamicResource Accent}" ToolTip="Restore the erased content and scribble"/></StackPanel>
+                    </Border>
                     <Border x:Name="SaveErrorBanner" Visibility="Collapsed" VerticalAlignment="Bottom" Margin="16" Padding="14"
                             Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Danger}" BorderThickness="1" CornerRadius="10">
                         <DockPanel><Button DockPanel.Dock="Right" Click="Export_Click" Content="Export backup" Margin="12,0,0,0"/><TextBlock Text="Storage is unavailable. Keep the app open while autosave retries. You can export this page for a backup." Foreground="{DynamicResource Danger}" TextWrapping="Wrap" VerticalAlignment="Center"/></DockPanel>
@@ -301,7 +265,76 @@
                 </Grid>
             </Grid>
             <Border x:Name="ContextPanel" Grid.Column="2" Width="312" Visibility="Collapsed" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1,0,0,0">
+                <Grid>
                 <local:PaperSettingsPanel x:Name="PaperSettingsEditor"/>
+                        <Border x:Name="ToolInspector" Visibility="Collapsed" Padding="14">
+                            <ScrollViewer x:Name="ToolSettingsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
+                            <StackPanel>
+                                <DockPanel><Button DockPanel.Dock="Right" Click="CloseToolInspector_Click" ToolTip="Close tool settings" Padding="10"><local:WorkspaceIcon Kind="Close" Foreground="{DynamicResource Muted}" Width="16" Height="16"/></Button><TextBlock x:Name="ToolTitle" Text="Pen" FontSize="20" FontWeight="SemiBold" VerticalAlignment="Center"/></DockPanel>
+                                <TextBlock x:Name="ToolHint" Text="Pressure-sensitive ink" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,18" TextWrapping="Wrap"/>
+                                <StackPanel x:Name="SavedPensPanel" Margin="0,0,0,16">
+                                    <TextBlock Text="YOUR PENS" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
+                                    <ItemsControl x:Name="SavedPenList">
+                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate><DataTemplate>
+                                            <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="64" Padding="5,8" ToolTip="{Binding Description}" Margin="0,0,3,5">
+                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                                <StackPanel><Ellipse Fill="{Binding Color}" Width="21" Height="21" Margin="0,0,0,7"/><TextBlock Text="{Binding Name}" FontSize="10" TextTrimming="CharacterEllipsis" MaxWidth="54" TextAlignment="Center"/></StackPanel>
+                                                <Button.ContextMenu><ContextMenu><MenuItem Header="Rename saved pen…" Tag="rename" Click="PresetAction_Click"/><MenuItem Header="Remove saved pen" Tag="remove" Click="PresetAction_Click"/></ContextMenu></Button.ContextMenu>
+                                            </Button>
+                                        </DataTemplate></ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock x:Name="CurrentPenDescription" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,8"/>
+                                    <Button x:Name="SavePenButton" Click="SavePreset_Click" Content="Save current pen…" HorizontalContentAlignment="Left" BorderBrush="{DynamicResource Stroke}" FontSize="12"/>
+                                </StackPanel>
+                                <StackPanel x:Name="ThicknessControls">
+                                    <DockPanel><TextBlock x:Name="ThicknessLabel" Text="Thickness" Foreground="{DynamicResource Muted}"/><TextBlock x:Name="ThicknessValue" Text="2.5" HorizontalAlignment="Right"/></DockPanel>
+                                    <Slider x:Name="ThicknessSlider" AutomationProperties.Name="Tool thickness" Minimum="0.5" Maximum="12" Value="2.5" TickFrequency=".5" IsSnapToTickEnabled="True" ValueChanged="Thickness_Changed" Margin="0,10,0,18" Height="44"/>
+                                </StackPanel>
+                                <StackPanel x:Name="ColorControls">
+                                    <ComboBox x:Name="ColorPicker" Visibility="Collapsed" SelectedIndex="0" SelectionChanged="Color_Changed" AutomationProperties.Name="Ink color">
+                                        <ComboBoxItem Content="Midnight" Tag="#FF24324A"/><ComboBoxItem Content="Indigo" Tag="#FF5C55B3"/><ComboBoxItem Content="Rose" Tag="#FFCE3F53"/><ComboBoxItem Content="Teal" Tag="#FF248779"/><ComboBoxItem Content="Amber" Tag="#FFE7B944"/><ComboBoxItem Content="Sky" Tag="#FF4D8EC9"/><ComboBoxItem Content="White" Tag="#FFFFFFFF"/>
+                                    </ComboBox>
+                                    <TextBlock x:Name="ColorTitle" Text="Pen color" FontWeight="SemiBold"/>
+                                    <TextBlock x:Name="ColorValue" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,4,0,8"/>
+                                <ItemsControl x:Name="ColorSwatches">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="5"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate><DataTemplate>
+                                        <Button Tag="{Binding Hex}" Click="Swatch_Click" Width="44" Height="44" Padding="9" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name}">
+                                            <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                            <Ellipse Fill="{Binding Hex}" Width="25" Height="25" Stroke="{DynamicResource Muted}" StrokeThickness=".7"/>
+                                        </Button>
+                                    </DataTemplate></ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="CUSTOM COLOR" Style="{StaticResource Caption}" FontSize="10" Margin="0,14,0,8"/>
+                                <DockPanel><Button DockPanel.Dock="Right" Click="CustomColor_Click" Content="Apply" Margin="8,0,0,0"/><TextBox x:Name="CustomColorBox" MaxLength="9" AutomationProperties.Name="Custom ink color hex code" ToolTip="#RRGGBB or #AARRGGBB"/></DockPanel>
+                                <TextBlock x:Name="ColorValidation" TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource Danger}" Margin="0,8,0,0"/>
+                                </StackPanel>
+                                <StackPanel x:Name="PenStyleControls">
+                                    <TextBlock Text="PEN STYLE" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
+                                    <ComboBox x:Name="PenStylePicker" SelectedIndex="0" SelectionChanged="Properties_Changed"><ComboBoxItem Content="Pressure"/><ComboBoxItem Content="Monoline"/></ComboBox>
+                                    <CheckBox x:Name="ScribbleEraseToggle" Foreground="{DynamicResource Ink}" Content="Scribble to erase" IsChecked="True" Checked="ScribbleErase_Changed" Unchecked="ScribbleErase_Changed" MinHeight="44" VerticalContentAlignment="Center" Margin="0,8,0,0"/>
+                                    <TextBlock Text="Cross out ink or typed words with a tight scribble. Undo restores the content and your mark." TextWrapping="Wrap" FontSize="11" Foreground="{DynamicResource Muted}" Margin="0,0,0,8"/>
+                                </StackPanel>
+                                <StackPanel x:Name="EraserControls" Visibility="Collapsed">
+                                    <ComboBox x:Name="EraserModePicker" SelectedIndex="0" SelectionChanged="Properties_Changed"><ComboBoxItem Content="Erase whole strokes"/><ComboBoxItem Content="Precision eraser"/></ComboBox>
+                                </StackPanel>
+                                <StackPanel x:Name="ShapeControls" Visibility="Collapsed">
+                                    <ComboBox x:Name="ShapePicker" SelectedIndex="0"><ComboBoxItem Content="Line"/><ComboBoxItem Content="Rectangle"/><ComboBoxItem Content="Ellipse"/><ComboBoxItem Content="Arrow"/></ComboBox>
+                                </StackPanel>
+                                <StackPanel x:Name="TextControls" Visibility="Collapsed">
+                                    <TextBlock Text="TEXT SIZE" Style="{StaticResource Caption}" FontSize="10" Margin="0,0,0,8"/>
+                                    <ComboBox x:Name="TextSizePicker" SelectedIndex="1" SelectionChanged="Properties_Changed"><ComboBoxItem Content="16"/><ComboBoxItem Content="20"/><ComboBoxItem Content="28"/><ComboBoxItem Content="36"/></ComboBox>
+                                </StackPanel>
+                                <Border Height="1" Background="{DynamicResource Stroke}" Margin="0,18,0,10"/>
+                                <Button x:Name="DockToolbarTopButton" Click="DockToolbarTop_Click" HorizontalContentAlignment="Left" Content="Move toolbar to top" FontSize="12"/>
+                                <Button x:Name="DockToolbarBottomButton" Click="DockToolbarBottom_Click" HorizontalContentAlignment="Left" Content="Move toolbar to bottom" FontSize="12"/>
+                                <Button Click="HideToolbar_Click" HorizontalContentAlignment="Left" Content="Hide writing tools" FontSize="12"/>
+                            </StackPanel>
+                            </ScrollViewer>
+                        </Border>
+
+                </Grid>
             </Border>
         </Grid>
         <local:LibraryHomeView x:Name="HomeView" Grid.Row="1" Visibility="Collapsed"/>

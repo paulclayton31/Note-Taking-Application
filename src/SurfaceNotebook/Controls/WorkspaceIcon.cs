@@ -51,6 +51,7 @@ public sealed class WorkspaceIcon : FrameworkElement
             "Export" => "M12,16 L12,3 M7,8 L12,3 17,8 M4,16 L4,22 20,22 20,16",
             "Grip" => "M8,5 L9,5 M15,5 L16,5 M8,12 L9,12 M15,12 L16,12 M8,19 L9,19 M15,19 L16,19",
             "Maximize" => "M5,5 L19,5 19,19 5,19 Z",
+            "Settings" => "M4,6 L20,6 M4,12 L20,12 M4,18 L20,18 M8,3 L8,9 M16,9 L16,15 M10,15 L10,21",
             _ => "M4,12 L20,12"
         };
         dc.PushTransform(new ScaleTransform(ActualWidth / 24, ActualHeight / 24));

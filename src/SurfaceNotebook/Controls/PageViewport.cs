@@ -13,6 +13,9 @@ public sealed class PageViewport : Canvas
     private Point? dragPoint;
     private double scrollBeyondEdge;
     private bool pinching;
+    private (int Id, Point Origin, long Started)? selectionTap;
+    public Func<Point, bool>? IsSelectionTapTarget { get; set; }
+    public event Action<Point>? SelectionTapped;
     public double PaperWidth { get; private set; } = PageDocument.DefaultWidth;
     public double PaperHeight { get; private set; } = PageDocument.DefaultHeight;
     public bool HandMode { get; set; }
@@ -41,8 +44,8 @@ public sealed class PageViewport : Canvas
         };
         PreviewTouchMove += (_, e) => { MoveContact(e.TouchDevice.Id, e.GetTouchPoint(this).Position); e.Handled = true; };
         PreviewTouchUp += (_, e) => { EndContact(e.TouchDevice.Id); e.Handled = true; if (e.TouchDevice.IsActive) e.TouchDevice.Capture(null); };
-        LostTouchCapture += (_, e) => EndContact(e.TouchDevice.Id);
-        LostStylusCapture += (_, e) => { if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Touch) EndContact(e.StylusDevice.Id); };
+        LostTouchCapture += (_, e) => EndContact(e.TouchDevice.Id, canceled: true);
+        LostStylusCapture += (_, e) => { if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Touch) EndContact(e.StylusDevice.Id, canceled: true); };
         PreviewMouseDown += (_, e) =>
         {
             if (!HandMode || e.StylusDevice is not null || e.ChangedButton != MouseButton.Left) return;
@@ -79,6 +82,7 @@ public sealed class PageViewport : Canvas
     {
         penInRange = present;
         contacts.Clear();
+        selectionTap = null;
         scrollBeyondEdge = 0;
     }
     private void HandleStylusDown(object sender, StylusDownEventArgs e)
@@ -117,14 +121,23 @@ public sealed class PageViewport : Canvas
     {
         if (!penInRange)
         {
-            if (contacts.Count == 0) { pinching = false; scrollBeyondEdge = 0; }
+            if (contacts.Count == 0)
+            {
+                pinching = false; scrollBeyondEdge = 0;
+                selectionTap = IsSelectionTapTarget?.Invoke(position) == true ? (id, position, Environment.TickCount64) : null;
+            }
             contacts[id] = position;
-            if (contacts.Count > 1) { pinching = true; scrollBeyondEdge = 0; }
+            if (contacts.Count > 1) { pinching = true; scrollBeyondEdge = 0; selectionTap = null; }
         }
     }
     public void MoveContact(int id, Point position)
     {
         if (penInRange || !contacts.ContainsKey(id)) return;
+        if (selectionTap is { } tap)
+        {
+            if ((position - tap.Origin).Length <= 8) return;
+            selectionTap = null;
+        }
         var before = contacts.OrderBy(p => p.Key).Take(2).Select(p => p.Value).ToArray();
         contacts[id] = position;
         var after = contacts.OrderBy(p => p.Key).Take(2).Select(p => p.Value).ToArray();
@@ -144,9 +157,14 @@ public sealed class PageViewport : Canvas
             SetView(scaled.Pan(newCenter.X - oldCenter.X, newCenter.Y - oldCenter.Y));
         }
     }
-    public void EndContact(int id)
+    public void EndContact(int id, bool canceled = false)
     {
-        if (contacts.Remove(id) && contacts.Count == 0) { GestureCompleted?.Invoke(); if (!pinching) TurnAtEdge(); }
+        if (!contacts.Remove(id)) return;
+        var tap = selectionTap; selectionTap = null;
+        if (contacts.Count == 0 && !canceled && !penInRange && !pinching &&
+            tap is { } candidate && candidate.Id == id && Environment.TickCount64 - candidate.Started <= 500)
+        { SelectionTapped?.Invoke(candidate.Origin); return; }
+        if (contacts.Count == 0) { GestureCompleted?.Invoke(); if (!pinching && !canceled) TurnAtEdge(); }
     }
     public void SetView(PageView view)
     {

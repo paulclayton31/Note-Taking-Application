@@ -101,7 +101,7 @@ internal static partial class Program
         foreach (var name in new[] { "PenButton", "HighlighterButton", "EraserButton", "LassoButton", "ShapeButton", "TextButton", "HandButton" })
         {
             ((RadioButton)window.FindName(name)).IsChecked = true;
-            ((Popup)window.FindName("ToolPopup")).IsOpen = false;
+            window.CloseToolInspector();
             var count = ink.Strokes.Count; var objects = ink.Children.Count;
             var finger = new Finger(41) { Position = new Point(100, 150) };
             finger.Send(ink, UIElement.PreviewTouchDownEvent); finger.Position = new Point(140, 190);
@@ -120,7 +120,7 @@ internal static partial class Program
         ((Button)window.FindName("UndoButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Require(ink.Strokes.Count == 1 && InkMapper.Identity(ink.Strokes[0]) == before.Id, "Precision eraser could not undo.");
         ((RadioButton)window.FindName("TextButton")).IsChecked = true;
-        ((Popup)window.FindName("ToolPopup")).IsOpen = false;
+        window.CloseToolInspector();
         ink.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left)
         { RoutedEvent = UIElement.PreviewMouseDownEvent, Source = ink });
         Require(ink.Children.Count == 1 && ink.Children[0] is TextBox, "Text tool did not create an editable object.");
