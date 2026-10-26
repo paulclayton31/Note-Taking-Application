@@ -6,7 +6,7 @@ using SurfaceNotebook.Models;
 namespace SurfaceNotebook.Services;
 
 // Owned by AutosaveWriter's single background worker. Never used on the UI thread.
-public sealed class NotebookDatabase : IDisposable
+public sealed partial class NotebookDatabase : IDisposable
 {
     private readonly FileStream instanceLock;
     private readonly SqliteConnection connection;
@@ -65,8 +65,9 @@ public sealed class NotebookDatabase : IDisposable
             if (!string.Equals(Convert.ToString(Scalar("PRAGMA quick_check;")), "ok", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("Notebook integrity check failed. Your library has been left in place.");
             var recovered = GetState("clean_shutdown") == "false";
-            if (Convert.ToInt64(Scalar("SELECT COUNT(*) FROM notebooks;")) == 0)
+            if (Convert.ToInt64(Scalar("SELECT COUNT(*) FROM notebooks;")) == 0 && GetState("library_initialized") != "true")
                 CreateNotebook(new NotebookSummary(Guid.NewGuid(), "My notebook"), Guid.NewGuid());
+            SetState("library_initialized", "true");
             var notebooks = new List<NotebookSummary>();
             using (var command = Command("SELECT id,name,paper_json,folder_id,favorite,last_opened FROM notebooks ORDER BY rowid;"))
             using (var reader = command.ExecuteReader())
@@ -79,7 +80,7 @@ public sealed class NotebookDatabase : IDisposable
                 while (reader.Read()) pages.Add(new PageSummary(Guid.Parse(reader.GetString(0)), Guid.Parse(reader.GetString(1)),
                     reader.GetString(2), reader.GetInt32(3), reader.IsDBNull(4) ? null : JsonSerializer.Deserialize<PageView>(reader.GetString(4)),
                     reader.IsDBNull(5) ? null : JsonSerializer.Deserialize<PaperSettings>(reader.GetString(5))));
-            var last = Guid.TryParse(GetState("last_page"), out var id) && pages.Any(p => p.Id == id) ? id : pages[0].Id;
+            var last = Guid.TryParse(GetState("last_page"), out var id) && pages.Any(p => p.Id == id) ? id : pages.FirstOrDefault()?.Id ?? Guid.Empty;
             SetState("clean_shutdown", "false");
             var preferences = GetState("workspace");
             WorkspacePreferences? workspace = null;

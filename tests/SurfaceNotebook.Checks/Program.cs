@@ -42,6 +42,8 @@ internal static partial class Program
             ExecuteCheck("CheckHomePensZoomAndPages", () => CheckHomePensZoomAndPages(Path.Combine(root, "library-workflows")));
             ExecuteCheck("CheckEditingTools", () => CheckEditingTools(Path.Combine(root, "editing-tools")));
             ExecuteCheck("CheckScribbleEditing", () => CheckScribbleEditing(Path.Combine(root, "scribble-editing")));
+            ExecuteCheck("CheckPageScrolling", () => CheckPageScrolling(Path.Combine(root, "page-scroll")));
+            ExecuteCheck("CheckLibraryActions", () => CheckLibraryActions(Path.Combine(root, "library-actions")));
             ExecuteCheck("CheckColorWheel", () => CheckColorWheel());
             ExecuteCheck("CheckPenRail", () => CheckPenRail(Path.Combine(root, "pen-rail")));
             if (failures.Count > 0) throw new AggregateException("Regression checks failed.", failures);

@@ -29,6 +29,10 @@ public partial class MainWindow
             if (name is not null) try { await CreateFolderAsync(name, homeFolder); } catch (Exception ex) { ShowError(ex); }
         };
         HomeView.ResumeRequested += ShowWorkspace;
+        HomeView.PasteRequested += async () =>
+        {
+            try { await PasteNotebookAsync(homeFolder); } catch (Exception ex) { ShowError(ex); }
+        };
         HomeView.ActionRequested += HomeAction;
     }
     private void Home_Click(object sender, RoutedEventArgs e) => ShowHome();
@@ -49,6 +53,7 @@ public partial class MainWindow
     }
     public void ShowWorkspace()
     {
+        if (currentPageId is null) { ShowHome(); return; }
         homeVisible = false; homeCoverGeneration++;
         HomeView.Visibility = Visibility.Collapsed; EditorRoot.Visibility = Visibility.Visible;
         FocusButton.IsEnabled = true; HomeButton.Background = Brushes.Transparent;
@@ -218,6 +223,9 @@ public partial class MainWindow
     {
         try
         {
+            if (action == "copy-notebook") { await CopyNotebookAsync(id); return; }
+            if (action == "duplicate-notebook") { await DuplicateNotebookAsync(id); return; }
+            if (action == "delete-notebook") { await ConfirmDeleteNotebookAsync(id); return; }
             var isFolder = action.EndsWith("folder", StringComparison.Ordinal);
             var folder = isFolder ? folders.First(f => f.Id == id) : null;
             var notebook = !isFolder ? notebooks.First(n => n.Id == id) : null;

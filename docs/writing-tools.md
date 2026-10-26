@@ -46,3 +46,11 @@ When a scratch erases content, its mark disappears and a short Undo notice appea
 Windows checks cover independent pen edits across switches/restarts, legacy current-pen recovery, add/cancel behavior, wheel color/touch input, pressure style, vertical-slider commands, short-window rail reachability, mixed lasso operations, short/flat/diagonal scratches, undo/redo, and durable storage.
 
 Physical Surface testing remains necessary for handwriting variety, pen/palm behavior, scratch-out comfort, and sustained lecture use. Undo remains available when a real mark is interpreted as erasing.
+
+## Library management
+
+Use a notebook card's ••• menu to Copy, Duplicate, Move, Rename, or Delete it. Copy takes a snapshot of all its pages; navigate to a folder and use **Paste notebook** beside New folder. Copies have independent pages, handwriting, text, paper, and views. The notebook clipboard stays inside the app for the current session. Repeated pastes receive unique names.
+
+Page actions in the header or a page's hold/right-click menu include Delete page. Deletion asks for confirmation and is permanent; the ink Undo arrow does not restore deleted pages or notebooks. Deleting the last page returns to the library; opening that empty notebook starts a fresh blank page. Deleting every notebook leaves an empty library until you create a new one.
+
+Close the final tab to return to the library, or right-click a tab for **Close all tabs**. Closing tabs saves notes and remembers each notebook's last page. The empty tab state survives restarting. Page navigation uses pixel scrolling with native touch panning and short mouse-wheel easing; system animation preferences are respected. Saved pen icons use quiet nib outlines with a color underline and retain 44-DIP touch targets.

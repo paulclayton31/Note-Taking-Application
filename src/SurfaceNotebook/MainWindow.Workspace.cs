@@ -56,22 +56,42 @@ public partial class MainWindow
         }
         finally { bindingSelection = wasBinding; }
     }
+    private string? pageListScope;
+    private int pageListGeneration;
     private void BindPageList()
     {
         if (NotebookPicker.SelectedItem is not NotebookSummary book) return;
         var query = SearchBox.Text.Trim();
-        var result = pages.Where(p => p.NotebookId == book.Id && p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) &&
-            (!favoritesOnly || favorites.Contains(p.Id))).OrderBy(p => p.Position).Select(p =>
+        var ordered = pages.Where(p => p.NotebookId == book.Id && p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) &&
+            (!favoritesOnly || favorites.Contains(p.Id))).OrderBy(p => p.Position).ToList();
+        string Detail(PageSummary p) => $"{(favorites.Contains(p.Id) ? "★  " : "")}Page {p.Position + 1}";
+        var existing = PageList.ItemsSource as List<NavigationPage>;
+        var unchanged = existing is not null && existing.Count == ordered.Count &&
+            existing.Zip(ordered).All(pair => pair.First.Page == pair.Second && pair.First.Detail == Detail(pair.Second));
+        var scope = $"{book.Id}/{query}/{favoritesOnly}";
+        var offset = pageListScope == scope ? FindTabScrollViewer(PageList)?.VerticalOffset : null;
+        pageListScope = scope;
+        var result = unchanged ? existing! : ordered.Select(p =>
         {
-            var item = new NavigationPage(p) { Detail = $"{(favorites.Contains(p.Id) ? "★  " : "")}Page {p.Position + 1}" };
+            var item = new NavigationPage(p) { Detail = Detail(p) };
             if (thumbnails.TryGetValue(p.Id, out var thumbnail)) item.Thumbnail = thumbnail;
             else item.Thumbnail = CreateThumbnail(new PageDocument(PageDocument.CurrentVersion,
                 (p.Paper ?? PaperSettings.Default).Width, (p.Paper ?? PaperSettings.Default).Height, [], p.Paper));
             navigationPages[p.Id] = item;
             return item;
         }).ToList();
-        PageList.ItemsSource = result;
-        PageList.SelectedItem = result.FirstOrDefault(p => p.Id == currentPageId);
+        var selection = result.FirstOrDefault(p => p.Id == currentPageId);
+        var changedSelection = PageList.SelectedItem != selection;
+        var generation = ++pageListGeneration;
+        if (!unchanged) PageList.ItemsSource = result;
+        PageList.SelectedItem = selection;
+        if (!unchanged || changedSelection)
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (generation != pageListGeneration) return;
+                if (!unchanged && offset is double saved) FindTabScrollViewer(PageList)?.ScrollToVerticalOffset(saved);
+                else if (selection is not null) PageList.ScrollIntoView(selection);
+            }, DispatcherPriority.Loaded);
         PagesLabel.Text = favoritesOnly ? "FAVORITES" : $"PAGES  ·  {pages.Count(p => p.NotebookId == book.Id)}";
         EmptyPages.Visibility = result.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         SearchPlaceholder.Visibility = SearchBox.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -120,12 +140,19 @@ public partial class MainWindow
         }
         return null;
     }
-    public Task ActivateNotebookAsync(Guid notebookId)
+    public async Task ActivateNotebookAsync(Guid notebookId)
     {
         var page = notebookPages.TryGetValue(notebookId, out var remembered)
             ? pages.FirstOrDefault(p => p.Id == remembered && p.NotebookId == notebookId) : null;
         page ??= pages.Where(p => p.NotebookId == notebookId).OrderBy(p => p.Position).FirstOrDefault();
-        return page is null ? Task.CompletedTask : ActivatePageAsync(page.Id);
+        if (page is null && writer is not null && notebooks.FirstOrDefault(n => n.Id == notebookId) is { } notebook)
+        {
+            page = new PageSummary(Guid.NewGuid(), notebookId, "Page 1", 0, null, notebook.Paper);
+            SetBusy(true);
+            try { await writer.MutateAsync(db => { db.CreatePage(page); return true; }); pages.Add(page); }
+            finally { SetBusy(false); }
+        }
+        if (page is not null) await ActivatePageAsync(page.Id);
     }
     private async void CloseTab_Click(object sender, RoutedEventArgs e)
     {
@@ -135,9 +162,14 @@ public partial class MainWindow
     }
     public async Task CloseNotebookTabAsync(Guid notebookId)
     {
-        if (busy || openNotebooks.Count <= 1) return;
+        if (busy) return;
         var tab = openNotebooks.FirstOrDefault(n => n.Id == notebookId); if (tab is null) return;
         var index = openNotebooks.IndexOf(tab);
+        var stayAtHome = homeVisible;
+        if (openNotebooks.Count == 1)
+        {
+            CloseAllNotebookTabs(); return;
+        }
         if (pages.FirstOrDefault(p => p.Id == currentPageId)?.NotebookId == notebookId)
         {
             var neighbor = openNotebooks[index == openNotebooks.Count - 1 ? index - 1 : index + 1];
@@ -147,8 +179,18 @@ public partial class MainWindow
         bindingSelection = true;
         try { openNotebooks.Remove(tab); }
         finally { bindingSelection = false; }
+        if (stayAtHome) ShowHome();
         BindNavigation();
         SavePreferences();
+    }
+    private void CloseAllTabs_Click(object sender, RoutedEventArgs e) => CloseAllNotebookTabs();
+    public void CloseAllNotebookTabs()
+    {
+        if (busy) return;
+        ShowHome(); ClearActivePage();
+        bindingSelection = true;
+        try { openNotebooks.Clear(); } finally { bindingSelection = false; }
+        RefreshHome(); SavePreferences();
     }
     private void SavePreferences()
     {

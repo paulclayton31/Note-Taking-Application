@@ -17,6 +17,9 @@ public partial class LibraryHomeView : UserControl
     public event Action? NewNotebookRequested;
     public event Action? NewFolderRequested;
     public event Action? ResumeRequested;
+    public event Action? PasteRequested;
+    public void SetPasteAvailable(bool available) => PasteNotebookButton.IsEnabled = available;
+    private void PasteNotebook_Click(object sender, RoutedEventArgs e) => PasteRequested?.Invoke();
     public event Action<string, Guid>? ActionRequested;
     public string Query => LibrarySearch.Text.Trim();
     public bool SortByName => SortPicker.SelectedIndex == 1;

@@ -30,3 +30,5 @@ public sealed record PageView(double Zoom, double X, double Y)
             Math.Clamp(double.IsFinite(Y) ? Y : 24, 48 - paperHeight * zoom, Math.Max(48, viewportHeight) - 48));
     }
 }
+
+public sealed record NotebookCopy(NotebookSummary Notebook, List<DuplicatedPage> Pages);
