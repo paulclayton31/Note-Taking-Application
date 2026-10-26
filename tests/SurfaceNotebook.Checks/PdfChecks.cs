@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Data.Sqlite;
 using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
@@ -11,6 +12,8 @@ using SurfaceNotebook.Services;
 
 internal static partial class Program
 {
+    private sealed class ImmediateProgress(Action<string> action) : IProgress<string>
+    { public void Report(string value) => action(value); }
     private static void CheckPdfWorkflows(string root)
     {
         Directory.CreateDirectory(root);
@@ -59,6 +62,11 @@ internal static partial class Program
             using (var verify = PdfReader.Open(single, PdfDocumentOpenMode.Import)) Require(verify.PageCount == 1, "Single-page PDF export included other pages.");
             using var canceled = new CancellationTokenSource(); canceled.Cancel();
             try { Await(window.ImportPdfAsync(fixture, canceled.Token)); throw new Exception("Canceled PDF import succeeded."); } catch (OperationCanceledException) { }
+            using (var midway = new CancellationTokenSource())
+            {
+                var progress = new ImmediateProgress(message => { if (message.Contains("page 2 of")) midway.Cancel(); });
+                try { Await(window.ImportPdfAsync(fixture, midway.Token, progress)); throw new Exception("Mid-import cancellation succeeded."); } catch (OperationCanceledException) { }
+            }
             var invalid = Path.Combine(root, "Invalid.pdf"); File.WriteAllText(invalid, "not a PDF");
             var rejected = false;
             try { Await(window.ImportPdfAsync(invalid)); }
@@ -97,7 +105,12 @@ internal static partial class Program
                 "PDF background or annotation did not survive restart.");
             var copy = db.DuplicatePage(first, Guid.NewGuid(), "PDF copy");
             Require(copy.Document.Background!.SourcePdf.SequenceEqual(imported[0].Background!.SourcePdf), "Database duplication lost source PDF content.");
-            db.MarkClean();
+            var source = new NotebookCopy(db.Snapshot.Notebooks.Single(n => n.Id == notebook), db.Snapshot.Pages.Where(p => p.NotebookId == notebook)
+                .OrderBy(p => p.Position).Select(p => new DuplicatedPage(p, db.LoadPage(p.Id))).ToList());
+            var notebookCopy = db.PasteNotebook(source, "PDF notebook copy", null);
+            Require(notebookCopy.Pages.All(p => p.Document.Background is not null) && db.LoadPage(notebookCopy.Pages[0].Page.Id).Strokes.Count == 1,
+                "Notebook duplication lost PDF backgrounds or annotations.");
+            db.DeleteNotebook(notebookCopy.Notebook.Id); db.MarkClean();
         }
         var reopened = new MainWindow(library); Await(reopened.InitializeLibraryAsync()); Await(reopened.ActivatePageAsync(first));
         Require(((System.Windows.Controls.Image)reopened.FindName("PdfPageImage")).Source is not null, "PDF did not render after reopening the library.");
@@ -113,7 +126,28 @@ internal static partial class Program
             canceled.Cancel();
             try { Await(PdfService.ExportAsync(output, imported, "Canceled", canceled.Token)); throw new Exception("Canceled PDF export succeeded."); } catch (OperationCanceledException) { }
         }
+        using (var midway = new CancellationTokenSource())
+        {
+            var progress = new ImmediateProgress(message => { if (message.Contains("page 2 of")) midway.Cancel(); });
+            try { Await(PdfService.ExportAsync(output, imported, "Canceled midway", midway.Token, progress)); throw new Exception("Mid-export cancellation succeeded."); } catch (OperationCanceledException) { }
+        }
         Require(File.ReadAllBytes(output).SequenceEqual(previous), "Canceled export damaged the existing PDF.");
+        var migration = Path.Combine(root, "migration-v032"); Guid legacyPage;
+        using (var db = new NotebookDatabase(migration))
+        { legacyPage = db.Snapshot.LastPageId; db.ApplyDelta(legacyPage, [new StoredStroke(SampleData(), 0)], []); db.MarkClean(); }
+        using (var connection = new SqliteConnection($"Data Source={Path.Combine(migration, "library.db")};Pooling=False"))
+        {
+            connection.Open(); using var command = connection.CreateCommand();
+            command.CommandText = "ALTER TABLE pages DROP COLUMN background_json; PRAGMA user_version=3;"; command.ExecuteNonQuery();
+        }
+        File.Delete(Path.Combine(migration, "library-v032-backup.db"));
+        using (var db = new NotebookDatabase(migration)) { Require(db.LoadPage(legacyPage).Strokes.Count == 1, "Schema 4 migration lost existing ink."); db.MarkClean(); }
+        using (var backup = new SqliteConnection($"Data Source={Path.Combine(migration, "library-v032-backup.db")};Mode=ReadOnly;Pooling=False"))
+        {
+            backup.Open(); using var version = backup.CreateCommand(); version.CommandText = "PRAGMA user_version;";
+            Require(Convert.ToInt32(version.ExecuteScalar()) == 3, "The pre-PDF library backup is not schema 3.");
+            version.CommandText = "SELECT COUNT(*) FROM strokes;"; Require(Convert.ToInt32(version.ExecuteScalar()) == 1, "The pre-PDF backup lost committed notes.");
+        }
 
     }
 }
