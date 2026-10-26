@@ -120,6 +120,7 @@ public static class PdfService
     {
         var flattened = geometry.GetFlattenedPathGeometry(.12, ToleranceType.Absolute);
         var path = new XGraphicsPath { FillMode = flattened.FillRule == FillRule.EvenOdd ? XFillMode.Alternate : XFillMode.Winding };
+        var transform = flattened.Transform?.Value ?? Matrix.Identity;
         var any = false;
         foreach (var figure in flattened.Figures)
         {
@@ -131,7 +132,7 @@ public static class PdfService
             }
             if (points.Count < 2) continue;
             any = true;
-            var transformed = points.Select(p => flattened.Transform.Transform(new Point(p.X, p.Y))).Select(p => new XPoint(p.X, p.Y)).ToArray();
+            var transformed = points.Select(p => transform.Transform(new Point(p.X, p.Y))).Select(p => new XPoint(p.X, p.Y)).ToArray();
             path.StartFigure(); path.AddLines(transformed); if (figure.IsClosed) path.CloseFigure();
         }
         if (any) gfx.DrawPath(new XSolidBrush(color), path);
