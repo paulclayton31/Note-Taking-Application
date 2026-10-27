@@ -12,10 +12,10 @@ public static class ScribbleGesture
     public sealed class Trace(IReadOnlyList<Point> path, IReadOnlyList<IReadOnlyList<Point>> passes)
     {
         public IReadOnlyList<Point> Path { get; } = path;
-        public bool CrossesRepeatedly(Rect target)
+        public bool CrossesRepeatedly(Rect target, double padding = 8)
         {
             if (target.IsEmpty) return false;
-            target.Inflate(8, 8);
+            target.Inflate(padding, padding);
             var hits = 0;
             foreach (var pass in passes)
             {

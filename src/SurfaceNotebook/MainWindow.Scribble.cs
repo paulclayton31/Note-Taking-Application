@@ -72,7 +72,7 @@ public partial class MainWindow
                 if (leading.IsEmpty || trailing.IsEmpty) continue;
                 var origin = box.TranslatePoint(leading.TopLeft, InkSurface);
                 var character = new Rect(origin, new Size(Math.Max(1, trailing.X - leading.X), leading.Height));
-                hit = trace.CrossesRepeatedly(character);
+                hit = trace.CrossesRepeatedly(character, padding: 2);
             }
             if (hit)
             {
