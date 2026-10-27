@@ -16,17 +16,17 @@ public partial class MainWindow
     public bool TryScribbleErase(Stroke gesture)
     {
         if (busy || toolName != "Pen" || ScribbleEraseToggle.IsChecked != true || session is null ||
-            !InkSurface.Strokes.Contains(gesture) || !ScribbleGesture.IsScribble(gesture)) return false;
-        var path = gesture.StylusPoints.Select(p => p.ToPoint()).ToArray();
-        var bounds = gesture.GetBounds(); bounds.Inflate(6, 6);
-        var erased = InkSurface.Strokes.Where(s => s != gesture && ScribbleGesture.IsLocalTarget(gesture, s) && s.HitTest(bounds, 8) &&
-            ScribbleGesture.CrossesRepeatedly(path, s.GetBounds()) && s.HitTest(path, new EllipseStylusShape(12, 12))).ToList();
+            !InkSurface.Strokes.Contains(gesture) || ScribbleGesture.Analyze(gesture) is not { } trace) return false;
+        var path = trace.Path;
+        var bounds = gesture.GetBounds(); bounds.Inflate(8, 8);
+        var erased = InkSurface.Strokes.Where(s => s != gesture && ScribbleGesture.IsLocalTarget(gesture, s) &&
+            trace.CrossesRepeatedly(s.GetBounds()) && s.HitTest(path, new EllipseStylusShape(16, 16))).ToList();
         var replacements = new Dictionary<Guid, PageText>();
         foreach (var box in InkSurface.Children.OfType<TextBox>())
         {
             var text = session.Texts.FirstOrDefault(t => t.Id == (Guid)box.Tag);
             if (text is null || !new Rect(text.X, text.Y, box.ActualWidth, box.ActualHeight).IntersectsWith(bounds)) continue;
-            var updated = EraseScribbledWords(box, text, path);
+            var updated = EraseScribbledWords(box, text, trace);
             if (updated != text.Text) replacements[text.Id] = text with { Text = updated };
         }
         if (erased.Count == 0 && replacements.Count == 0) return false;
@@ -56,7 +56,7 @@ public partial class MainWindow
         editNoticeTimer.Stop(); editNoticeTimer.Start();
         return true;
     }
-    private string EraseScribbledWords(TextBox box, PageText text, IReadOnlyList<Point> path)
+    private string EraseScribbledWords(TextBox box, PageText text, ScribbleGesture.Trace trace)
     {
         var remove = new bool[text.Text.Length];
         for (var start = 0; start < text.Text.Length;)
@@ -72,7 +72,7 @@ public partial class MainWindow
                 if (leading.IsEmpty || trailing.IsEmpty) continue;
                 var origin = box.TranslatePoint(leading.TopLeft, InkSurface);
                 var character = new Rect(origin, new Size(Math.Max(1, trailing.X - leading.X), leading.Height));
-                hit = ScribbleGesture.CrossesRepeatedly(path, character);
+                hit = trace.CrossesRepeatedly(character);
             }
             if (hit)
             {
