@@ -150,6 +150,7 @@ public partial class MainWindow : Window
         ToolbarFrame.IsEnabled = !value;
         if (value)
         {
+            CancelHeldShape(); SetBarrelSelection(false);
             CloseToolInspector(); selectionMenu.IsOpen = false;
             EditNotice.Visibility = Visibility.Collapsed; editNoticeTimer.Stop(); selectionPointerDown = null;
         }
@@ -448,7 +449,7 @@ public partial class MainWindow : Window
             e.Handled = true; return;
         }
         if (busy) return;
-        if (Keyboard.FocusedElement is not TextBox && toolName == "Lasso")
+        if (Keyboard.FocusedElement is not TextBox && EffectiveLasso)
         {
             Action? action = Keyboard.Modifiers == ModifierKeys.Control ? e.Key switch
             {

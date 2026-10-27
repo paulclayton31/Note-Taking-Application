@@ -1,6 +1,6 @@
-# v0.3.1 writing tools
+# Writing tools
 
-See the [release notes and downloads](releases/v0.3.1.md).
+See the [release notes and downloads](releases/v0.3.5.md).
 
 ## Thin tool rail
 
@@ -56,3 +56,16 @@ Page actions in the header or a page's hold/right-click menu include Delete page
 Close the final tab to return to the library, or right-click a tab for **Close all tabs**. Closing tabs saves notes and remembers each notebook's last page. The empty tab state survives restarting. Page navigation uses pixel scrolling with native touch panning and short mouse-wheel easing; system animation preferences are respected. Saved pen icons use quiet nib outlines with a color underline and retain 44-DIP touch targets.
 
 PDF import/export and vertical scratch-outs are described in the [PDF workflows guide](pdf-workflows.md).
+
+
+## Draw and hold shapes (v0.3.5)
+
+With **Pen** selected, draw one continuous line, triangle, circle, square, rectangle, or ellipse. Keep the tip touching the screen and pause at the end for **0.6 seconds**. The recognized outline previews on the page; lift to finish. Small tip jitter is tolerated in screen space at any zoom. Move the tip farther to cancel the preview and continue drawing; pause again to retry.
+
+The shape keeps the selected ink color and thickness and uses an even-width outline. One **Undo** restores the original freehand stroke, including pressure; a second removes that stroke. Redo reapplies the shape. Ordinary strokes without a hold, touch, the inverted eraser, highlighter, and the separate Shape tool do not use this recognizer. Open arcs, scratch-outs, tiny marks, and repeated loops remain freehand in the regression fixtures. Disable **Draw & hold shapes** in the pen rail's ellipsis menu; the setting survives restart.
+
+## Surface Pen side-button selection (v0.3.5)
+
+Hold the pen's **side/barrel button before touching the paper**, then circle the objects to select. The chosen toolbar tool and pen settings are retained. Release the button whenever you like during that gesture: the lasso completes when you lift. The selection stays available for moving/resizing and its Copy, Duplicate, Delete, and Paste actions. Tap the selection or its actions button to open the menu. Touching blank paper without the side button resumes your previous tool; selecting a toolbar tool, leaving the workspace, or changing pages also clears the temporary override. Keyboard selection shortcuts work during temporary selection.
+
+This uses the barrel-button signal exposed to Windows ink input, rather than the pen's top/Bluetooth shortcut button. Pens or driver mappings that do not expose that signal cannot activate this shortcut. Physical Surface testing is still needed for device-specific button behavior and handwriting feel.

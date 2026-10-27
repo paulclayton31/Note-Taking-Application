@@ -33,6 +33,7 @@ public partial class MainWindow
             SetPenStyle(settings.Monoline);
             EraserModePicker.SelectedIndex = settings.PrecisionEraser ? 1 : 0;
             ScribbleEraseToggle.IsChecked = settings.ScribbleErase;
+            HoldShapesToggle.IsChecked = settings.HoldShapes;
             SelectInkColor(penColor); ThicknessSlider.Value = penWidth;
             activePreset = savedPens.FirstOrDefault(p => p.Id == settings.ActivePreset)?.Id
                 ?? savedPens.FirstOrDefault(p => p.Color == penColor && Math.Abs(p.Width - penWidth) < .001 && p.Monoline == settings.Monoline)?.Id;
@@ -62,7 +63,7 @@ public partial class MainWindow
         var pen = savedPens.FirstOrDefault(p => p.Id == activePreset);
         return new(savedPens.ToList(), activePreset, pen?.Color ?? penColor, pen?.Width ?? penWidth,
             pen?.Monoline ?? BallStyleButton.IsChecked == true, highlighterColor, highlighterWidth, eraserSize,
-            EraserModePicker.SelectedIndex == 1, ScribbleEraseToggle.IsChecked != false);
+            EraserModePicker.SelectedIndex == 1, ScribbleEraseToggle.IsChecked != false, HoldShapesToggle.IsChecked != false);
     }
     private void UpdateActivePen()
     {
