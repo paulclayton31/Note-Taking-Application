@@ -18,4 +18,4 @@ PDF pages have fixed paper dimensions. The paper-settings button is disabled on 
 
 ## Vertical scratch-outs
 
-Up-and-down scratch-outs now accept narrow coverage over connected handwriting. Horizontal and diagonal gestures remain supported. Long diagram lines crossing the scratch region are protected. One Undo restores the erased handwriting and scratch; a second Undo removes the scratch. Scribble erasing can still be disabled in tool options.
+Up-and-down scratch-outs accept rounded turns, a shorter finishing pass, and narrow contact with connected handwriting. Target detection counts the scratch passes instead of requiring a percentage of the whole stroke or repeated exits from its bounding box. Horizontal and diagonal gestures remain supported. Long diagram lines crossing the scratch region are protected. One Undo restores the erased handwriting and scratch; a second Undo removes the scratch. Scribble erasing can still be disabled in tool options.

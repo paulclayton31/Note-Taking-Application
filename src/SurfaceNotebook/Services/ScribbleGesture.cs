@@ -7,11 +7,34 @@ namespace SurfaceNotebook.Services;
 // reversals in a small region; ordinary writing and diagrams stay ordinary ink.
 public static class ScribbleGesture
 {
-    public static bool IsScribble(Stroke stroke)
+    public static bool IsScribble(Stroke stroke) => Analyze(stroke) is not null;
+
+    public sealed class Trace(IReadOnlyList<Point> path, IReadOnlyList<IReadOnlyList<Point>> passes)
     {
-        if (stroke.StylusPoints.Count < 4 || stroke.StylusPoints.Count > 50000) return false;
+        public IReadOnlyList<Point> Path { get; } = path;
+        public bool CrossesRepeatedly(Rect target, double padding = 8)
+        {
+            if (target.IsEmpty) return false;
+            target.Inflate(padding, padding);
+            var hits = 0;
+            foreach (var pass in passes)
+            {
+                for (var i = 1; i < pass.Count; i++)
+                    if (Intersects(pass[i - 1], pass[i], target))
+                    {
+                        if (++hits >= 2) return true;
+                        break;
+                    }
+            }
+            return false;
+        }
+    }
+
+    public static Trace? Analyze(Stroke stroke)
+    {
+        if (stroke.StylusPoints.Count < 4 || stroke.StylusPoints.Count > 50000) return null;
         var points = Resample(stroke);
-        if (points.Count < 4) return false;
+        if (points.Count < 4) return null;
         var center = new Point(points.Average(p => p.X), points.Average(p => p.Y));
         double xx = 0, xy = 0, yy = 0, length = 0;
         foreach (var point in points)
@@ -19,7 +42,7 @@ public static class ScribbleGesture
             var offset = point - center;
             xx += offset.X * offset.X; xy += offset.X * offset.Y; yy += offset.Y * offset.Y;
         }
-        // Work in the gesture's own axis: horizontal, vertical, and diagonal scratches are equivalent.
+        // Use the gesture's own axis, independent of page orientation or pen sample rate.
         var angle = .5 * Math.Atan2(2 * xy, xx - yy);
         var axis = new Vector(Math.Cos(angle), Math.Sin(angle));
         var projected = points.Select(p => Vector.Multiply(p - center, axis)).ToArray();
@@ -29,11 +52,12 @@ public static class ScribbleGesture
         double travel = 0;
         for (var i = 1; i < points.Count; i++)
         { length += (points[i] - points[i - 1]).Length; travel += Math.Abs(projected[i] - projected[i - 1]); }
-        if (span < 16 || span > 500 || crossSpan > 180 || crossSpan > span * .8 ||
-            length < span * 2.55 || travel < length * .7) return false;
-        var threshold = Math.Max(3, span * .18);
+        if (span < 12 || span > 500 || crossSpan > 180 || crossSpan > span * .8 ||
+            length < span * 2.1 || travel < length * .7) return null;
+        var threshold = Math.Max(2, span * .12);
         var extreme = projected[0]; var extremeIndex = 0;
-        var direction = 0; var reversals = 0;
+        var direction = 0;
+        var turns = new List<int>(); var bends = new List<int>();
         for (var i = 1; i < points.Count; i++)
         {
             var value = projected[i];
@@ -44,21 +68,35 @@ public static class ScribbleGesture
             else if ((value - extreme) * direction > 0) { extreme = value; extremeIndex = i; }
             else if ((extreme - value) * direction >= threshold)
             {
-                if (SharpTurn(points, extremeIndex, Math.Min(6, span * .1))) reversals++;
+                var local = Turn(points, extremeIndex, Math.Min(6, span * .1));
+                var rounded = Turn(points, extremeIndex, Math.Clamp(span * .22, 8, 24));
+                if (local.Dot < .25 || (crossSpan <= span * .5 && rounded.Dot < .5))
+                {
+                    turns.Add(extremeIndex);
+                    if (Math.Abs(rounded.Cross) > .01) bends.Add(Math.Sign(rounded.Cross));
+                }
                 direction = -direction; extreme = value; extremeIndex = i;
             }
         }
-        return reversals >= 2;
+        if (turns.Count < 2) return null;
+        // Repeated circles/ovals keep bending the same way. A scratch alternates
+        // its bends, or retraces a straight path with no lateral bend at all.
+        if (bends.Count >= 2 && bends.All(b => b == bends[0])) return null;
+        var ends = new[] { 0 }.Concat(turns).Append(points.Count - 1).ToArray();
+        var passes = new List<IReadOnlyList<Point>>();
+        for (var i = 1; i < ends.Length; i++) passes.Add(points.GetRange(ends[i - 1], ends[i] - ends[i - 1] + 1));
+        return new Trace(points, passes);
     }
-    private static bool SharpTurn(IReadOnlyList<Point> points, int index, double window)
+    private static (double Dot, double Cross) Turn(IReadOnlyList<Point> points, int index, double window)
     {
         var before = index; var after = index; double distance = 0;
         while (before > 0 && distance < window) { distance += (points[before] - points[before - 1]).Length; before--; }
         distance = 0;
         while (after < points.Count - 1 && distance < window) { distance += (points[after + 1] - points[after]).Length; after++; }
         var incoming = points[index] - points[before]; var outgoing = points[after] - points[index];
-        if (incoming.Length < 1 || outgoing.Length < 1) return false;
-        return Vector.Multiply(incoming, outgoing) / (incoming.Length * outgoing.Length) < .25;
+        var denominator = incoming.Length * outgoing.Length;
+        if (denominator < 1) return (1, 0);
+        return (Vector.Multiply(incoming, outgoing) / denominator, Vector.CrossProduct(incoming, outgoing) / denominator);
     }
     private static List<Point> Resample(Stroke stroke)
     {
@@ -88,20 +126,6 @@ public static class ScribbleGesture
         return Math.Max(bounds.Width, bounds.Height) <= Math.Max(240, Math.Max(scratch.Width, scratch.Height) * 3);
     }
 
-    public static bool CrossesRepeatedly(IReadOnlyList<Point> path, Rect target)
-    {
-        if (target.IsEmpty || path.Count < 2) return false;
-        target.Inflate(2, 2);
-        var runs = 0; var previousHit = false; var allInside = target.Contains(path[0]);
-        for (var i = 1; i < path.Count; i++)
-        {
-            var hit = Intersects(path[i - 1], path[i], target);
-            if (hit && (!previousHit || !target.Contains(path[i - 1]))) runs++;
-            if (runs >= 2) return true;
-            previousHit = hit; allInside &= target.Contains(path[i]);
-        }
-        return allInside;
-    }
     private static bool Intersects(Point a, Point b, Rect rectangle)
     {
         double low = 0, high = 1;
