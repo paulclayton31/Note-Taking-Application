@@ -27,6 +27,7 @@ public partial class MainWindow
         InitializeToolbarMovement();
         InitializeSelectionActions();
         InitializePenEditor();
+        InitializePenGestures();
         Viewport.AddHandler(PreviewStylusDownEvent, new StylusDownEventHandler((_, e) =>
         {
             if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Stylus && toolName != "Hand") CloseToolInspector();
@@ -35,7 +36,7 @@ public partial class MainWindow
         {
             if (session is null) return;
             CloseToolInspector();
-            if (toolName == "Pen") { TryScribbleErase(e.Stroke); return; }
+            if (toolName == "Pen") { if (!TryFinishHeldShape(e.Stroke)) TryScribbleErase(e.Stroke); return; }
             if (toolName != "Shape") return;
             var shapes = ShapeFactory.Create(e.Stroke, ShapePicker.SelectedIndex);
             restoring = true;
@@ -65,6 +66,8 @@ public partial class MainWindow
     {
         if (InkSurface is null || ColorPicker is null || sender is not RadioButton button || !IsInitialized) return;
         CommitTextEditor();
+        CancelHeldShape();
+        barrelSelection = false;
         toolName = (string)button.Tag;
         selectionMenu.IsOpen = false; PenEditorPopup.IsOpen = false; ToolOptionsPopup.IsOpen = false; AllPensPopup.IsOpen = false;
         if (toolName != "Text") selectedTextId = null;
@@ -97,6 +100,7 @@ public partial class MainWindow
         ThicknessControls.Visibility = toolName is "Pen" or "Highlighter" or "Shape" or "Eraser" ? Visibility.Visible : Visibility.Collapsed;
         PenStyleControls.Visibility = toolName == "Pen" ? Visibility.Visible : Visibility.Collapsed;
         ScribbleEraseToggle.Visibility = toolName == "Pen" ? Visibility.Visible : Visibility.Collapsed;
+        HoldShapesToggle.Visibility = toolName == "Pen" ? Visibility.Visible : Visibility.Collapsed;
         SavedPensPanel.Visibility = toolName == "Pen" ? Visibility.Visible : Visibility.Collapsed;
         EraserControls.Visibility = toolName == "Eraser" ? Visibility.Visible : Visibility.Collapsed;
         ShapeControls.Visibility = toolName == "Shape" ? Visibility.Visible : Visibility.Collapsed;
@@ -121,15 +125,15 @@ public partial class MainWindow
             StylusTip = highlighter ? StylusTip.Rectangle : StylusTip.Ellipse
         };
         InkSurface.EraserShape = new EllipseStylusShape(eraserSize, eraserSize);
-        InkSurface.EditingMode = toolName switch
+        InkSurface.EditingMode = barrelSelection ? InkCanvasEditingMode.Select : toolName switch
         {
             "Eraser" => EraserModePicker?.SelectedIndex == 1 ? InkCanvasEditingMode.EraseByPoint : InkCanvasEditingMode.EraseByStroke,
             "Lasso" => InkCanvasEditingMode.Select,
             "Hand" or "Text" => InkCanvasEditingMode.None,
             _ => InkCanvasEditingMode.Ink
         };
-        Viewport.HandMode = toolName == "Hand";
-        InkSurface.Cursor = toolName == "Hand" ? Cursors.Hand : toolName == "Text" ? Cursors.IBeam : Cursors.Pen;
+        Viewport.HandMode = !barrelSelection && toolName == "Hand";
+        InkSurface.Cursor = barrelSelection ? Cursors.Pen : toolName == "Hand" ? Cursors.Hand : toolName == "Text" ? Cursors.IBeam : Cursors.Pen;
         if (CurrentColor is not null) CurrentColor.Fill = new SolidColorBrush(color);
         if (RailColor is not null) RailColor.Fill = new SolidColorBrush(color);
         RefreshColorChoices();
@@ -185,7 +189,7 @@ public partial class MainWindow
 
     private void TextCanvas_Down(object sender, MouseButtonEventArgs e)
     {
-        if (toolName != "Text" || session is null || busy || e.ChangedButton != MouseButton.Left ||
+        if (barrelSelection || toolName != "Text" || session is null || busy || e.ChangedButton != MouseButton.Left ||
             e.StylusDevice?.TabletDevice.Type == TabletDeviceType.Touch) return;
         CloseToolInspector();
         for (DependencyObject? node = e.OriginalSource as DependencyObject; node is not null && node != InkSurface; node = VisualTreeHelper.GetParent(node))

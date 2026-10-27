@@ -39,6 +39,7 @@ public partial class MainWindow
     private void Home_Click(object sender, RoutedEventArgs e) => ShowHome();
     public void ShowHome()
     {
+        CancelHeldShape(); SetBarrelSelection(false);
         if (!ready || busy) return;
         if (focusMode) ToggleFocus();
         CommitTextEditor(); SaveCurrentView();

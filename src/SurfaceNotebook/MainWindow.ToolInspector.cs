@@ -13,6 +13,7 @@ public partial class MainWindow
     { if (e.Key is Key.Space or Key.Enter) toolBeforeClick = toolName; }
     private void Tool_Click(object sender, RoutedEventArgs e)
     {
+        SetBarrelSelection(false);
         if (sender is RadioButton button && (string)button.Tag == toolBeforeClick) ToggleToolInspector();
         toolBeforeClick = null;
     }
@@ -23,6 +24,7 @@ public partial class MainWindow
     public void ShowToolInspector()
     {
         if (!ready || busy || homeVisible) return;
+        SetBarrelSelection(false);
         CommitTextEditor(); ZoomPopup.IsOpen = false; selectionMenu.IsOpen = false;
         CloseContextPanel(); ToolInspector.Visibility = Visibility.Visible;
         UpdateToolInspectorPlacement(ActualWidth);

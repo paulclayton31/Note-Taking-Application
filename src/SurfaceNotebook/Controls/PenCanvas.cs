@@ -17,6 +17,17 @@ public sealed class PenCanvas : InkCanvas
         protected override void OnStylusUp(RawStylusInput input) { if (pens.ContainsKey(input.StylusDeviceId)) base.OnStylusUp(input); }
     }
     private readonly PenRenderer penRenderer = new();
+    private bool shapePreviewVisible;
+    public void ShowShapePreview(bool visible)
+    {
+        if (shapePreviewVisible == visible) return;
+        shapePreviewVisible = visible;
+        penRenderer.Enabled = !visible && ActiveEditingMode == InkCanvasEditingMode.Ink;
+    }
+    public void ResumeInkPreview(StylusDevice pen, StylusPointCollection points)
+    {
+        if (!pen.InAir && penRenderer.Enabled) penRenderer.Reset(pen, points);
+    }
     public PenCanvas()
     {
         DynamicRenderer = penRenderer;

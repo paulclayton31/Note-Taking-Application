@@ -48,7 +48,8 @@ public partial class MainWindow
             for (var node = e.OriginalSource as DependencyObject; node is not null && node != InkSurface; node = VisualTreeHelper.GetParent(node))
                 if (node is TextBox) return;
             e.Handled = true;
-            if (toolName == "Lasso" && !busy) OpenSelectionMenu(Mouse.GetPosition(InkSurface));
+            if (barrelSelection && !HasSelection) return;
+            if (EffectiveLasso && !busy) OpenSelectionMenu(Mouse.GetPosition(InkSurface));
         };
         InkSurface.SelectionChanged += (_, _) => { selectionMenu.IsOpen = false; UpdateSelectionActions(); };
         InkSurface.SelectionMoved += (_, _) => UpdateSelectionActions();
@@ -77,13 +78,13 @@ public partial class MainWindow
             Dispatcher.BeginInvoke(() => { if (page == currentPageId && IsSelectionInterior(point)) OpenSelectionMenu(point); }, DispatcherPriority.Input);
         }), true);
     }
-    private bool IsSelectionInterior(Point point) => !busy && toolName == "Lasso" && HasSelection &&
+    private bool IsSelectionInterior(Point point) => !busy && EffectiveLasso && HasSelection &&
         InkSurface.HitTestSelection(point) == InkCanvasSelectionHitResult.Selection;
 
     private void UpdateSelectionActions()
     {
         if (SelectionActionsButton is null) return;
-        var visible = !busy && !restoring && !homeVisible && toolName == "Lasso" && HasSelection;
+        var visible = !busy && !restoring && !homeVisible && EffectiveLasso && HasSelection;
         SelectionActionsButton.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
         if (!visible) return;
         var count = InkSurface.GetSelectedStrokes().Count + InkSurface.GetSelectedElements().Count;
@@ -104,7 +105,7 @@ public partial class MainWindow
     }
     private void OpenSelectionMenu(Point point)
     {
-        if (busy || toolName != "Lasso") return;
+        if (busy || !EffectiveLasso) return;
         CloseToolInspector();
         selectionMenuPoint = point;
         var position = InkSurface.TranslatePoint(point, MainStage);

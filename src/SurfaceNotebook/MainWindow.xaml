@@ -286,6 +286,7 @@
                                 <TextBlock x:Name="ToolTitle" Text="Pen" FontSize="18" FontWeight="SemiBold"/>
                                 <TextBlock x:Name="ToolHint" Text="Pressure-sensitive ink" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" FontSize="11" Margin="0,6,0,10"/>
                                 <CheckBox x:Name="ScribbleEraseToggle" Foreground="{DynamicResource Ink}" Content="Scribble to erase" IsChecked="True" Checked="ScribbleErase_Changed" Unchecked="ScribbleErase_Changed" MinHeight="44" VerticalContentAlignment="Center"/>
+                                <CheckBox x:Name="HoldShapesToggle" Foreground="{DynamicResource Ink}" Content="Draw &amp; hold shapes" IsChecked="True" Checked="ScribbleErase_Changed" Unchecked="ScribbleErase_Changed" MinHeight="44" VerticalContentAlignment="Center" ToolTip="Draw a line or closed shape, then hold the tip still for 0.6 seconds. Undo restores the freehand stroke."/>
                                 <StackPanel x:Name="EraserControls" Visibility="Collapsed">
                                     <ComboBox x:Name="EraserModePicker" SelectedIndex="0" SelectionChanged="Properties_Changed"><ComboBoxItem Content="Erase whole strokes"/><ComboBoxItem Content="Precision eraser"/></ComboBox>
                                 </StackPanel>
