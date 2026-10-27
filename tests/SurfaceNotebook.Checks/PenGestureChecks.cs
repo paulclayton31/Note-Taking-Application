@@ -70,6 +70,8 @@ internal static partial class Program
         Require(held.Check(701) is not null, "Small screen-space jitter reset a zoomed-out hold.");
 
         var window = new MainWindow(root); Await(window.InitializeLibraryAsync()); window.ShowWorkspace(); ArrangeWorkspace(window);
+        var originalPage = window.CurrentPageId;
+        Guid snappedPage;
         try
         {
             var ink = (PenCanvas)window.FindName("InkSurface");
@@ -101,14 +103,22 @@ internal static partial class Program
             ((RadioButton)window.FindName("PenButton")).IsChecked = true;
             window.SetBarrelSelection(true); window.ShowHome(); window.ShowWorkspace();
             Require(ink.EditingMode == InkCanvasEditingMode.Ink, "Temporary lasso remained stuck after returning to the library.");
+            window.SetBarrelSelection(true); window.ShowToolInspector();
+            Require(ink.EditingMode == InkCanvasEditingMode.Ink, "Opening pen settings did not restore the chosen tool.");
+            window.CloseToolInspector();
+            snappedPage = Await(window.CreatePageAsync("Held shape"));
+            controller.Begin(line.DrawingAttributes, line.StylusPoints[0].ToPoint(), new Point(0, 0), 0);
+            foreach (var p in line.StylusPoints.Skip(1)) controller.Move(p.ToPoint(), p.ToPoint(), 100);
+            controller.Check(1000); Collect(ink, line.Clone());
             ((CheckBox)window.FindName("HoldShapesToggle")).IsChecked = false;
             Require(Await(window.FlushAsync()) && Await(window.ShutdownLibraryAsync()), "Pen gesture changes did not save.");
         }
         finally { Await(window.ShutdownLibraryAsync()); }
         var reopened = new MainWindow(root); Await(reopened.InitializeLibraryAsync());
-        Require(((PenCanvas)reopened.FindName("InkSurface")).Strokes.Single().StylusPoints.Count == rawCount(line) && ((CheckBox)reopened.FindName("HoldShapesToggle")).IsChecked == false,
-            "Restart lost freehand ink or the draw-and-hold preference.");
+        Require(reopened.CurrentPageId == snappedPage && ((PenCanvas)reopened.FindName("InkSurface")).Strokes.Single().StylusPoints.Count == 2 &&
+            ((CheckBox)reopened.FindName("HoldShapesToggle")).IsChecked == false, "Restart lost the snapped shape or the draw-and-hold preference.");
+        Await(reopened.ActivatePageAsync(originalPage!.Value));
+        Require(((PenCanvas)reopened.FindName("InkSurface")).Strokes.Single().StylusPoints.Count == line.StylusPoints.Count, "Saving a shape changed freehand ink on another page.");
         Require(Await(reopened.ShutdownLibraryAsync()), "Gesture test library did not close.");
-        static int rawCount(Stroke s) => s.StylusPoints.Count;
     }
 }

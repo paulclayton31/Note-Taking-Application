@@ -24,6 +24,7 @@ public partial class MainWindow
     public void ShowToolInspector()
     {
         if (!ready || busy || homeVisible) return;
+        SetBarrelSelection(false);
         CommitTextEditor(); ZoomPopup.IsOpen = false; selectionMenu.IsOpen = false;
         CloseContextPanel(); ToolInspector.Visibility = Visibility.Visible;
         UpdateToolInspectorPlacement(ActualWidth);

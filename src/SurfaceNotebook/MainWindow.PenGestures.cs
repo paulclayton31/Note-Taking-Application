@@ -31,6 +31,23 @@ public partial class MainWindow
     {
         Stylus.SetIsPressAndHoldEnabled(InkSurface, false);
         Stylus.SetIsFlicksEnabled(InkSurface, false);
+        AddHandler(PreviewStylusButtonDownEvent, new StylusButtonEventHandler((_, e) =>
+        {
+            if (e.StylusButton.Guid == StylusPointProperties.BarrelButton.Id && e.StylusDevice.InAir &&
+                !e.StylusDevice.Inverted && !busy && !homeVisible && session is not null && IsInkDescendant(e.OriginalSource as DependencyObject))
+                SetBarrelSelection(true);
+        }), true);
+        AddHandler(PreviewStylusButtonUpEvent, new StylusButtonEventHandler((_, e) =>
+        {
+            if (e.StylusButton.Guid == StylusPointProperties.BarrelButton.Id && e.StylusDevice.InAir && !HasSelection)
+                SetBarrelSelection(false);
+        }), true);
+        AddHandler(StylusOutOfRangeEvent, new StylusEventHandler((_, e) =>
+        {
+            if (e.StylusDevice.TabletDevice.Type != TabletDeviceType.Stylus) return;
+            CancelHeldShape();
+            if (!HasSelection) SetBarrelSelection(false);
+        }), true);
         // The window preview runs before PageViewport's hand/pan handler.
         AddHandler(PreviewStylusDownEvent, new StylusDownEventHandler((_, e) =>
         {
