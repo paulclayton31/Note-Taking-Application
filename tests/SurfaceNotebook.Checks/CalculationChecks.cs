@@ -2,12 +2,27 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Ink;
+using System.Windows.Input;
 using SurfaceNotebook;
 using SurfaceNotebook.Controls;
 using SurfaceNotebook.Services;
 
 internal static partial class Program
 {
+    // A reproducible ink fixture, separate from real-device recognition accuracy.
+    private static StrokeCollection CalculationHandwritingFixture()
+    {
+        var strokes = new StrokeCollection();
+        void Path(double x, double y, params double[] coordinates) => strokes.Add(new Stroke(new StylusPointCollection(
+            Enumerable.Range(0, coordinates.Length / 2).Select(i => new StylusPoint(x + coordinates[i * 2], y + coordinates[i * 2 + 1])))));
+        void X(double y) { Path(10, y, 0, 0, 32, 40); Path(10, y, 32, 0, 0, 40); }
+        void Y(double x, double y) { Path(x, y, 0, 0, 14, 22, 28, 0); Path(x, y, 14, 22, 10, 36, 3, 48); }
+        void Equals(double y) { Path(70, y, 0, 14, 28, 14); Path(70, y, 0, 25, 28, 25); }
+        X(10); Equals(10); Path(120, 10, 0, 8, 6, 0, 21, 0, 29, 9, 27, 18, 0, 42, 31, 42);
+        Y(10, 100); Equals(100); Path(120, 100, 0, 6, 12, 0, 27, 5, 28, 14, 15, 21, 28, 25, 30, 35, 22, 44, 5, 43, 0, 38);
+        X(190); Path(70, 190, 0, 20, 28, 20); Path(70, 190, 14, 6, 14, 34); Y(120, 190);
+        return strokes;
+    }
     private static void CheckCalculations(string root)
     {
         const string source = "F = m * a\nm = 2\na = 3";
@@ -65,8 +80,14 @@ internal static partial class Program
             Require(!((Button)editor.FindName("AcceptButton")).IsEnabled, "An outdated result could be accepted after editing.");
             editor.RefreshResult(); Require(editor.Result is null && ((TextBlock)editor.FindName("ErrorText")).Text.Contains("Unknown variable"), "The review editor hid invalid math.");
             editor.Stop();
-            var recognition = Await(HandwritingRecognition.RecognizeAsync([original]).WaitAsync(TimeSpan.FromSeconds(25)));
+            var recognition = Await(HandwritingRecognition.RecognizeAsync(InkMapper.Capture(CalculationHandwritingFixture()).Strokes).WaitAsync(TimeSpan.FromSeconds(25)));
             Console.WriteLine($"Handwriting service: available={recognition.RecognizerAvailable}; text='{recognition.Text}'; {recognition.Message}");
+            if (recognition.RecognizerAvailable)
+            {
+                Require(!string.IsNullOrWhiteSpace(recognition.Text), "Windows returned no text for the handwritten variable fixture.");
+                try { Console.WriteLine($"Handwriting fixture calculation (before human review): {CalculationEngine.Evaluate(recognition.Text).DisplayText}"); }
+                catch (CalculationEngine.CalculationException ex) { Console.WriteLine($"Handwriting fixture requires review: {ex.Message}"); }
+            }
             using (var canceled = new CancellationTokenSource())
             {
                 canceled.Cancel();
