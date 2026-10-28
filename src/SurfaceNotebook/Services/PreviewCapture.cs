@@ -56,9 +56,13 @@ public static class PreviewCapture
             var editor = new Controls.CalculationEditor { Width = 500, Height = 640 };
             editor.Prepare([], calculation, false);
             await CaptureElementAsync(editor, Path.Combine(outputDirectory, "calculation-review.png"), 500, 640);
-            window.SetDarkTheme(true);
-            await CaptureElementAsync(editor, Path.Combine(outputDirectory, "calculation-review-dark.png"), 500, 640);
-            editor.Stop(); window.SetDarkTheme(false);
+            editor.Stop(); window.SetDarkTheme(true);
+            // Detached controls do not receive logical-tree theme invalidation.
+            // Create the dark review after applying the theme, just as a dialog opens.
+            var darkEditor = new Controls.CalculationEditor { Width = 500, Height = 640 };
+            darkEditor.Prepare([], calculation, false);
+            await CaptureElementAsync(darkEditor, Path.Combine(outputDirectory, "calculation-review-dark.png"), 500, 640);
+            darkEditor.Stop(); window.SetDarkTheme(false);
             if (!await window.ShutdownLibraryAsync()) throw new IOException("Preview library did not flush.");
             window = null;
         }

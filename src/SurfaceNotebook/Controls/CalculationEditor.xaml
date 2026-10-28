@@ -4,8 +4,8 @@
  Background="{DynamicResource Surface}" Foreground="{DynamicResource Ink}">
  <Grid Margin="22">
   <Grid.RowDefinitions>
-   <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="2*"/>
-   <RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/>
+   <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="3*"/>
+   <RowDefinition Height="Auto"/><RowDefinition Height="2*"/><RowDefinition Height="Auto"/>
   </Grid.RowDefinitions>
   <StackPanel>
    <TextBlock Text="Calculate" FontSize="23" FontWeight="SemiBold"/>
