@@ -87,7 +87,7 @@ internal static partial class Program
             Click((Button)window.FindName("RedoButton")); Require(ink.Strokes.Single().StylusPoints.Count == 2, "Shape snapping did not redo.");
             Click((Button)window.FindName("UndoButton")); Click((Button)window.FindName("UndoButton"));
             Collect(ink, raw.Clone()); Require(ink.Strokes.Single().StylusPoints.Count == raw.StylusPoints.Count, "A stroke without a hold was automatically converted.");
-            foreach (var tool in new[] { "Pen", "Highlighter", "Eraser", "Hand", "Shape", "Text", "Lasso" })
+            foreach (var tool in new[] { "Pen", "Highlighter", "Eraser", "Hand", "Shape", "Text", "Lasso", "Calculate" })
             {
                 ((RadioButton)window.FindName(tool + "Button")).IsChecked = true;
                 var originalMode = ink.EditingMode; var attrs = ink.DefaultDrawingAttributes.Clone();

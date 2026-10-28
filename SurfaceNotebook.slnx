@@ -1,4 +1,5 @@
 <Solution>
   <Project Path="src/SurfaceNotebook/SurfaceNotebook.csproj" />
   <Project Path="tests/SurfaceNotebook.Checks/SurfaceNotebook.Checks.csproj" />
+  <Project Path="tests/SurfaceNotebook.CalculationChecks/SurfaceNotebook.CalculationChecks.csproj" />
 </Solution>

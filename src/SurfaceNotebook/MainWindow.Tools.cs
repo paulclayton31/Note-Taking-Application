@@ -84,7 +84,7 @@ public partial class MainWindow
         finally { changingTool = false; }
         ThicknessValue.Text = ThicknessSlider.Value.ToString("0.#", CultureInfo.CurrentCulture);
         ApplyPen();
-        foreach (TextBox box in InkSurface.Children) box.IsHitTestVisible = toolName == "Text";
+        UpdateTextInputModes();
         ToolTitle.Text = toolName == "Lasso" ? "Select ink" : toolName;
         ToolHint.Text = toolName switch
         {
@@ -94,6 +94,7 @@ public partial class MainWindow
             "Shape" => "Drag from one corner to the opposite corner",
             "Text" => "Tap the paper with a pen or click to add text",
             "Hand" => "Drag with pen or mouse · fingers always navigate",
+            "Calculate" => "Circle handwriting · review variables and expressions · tap a calculation card to edit",
             _ => "Pressure-sensitive ink, tuned for Surface Pen"
         };
         ColorControls.Visibility = toolName is "Pen" or "Highlighter" or "Shape" or "Text" ? Visibility.Visible : Visibility.Collapsed;
@@ -128,7 +129,7 @@ public partial class MainWindow
         InkSurface.EditingMode = barrelSelection ? InkCanvasEditingMode.Select : toolName switch
         {
             "Eraser" => EraserModePicker?.SelectedIndex == 1 ? InkCanvasEditingMode.EraseByPoint : InkCanvasEditingMode.EraseByStroke,
-            "Lasso" => InkCanvasEditingMode.Select,
+            "Lasso" or "Calculate" => InkCanvasEditingMode.Select,
             "Hand" or "Text" => InkCanvasEditingMode.None,
             _ => InkCanvasEditingMode.Ink
         };
@@ -212,11 +213,21 @@ public partial class MainWindow
             Foreground = Controls.PaperSurface.Brush(text.Color), CaretBrush = Controls.PaperSurface.Brush(text.Color),
             Background = Brushes.Transparent, BorderBrush = Brushes.Transparent, BorderThickness = new Thickness(0),
             Padding = new Thickness(2), MinHeight = 28, TextWrapping = TextWrapping.Wrap, AcceptsReturn = true,
-            IsHitTestVisible = toolName == "Text"
+            IsReadOnly = text.CalculationSource is not null || toolName != "Text",
+            IsHitTestVisible = !barrelSelection && (toolName == "Text" || CalculationMode && text.CalculationSource is not null)
         };
+        if (text.CalculationSource is not null)
+        {
+            box.Background = Controls.PaperSurface.Brush("#105C55B3");
+            box.BorderBrush = Controls.PaperSurface.Brush("#605C55B3"); box.BorderThickness = new Thickness(1);
+            box.Padding = new Thickness(8); box.Cursor = Cursors.Hand;
+            box.ToolTip = "Calculation · select Calculate, then tap to edit its variables and formulas";
+            box.PreviewMouseLeftButtonDown += CalculationCard_Down;
+        }
         InkCanvas.SetLeft(box, text.X); InkCanvas.SetTop(box, text.Y);
         box.GotKeyboardFocus += (_, _) =>
         {
+            if (text.CalculationSource is not null || toolName != "Text") return;
             if (textEditor == box) return;
             CommitTextEditor(); textEditor = box; textBeforeEdit = session?.Texts.FirstOrDefault(t => t.Id == (Guid)box.Tag);
             selectedTextId = (Guid)box.Tag;

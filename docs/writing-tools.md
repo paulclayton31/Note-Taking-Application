@@ -4,7 +4,7 @@ See the [release notes and downloads](releases/v0.3.5.md).
 
 ## Thin tool rail
 
-All seven tools remain on the writing palette. Tap a tool to switch, then tap the active tool again to open or close its vertical rail. The settings button does the same. The rail is 64 DIPs wide, roughly the thickness of the main toolbar, and floats above the page without narrowing the writing viewport. Starting a pen stroke or editing text dismisses it.
+All eight tools remain on the writing palette. Tap a tool to switch, then tap the active tool again to open or close its vertical rail. The settings button does the same. The rail is 64 DIPs wide, roughly the thickness of the main toolbar, and floats above the page without narrowing the writing viewport. Starting a pen stroke or editing text dismisses it.
 
 Pens appear as colored buttons. Swipe the pen list to reach more; short windows replace the list with a button that opens all pens. The **+** button adds a pen. Drag the vertical thickness slider to change width. **Fountain** enables pressure-sensitive ink; **Ball** uses monoline. The ellipsis opens less-used options, including scribble erasing, precision erasing, shapes, text size, and toolbar docking.
 
@@ -69,3 +69,7 @@ The shape keeps the selected ink color and thickness and uses an even-width outl
 Hold the pen's **side/barrel button before touching the paper**, then circle the objects to select. The chosen toolbar tool and pen settings are retained. Release the button whenever you like during that gesture: the lasso completes when you lift. The selection stays available for moving/resizing and its Copy, Duplicate, Delete, and Paste actions. Tap the selection or its actions button to open the menu. Touching blank paper without the side button resumes your previous tool; selecting a toolbar tool, leaving the workspace, or changing pages also clears the temporary override. Keyboard selection shortcuts work during temporary selection.
 
 This uses the barrel-button signal exposed to Windows ink input, rather than the pen's top/Bluetooth shortcut button. Pens or driver mappings that do not expose that signal cannot activate this shortcut. Physical Surface testing is still needed for device-specific button behavior and handwriting feel.
+
+## Calculate (v0.4 preview)
+
+Press **C** or choose **Calculate**, circle handwritten variables and expressions, then **Review selection**. Correct the recognition and choose **Add to page**. With Calculate selected, tap a saved card to edit its variables and recalculate. Original ink stays intact. The calculator supports numerical expressions; units and symbolic solving are not supported yet. See the [calculation guide](calculations.md) for examples, supported math, and Windows handwriting setup.

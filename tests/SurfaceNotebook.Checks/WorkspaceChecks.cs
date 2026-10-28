@@ -98,7 +98,7 @@ internal static partial class Program
         window.ApplyPaper(a4, entireNotebook: true);
         Require(viewport.PaperWidth == a4.Width && viewport.PaperHeight == a4.Height &&
             InkMapper.Capture(ink.Strokes).Strokes[0].Points.SequenceEqual(before.Points), "Paper settings changed existing ink.");
-        foreach (var name in new[] { "PenButton", "HighlighterButton", "EraserButton", "LassoButton", "ShapeButton", "TextButton", "HandButton" })
+        foreach (var name in new[] { "PenButton", "HighlighterButton", "EraserButton", "LassoButton", "ShapeButton", "TextButton", "CalculateButton", "HandButton" })
         {
             ((RadioButton)window.FindName(name)).IsChecked = true;
             window.CloseToolInspector();

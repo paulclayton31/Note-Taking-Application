@@ -48,6 +48,17 @@ public static class PreviewCapture
             window.ToggleFocus();
             await CaptureAsync(window, Path.Combine(outputDirectory, "portrait.png"), 960, 1440);
             await CaptureAsync(window, Path.Combine(outputDirectory, "compact-window.png"), 720, 700);
+            await window.CreatePageAsync("Live calculations");
+            const string calculation = "F = m * a\nm = 2\na = 3\nenergy = 0.5 * m * 4^2";
+            window.SaveCalculation(calculation, new Point(70, 160));
+            ((System.Windows.Controls.RadioButton)window.FindName("CalculateButton")).IsChecked = true;
+            await CaptureAsync(window, Path.Combine(outputDirectory, "calculations.png"), 1440, 1000);
+            var editor = new Controls.CalculationEditor { Width = 500, Height = 640 };
+            editor.Prepare([], calculation, false);
+            await CaptureElementAsync(editor, Path.Combine(outputDirectory, "calculation-review.png"), 500, 640);
+            window.SetDarkTheme(true);
+            await CaptureElementAsync(editor, Path.Combine(outputDirectory, "calculation-review-dark.png"), 500, 640);
+            editor.Stop(); window.SetDarkTheme(false);
             if (!await window.ShutdownLibraryAsync()) throw new IOException("Preview library did not flush.");
             window = null;
         }
@@ -72,9 +83,9 @@ public static class PreviewCapture
         var png = new PngBitmapEncoder(); png.Frames.Add(BitmapFrame.Create(image));
         using var stream = File.Create(file); png.Save(stream);
     }
-    private static async Task CaptureElementAsync(FrameworkElement element, string file)
+    private static async Task CaptureElementAsync(FrameworkElement element, string file, int width = 300, int height = 1000)
     {
-        element.Measure(new Size(300, 1000)); element.Arrange(new Rect(element.DesiredSize)); element.UpdateLayout();
+        element.Measure(new Size(width, height)); element.Arrange(new Rect(element.DesiredSize)); element.UpdateLayout();
         await Dispatcher.Yield(DispatcherPriority.Render);
         var image = new RenderTargetBitmap((int)Math.Ceiling(element.ActualWidth), (int)Math.Ceiling(element.ActualHeight), 96, 96, PixelFormats.Pbgra32);
         image.Render(element);

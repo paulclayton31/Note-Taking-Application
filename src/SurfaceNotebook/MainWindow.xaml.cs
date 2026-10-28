@@ -475,7 +475,7 @@ public partial class MainWindow : Window
         else if (Keyboard.Modifiers == ModifierKeys.None && Keyboard.FocusedElement is not TextBox and not ComboBox && !IsToolInspectorOpen)
         {
             var button = e.Key switch { Key.P => PenButton, Key.H => HighlighterButton, Key.E => EraserButton, Key.L => LassoButton,
-                Key.S => ShapeButton, Key.T => TextButton, Key.V => HandButton, _ => null };
+                Key.S => ShapeButton, Key.T => TextButton, Key.C => CalculateButton, Key.V => HandButton, _ => null };
             if (button is null) return;
             if (button.IsChecked == true) ToggleToolInspector(); else button.IsChecked = true;
         }

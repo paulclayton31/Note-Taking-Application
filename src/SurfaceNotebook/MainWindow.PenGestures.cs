@@ -147,7 +147,7 @@ public partial class MainWindow
         if (active) CommitTextEditor();
         barrelSelection = active;
         ApplyPen();
-        foreach (TextBox box in InkSurface.Children) box.IsHitTestVisible = !active && toolName == "Text";
+        UpdateTextInputModes();
         UpdateSelectionActions();
         InputHint.Text = active ? "Side-button lasso · circle objects · tap the selection for actions" : ToolHint.Text;
     }

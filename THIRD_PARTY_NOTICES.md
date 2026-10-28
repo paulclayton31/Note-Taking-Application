@@ -1,5 +1,14 @@
 # Third-party notices
 
+## Windows SDK .NET projections
+
+Local handwriting recognition uses the Windows SDK .NET projections and WinRT runtime support supplied by Microsoft.Windows.SDK.NET.Ref.
+
+© Microsoft Corporation. All rights reserved.
+
+Windows SDK license terms: https://aka.ms/WinSDKLicenseURL
+Project: https://github.com/microsoft/CsWinRT
+
 ## PDFsharp-WPF 6.2.4
 
 https://github.com/empira/PDFsharp/tree/v6.2.4
