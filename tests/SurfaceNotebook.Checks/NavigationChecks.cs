@@ -124,7 +124,10 @@ internal static partial class Program
         grip.RaiseEvent(new DragDeltaEventArgs(-90, -120) { RoutedEvent = Thumb.DragDeltaEvent });
         grip.RaiseEvent(new DragCompletedEventArgs(-90, -120, false) { RoutedEvent = Thumb.DragCompletedEvent });
         var moved = ToolbarBounds(window);
-        Require(Math.Abs(moved.Left - before.Left + 90) < .1 && Math.Abs(moved.Top - before.Top + 120) < .1, "Mouse toolbar dragging did not move the palette.");
+        var expectedLeft = Math.Max(12, before.Left - 90);
+        var expectedTop = Math.Max(12, before.Top - 120);
+        Require(Math.Abs(moved.Left - expectedLeft) < .1 && Math.Abs(moved.Top - expectedTop) < .1,
+            $"Mouse toolbar dragging did not move/clamp the palette: before {before}, after {moved}, stage {stage.RenderSize}.");
         var viewport = (PageViewport)window.FindName("Viewport"); var viewBefore = viewport.View;
         var ink = (PenCanvas)window.FindName("InkSurface"); var inkCount = ink.Strokes.Count;
         var finger = new Finger(81) { Position = new Point(250, 250) };
@@ -132,7 +135,7 @@ internal static partial class Program
         finger.Position = new Point(300, 210); finger.Send(grip, UIElement.PreviewTouchMoveEvent);
         finger.Send(grip, UIElement.PreviewTouchUpEvent);
         var touched = ToolbarBounds(window);
-        Require(Math.Abs(touched.Left - moved.Left - 50) < .1 && Math.Abs(touched.Top - moved.Top + 40) < .1,
+        Require(Math.Abs(touched.Left - Math.Min(stage.ActualWidth - moved.Width - 12, moved.Left + 50)) < .1 && Math.Abs(touched.Top - Math.Max(12, moved.Top - 40)) < .1,
             "Touch did not drag the toolbar.");
         Require(viewport.View == viewBefore && ink.Strokes.Count == inkCount, "Moving the toolbar panned the paper or created ink.");
         grip.RaiseEvent(new DragDeltaEventArgs(100000, 100000) { RoutedEvent = Thumb.DragDeltaEvent });

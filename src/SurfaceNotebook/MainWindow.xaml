@@ -325,7 +325,7 @@
                             </ScrollViewer>
                         </Border>
                     </Popup>
-                    <Border x:Name="CalculationActionsPanel" Visibility="Collapsed" HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="12" Padding="12" MaxWidth="320" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="12">
+                    <Border x:Name="CalculationActionsPanel" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="12,80,12,12" Padding="12" MaxWidth="320" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="12">
                         <StackPanel>
                             <TextBlock Text="Calculate · Preview" FontWeight="SemiBold"/>
                             <TextBlock Text="Circle handwritten variables and expressions, then review. Tap a calculation card to edit it." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="12" Margin="0,5,0,8"/>
