@@ -40,7 +40,10 @@ public sealed record PaperSettings(
     }
 }
 
-public sealed record PageText(Guid Id, double X, double Y, double Width, double FontSize, string Color, string Text);
+// CalculationSource is optional metadata in the existing objects JSON. Older apps
+// still display the cached Text; no SQLite migration or new portable format is needed.
+public sealed record PageText(Guid Id, double X, double Y, double Width, double FontSize, string Color, string Text,
+    string? CalculationSource = null);
 
 public sealed record WorkspacePreferences(bool Dark = false, bool Sidebar = true, bool ToolbarBottom = false,
     List<Guid>? OpenPages = null, List<Guid>? Favorites = null, List<Guid>? OpenNotebooks = null,

@@ -449,7 +449,8 @@ public partial class MainWindow : Window
             e.Handled = true; return;
         }
         if (busy) return;
-        if (Keyboard.FocusedElement is not TextBox && EffectiveLasso)
+        var editingText = Keyboard.FocusedElement is TextBox { IsReadOnly: false };
+        if (!editingText && EffectiveLasso)
         {
             Action? action = Keyboard.Modifiers == ModifierKeys.Control ? e.Key switch
             {
@@ -461,8 +462,8 @@ public partial class MainWindow : Window
         {
             switch (e.Key)
             {
-                case Key.Z: if (Keyboard.FocusedElement is TextBox) return; Undo_Click(this, e); break;
-                case Key.Y: if (Keyboard.FocusedElement is TextBox) return; Redo_Click(this, e); break;
+                case Key.Z: if (editingText) return; Undo_Click(this, e); break;
+                case Key.Y: if (editingText) return; Redo_Click(this, e); break;
                 case Key.S: Flush_Click(this, e); break;
                 case Key.N: AddPage_Click(this, e); break;
                 case Key.O: Import_Click(this, e); break;
@@ -472,10 +473,10 @@ public partial class MainWindow : Window
         }
         else if (Keyboard.Modifiers == ModifierKeys.Alt && e.Key is Key.Up or Key.Down)
         { _ = NavigatePageAsync(e.Key == Key.Up ? -1 : 1); }
-        else if (Keyboard.Modifiers == ModifierKeys.None && Keyboard.FocusedElement is not TextBox and not ComboBox && !IsToolInspectorOpen)
+        else if (Keyboard.Modifiers == ModifierKeys.None && !editingText && Keyboard.FocusedElement is not ComboBox && !IsToolInspectorOpen)
         {
             var button = e.Key switch { Key.P => PenButton, Key.H => HighlighterButton, Key.E => EraserButton, Key.L => LassoButton,
-                Key.S => ShapeButton, Key.T => TextButton, Key.V => HandButton, _ => null };
+                Key.S => ShapeButton, Key.T => TextButton, Key.C => CalculateButton, Key.V => HandButton, _ => null };
             if (button is null) return;
             if (button.IsChecked == true) ToggleToolInspector(); else button.IsChecked = true;
         }

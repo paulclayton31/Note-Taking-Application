@@ -81,7 +81,9 @@ public partial class MainWindow
     private void ApplyToolbarPosition()
     {
         if (MainStage.ActualWidth > 0) ToolbarFrame.MaxWidth = Math.Max(64, MainStage.ActualWidth - 24);
-        QuickPenStrip.Visibility = MainStage.ActualWidth >= 860 ? Visibility.Visible : Visibility.Collapsed;
+        // Keep useful dragging room with eight tools. Saved pens remain in the
+        // rail when the viewport cannot comfortably fit the quick strip.
+        QuickPenStrip.Visibility = MainStage.ActualWidth >= 1100 ? Visibility.Visible : Visibility.Collapsed;
         var travel = ToolbarTravel;
         toolbarTranslation.X = travel.X * toolbarPosition.Horizontal;
         toolbarTranslation.Y = travel.Y * toolbarPosition.Vertical;

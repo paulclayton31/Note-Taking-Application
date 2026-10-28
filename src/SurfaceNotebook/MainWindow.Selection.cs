@@ -83,6 +83,7 @@ public partial class MainWindow
 
     private void UpdateSelectionActions()
     {
+        UpdateCalculationActions();
         if (SelectionActionsButton is null) return;
         var visible = !busy && !restoring && !homeVisible && EffectiveLasso && HasSelection;
         SelectionActionsButton.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;

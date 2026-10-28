@@ -42,6 +42,8 @@ jobs:
         run: |
           dotnet build SurfaceNotebook.slnx -c Release
           if ($LASTEXITCODE -ne 0) { throw 'Build failed' }
+          dotnet run --project tests/SurfaceNotebook.CalculationChecks -c Release --no-build
+          if ($LASTEXITCODE -ne 0) { throw 'Calculation checks failed' }
           dotnet run --project tests/SurfaceNotebook.Checks -c Release --no-build
           if ($LASTEXITCODE -ne 0) { throw 'Application checks failed' }
       - name: Package standalone executables
@@ -82,7 +84,7 @@ jobs:
             throw 'Preview capture timed out'
           }
           if ($appProcess.ExitCode -ne 0) { throw "Preview capture failed: $($appProcess.ExitCode)" }
-          foreach ($image in @('home-light.png', 'home-dark.png', 'workspace-light.png', 'workspace-dark.png', 'paper-settings.png', 'focus-mode.png', 'portrait.png', 'compact-window.png', 'tool-inspector.png', 'tool-inspector-portrait.png', 'tool-inspector-dark.png', 'add-pen.png')) {
+          foreach ($image in @('home-light.png', 'home-dark.png', 'workspace-light.png', 'workspace-dark.png', 'paper-settings.png', 'focus-mode.png', 'portrait.png', 'compact-window.png', 'tool-inspector.png', 'tool-inspector-portrait.png', 'tool-inspector-dark.png', 'add-pen.png', 'calculations.png', 'calculation-review.png', 'calculation-review-dark.png')) {
             if (-not (Test-Path -LiteralPath (Join-Path $outputDirectory $image))) { throw "Missing screenshot: $image" }
           }
       - uses: actions/upload-artifact@v4

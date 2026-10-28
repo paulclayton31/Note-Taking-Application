@@ -14,6 +14,8 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Build
         run: dotnet build SurfaceNotebook.slnx --configuration Release
+      - name: Check calculation engine
+        run: dotnet run --project tests/SurfaceNotebook.CalculationChecks --configuration Release --no-build
       - name: Check page storage, history, and WPF initialization
         shell: pwsh
         run: |

@@ -19,6 +19,7 @@ public partial class MainWindow
     }
     private void ToggleToolInspector()
     {
+        if (CalculationMode) { OpenCalculationEditor(useSelection: true); return; }
         if (IsToolInspectorOpen) CloseToolInspector(); else ShowToolInspector();
     }
     public void ShowToolInspector()

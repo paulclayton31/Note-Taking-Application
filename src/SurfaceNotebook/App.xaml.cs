@@ -42,6 +42,12 @@ public partial class App : Application
                 var paper = Models.PaperSettings.Default;
                 await PdfService.ExportAsync(pdfPath, [new Models.PageDocument(Models.PageDocument.CurrentVersion, paper.Width, paper.Height, [], paper)], "Startup check");
                 if ((await PdfService.ImportAsync(pdfPath)).Count != 1) throw new IOException("Bundled PDF rendering verification failed.");
+                if (CalculationEngine.Evaluate("F = m * a\nm = 2\na = 3").Rows[0].Value != 6)
+                    throw new IOException("Bundled calculation verification failed.");
+                var recognitionInk = new Models.InkStroke(Guid.NewGuid(), "#FF24324A", 2.5, true,
+                    [new(20, 20, .5f), new(30, 40, .5f), new(40, 20, .5f)]);
+                var recognition = await HandwritingRecognition.RecognizeAsync([recognitionInk]).WaitAsync(TimeSpan.FromSeconds(25));
+                Console.WriteLine($"Bundled handwriting service available: {recognition.RecognizerAvailable}");
                 if (!await window.ShutdownLibraryAsync()) throw new IOException("Notebook startup verification could not flush storage.");
                 Shutdown(0);
             }

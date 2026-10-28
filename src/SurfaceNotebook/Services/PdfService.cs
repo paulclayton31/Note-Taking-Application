@@ -99,10 +99,14 @@ public static class PdfService
                 }
                 foreach (var text in document.Texts ?? [])
                 {
+                    var inset = text.CalculationSource is null ? 2 : 9;
                     var formatted = new FormattedText(text.Text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                        new Typeface("Segoe UI Variable, Segoe UI"), text.FontSize, Brushes.Black, 1) { MaxTextWidth = Math.Max(1, text.Width - 4) };
+                        new Typeface("Segoe UI Variable, Segoe UI"), text.FontSize, Brushes.Black, 1) { MaxTextWidth = Math.Max(1, text.Width - inset * 2) };
+                    if (text.CalculationSource is not null)
+                        gfx.DrawRectangle(new XPen(XColor.FromArgb(96, 92, 85, 179), 1), new XSolidBrush(XColor.FromArgb(16, 92, 85, 179)),
+                            text.X, text.Y, text.Width, formatted.Height + inset * 2);
                     var color = (Color)ColorConverter.ConvertFromString(text.Color);
-                    DrawGeometry(gfx, formatted.BuildGeometry(new Point(text.X + 2, text.Y + 2)), XColor.FromArgb(color.A, color.R, color.G, color.B));
+                    DrawGeometry(gfx, formatted.BuildGeometry(new Point(text.X + inset, text.Y + inset)), XColor.FromArgb(color.A, color.R, color.G, color.B));
                 }
             }
             cancellation.ThrowIfCancellationRequested();

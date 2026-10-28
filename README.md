@@ -6,6 +6,8 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Download and run
 
+**New prerelease: [v0.4.0-preview.1](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.4.0-preview.1)** adds a separate **Calculate** tool: circle handwritten variables and expressions, review Windows' local recognition, and save an editable result card while preserving the original ink. [How to use calculations](docs/calculations.md). This is an experimental numerical calculator; units, symbolic solving, and graphs are not supported yet. v0.3.5 remains stable.
+
 **[Surface Notebook v0.3.5](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.5)** is the stable release: a Home library with folders, a compact writing toolbar, thin vertical tool rail, pens that save edits automatically, color-wheel selection, lasso actions, easier undoable scribble erasing, notebook copy/paste and deletion, fully closable tabs, smoother page navigation, PDF import/export, easier rounded/vertical scratch-outs, draw-and-hold shapes, and Surface Pen side-button lasso. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md) · [PDF import/export guide](docs/pdf-workflows.md).
 
 ![Your notebook library](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.5/home-light.png)
