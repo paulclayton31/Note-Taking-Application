@@ -55,7 +55,7 @@ public static class HandwritingRecognition
                     : "Check every variable, number, and operator before adding the result. Handwriting recognition can make mistakes.", true);
             }
             catch (OperationCanceledException) { throw; }
-            catch (Exception ex) when (ex is COMException or InvalidOperationException or NotSupportedException or TypeLoadException)
+            catch (Exception ex) when (ex is COMException or InvalidOperationException or NotSupportedException)
             { return Unavailable(); }
         }, cancellation);
     }
