@@ -48,6 +48,7 @@ internal static partial class Program
             ExecuteCheck("CheckPageScrolling", () => CheckPageScrolling(Path.Combine(root, "page-scroll")));
             ExecuteCheck("CheckLibraryActions", () => CheckLibraryActions(Path.Combine(root, "library-actions")));
             ExecuteCheck("CheckColorWheel", () => CheckColorWheel());
+            ExecuteCheck("CheckSavedColors", () => CheckSavedColors(Path.Combine(root, "saved-colors")));
             ExecuteCheck("CheckPenRail", () => CheckPenRail(Path.Combine(root, "pen-rail")));
             if (failures.Count > 0) throw new AggregateException("Regression checks failed.", failures);
             Console.WriteLine("PASS: migrations and backups; paper geometry/templates; ink and text history; autosave/recovery; pen-only input/palm suppression; notebook tabs, close-button layout at 100–200% scale, and last-page restoration; toolbar movement and saved placement; Home folders/search/stars; pen presets; touch zoom; independent page duplication and transactional reordering.");

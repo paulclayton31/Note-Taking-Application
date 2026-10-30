@@ -6,11 +6,11 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Download and run
 
-**[Surface Notebook v0.3.5](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.5)** is the stable release: a Home library with folders, a compact writing toolbar, thin vertical tool rail, pens that save edits automatically, color-wheel selection, lasso actions, easier undoable scribble erasing, notebook copy/paste and deletion, fully closable tabs, smoother page navigation, PDF import/export, easier rounded/vertical scratch-outs, draw-and-hold shapes, and Surface Pen side-button lasso. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md) · [PDF import/export guide](docs/pdf-workflows.md).
+**[Surface Notebook v0.3.6](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.6)** is the stable release: a Home library with folders, a compact writing toolbar, thin vertical tool rail, pens that save edits automatically, color-wheel selection, lasso actions, easier undoable scribble erasing, notebook copy/paste and deletion, fully closable tabs, smoother page navigation, PDF import/export, easier rounded/vertical scratch-outs, draw-and-hold shapes, and Surface Pen side-button lasso. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md) · [PDF import/export guide](docs/pdf-workflows.md).
 
-![Your notebook library](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.5/home-light.png)
+![Your notebook library](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.6/home-light.png)
 
-[See the writing workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.5/workspace-light.png) · [Tool customization sidebar](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.5/tool-inspector.png)
+[See the writing workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.6/workspace-light.png) · [Tool customization sidebar](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.6/tool-inspector.png)
 
 **[Download the latest Windows app](https://github.com/paulclayton31/Note-Taking-Application/releases/latest)** from the repository's **Releases** section.
 
@@ -23,9 +23,9 @@ The automatically generated **Source code** downloads contain the project files.
 
 ## Project status
 
-**v0.3.5** refines the paper-first design of the **C# / .NET 10 / WPF notebook app**. The workspace retains v0.2's multiple notebooks/pages, ordered background autosave, committed-note recovery, and strictly pen-only writing. Fingers pan and zoom in every tool. The default pressure/curve settings remain intact.
+**v0.3.6** refines the paper-first design of the **C# / .NET 10 / WPF notebook app**. The workspace retains v0.2's multiple notebooks/pages, ordered background autosave, committed-note recovery, and strictly pen-only writing. Fingers pan and zoom in every tool. The default pressure/curve settings remain intact.
 
-The app supports pen/highlighter, stroke/precision erasing, native lasso transforms and copy/duplicate/delete/paste, geometric ink shapes, typed text, a draggable/dockable palette, a thin floating tool rail, automatic pen-edit saving, a color wheel, Fountain/Ball buttons, easier undoable scribble erasing, paper customization, notebook tabs, nested folders, recents, stars, search, saved pens, touch zoom, page duplication/reordering and deletion, independent notebook copy/paste, fully closable tabs, smooth page navigation, PDF notebooks and export, vertical scratch-outs, draw-and-hold shape snapping, Surface Pen side-button selection, and focus mode. Existing older libraries are upgraded with a consistent SQLite backup. v0.3.5 keeps schema 4 from v0.3.3; older libraries are upgraded after creating a consistent `library-v032-backup.db` backup. Older app versions cannot open schema 4. See the [release and upgrade notes](docs/releases/v0.3.5.md).
+The app supports pen/highlighter, stroke/precision erasing, native lasso transforms and copy/duplicate/delete/paste, geometric ink shapes, typed text, a draggable/dockable palette, a thin floating tool rail, automatic pen-edit saving, a color wheel, Fountain/Ball buttons, easier undoable scribble erasing, paper customization, notebook tabs, nested folders, recents, stars, search, saved pens, touch zoom, page duplication/reordering and deletion, independent notebook copy/paste, fully closable tabs, smooth page navigation, PDF notebooks and export, vertical scratch-outs, draw-and-hold shape snapping, Surface Pen side-button selection, and focus mode. Existing older libraries are upgraded with a consistent SQLite backup. v0.3.6 keeps schema 4 from v0.3.3; older libraries are upgraded after creating a consistent `library-v032-backup.db` backup. Older app versions cannot open schema 4. See the [release and upgrade notes](docs/releases/v0.3.6.md).
 
 The capabilities below describe the broader intended product. Advanced PDF editing, STEM objects, AI, and cloud sync are future work. Physical pen/palm/touch validation is still required on each Surface model.
 

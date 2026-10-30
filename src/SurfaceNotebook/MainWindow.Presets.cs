@@ -44,6 +44,7 @@ public partial class MainWindow
                 savedPens.Add(recovered); activePreset = recovered.Id;
             }
             else UpdateActivePen();
+            savedColors.AddRange((settings.SavedColors ?? savedPens.Select(p => p.Color).ToList()).Where(PaperSettings.IsColor).Distinct().Take(24));
         }
         finally { changingTool = false; restoringWriting = false; }
         ApplyPen(); RefreshSavedPens();
@@ -63,7 +64,7 @@ public partial class MainWindow
         var pen = savedPens.FirstOrDefault(p => p.Id == activePreset);
         return new(savedPens.ToList(), activePreset, pen?.Color ?? penColor, pen?.Width ?? penWidth,
             pen?.Monoline ?? BallStyleButton.IsChecked == true, highlighterColor, highlighterWidth, eraserSize,
-            EraserModePicker.SelectedIndex == 1, ScribbleEraseToggle.IsChecked != false, HoldShapesToggle.IsChecked != false);
+            EraserModePicker.SelectedIndex == 1, ScribbleEraseToggle.IsChecked != false, HoldShapesToggle.IsChecked != false, savedColors.ToList());
     }
     private void UpdateActivePen()
     {
@@ -99,9 +100,7 @@ public partial class MainWindow
         if (SavedPenList is null) return;
         var items = savedPens.Select(p => new PresetItem(p, toolName == "Pen" && p.Id == activePreset)).ToList();
         SavedPenList.ItemsSource = items;
-        var quick = items.Take(3).ToList();
-        if (items.FirstOrDefault(p => p.Selected) is { } selected && !quick.Contains(selected)) quick[^1] = selected;
-        QuickPenList.ItemsSource = quick;
+        RefreshSavedColors();
         var preset = savedPens.FirstOrDefault(p => p.Id == activePreset);
         RailPensButton.ToolTip = preset is null ? "Your pens" : $"{preset.Name} · {preset.Description} · choose a pen";
         RailColorButton.ToolTip = "Choose ink color";
