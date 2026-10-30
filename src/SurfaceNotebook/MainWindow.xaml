@@ -211,17 +211,6 @@
                                 <Button x:Name="UndoButton" Click="Undo_Click" Padding="12" ToolTip="Undo · Ctrl+Z"><local:WorkspaceIcon Kind="Undo" Foreground="{DynamicResource Muted}"/></Button>
                                 <Button x:Name="RedoButton" Click="Redo_Click" Padding="12" ToolTip="Redo · Ctrl+Y"><local:WorkspaceIcon Kind="Redo" Foreground="{DynamicResource Muted}"/></Button>
                                 <Border Width="1" Height="24" Background="{DynamicResource Stroke}" Margin="7,10"/>
-                                <Border x:Name="QuickPenStrip" BorderBrush="{DynamicResource Stroke}" BorderThickness="1,0,0,0" Margin="4,0" Padding="7,0,0,0">
-                                    <ItemsControl x:Name="QuickPenList">
-                                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
-                                        <ItemsControl.ItemTemplate><DataTemplate>
-                                            <Button Tag="{Binding Id}" Click="ApplyPreset_Click" Width="44" Height="44" Padding="6" ToolTip="{Binding Name}" AutomationProperties.Name="{Binding Name, StringFormat=Use saved pen {0}}">
-                                                <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="Transparent"/></DataTrigger></Style.Triggers></Style></Button.Style>
-                                                <Grid Width="30" Height="30"><local:WorkspaceIcon Kind="{Binding Icon}" Foreground="{DynamicResource Muted}" Width="20" Height="20" HorizontalAlignment="Center" VerticalAlignment="Top"/><Border Background="{Binding Color}" BorderBrush="{DynamicResource Muted}" BorderThickness=".6" Height="3" Width="17" CornerRadius="1.5" VerticalAlignment="Bottom" Margin="0,0,0,2"/></Grid>
-                                            </Button>
-                                        </DataTemplate></ItemsControl.ItemTemplate>
-                                    </ItemsControl>
-                                </Border>
                                 <Button x:Name="ColorButton" Click="ColorMenu_Click" Width="44" Height="44" Padding="10" ToolTip="Choose ink color">
                                     <Ellipse x:Name="CurrentColor" Fill="#FF24324A" Width="22" Height="22" Stroke="{DynamicResource Muted}" StrokeThickness="1"/>
                                 </Button>
@@ -233,6 +222,23 @@
                         </DockPanel>
                     </Border>
                     </Canvas>
+                    <Border x:Name="SavedColorBar" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="12" Padding="5" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="14">
+                        <DockPanel>
+                            <Button x:Name="AddSavedColorButton" DockPanel.Dock="Right" Click="AddSavedColor_Click" Width="44" Height="44" Padding="12" ToolTip="Add a saved color" AutomationProperties.Name="Add saved color"><local:WorkspaceIcon Kind="Plus" Foreground="{DynamicResource Muted}"/></Button>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly">
+                                <ItemsControl x:Name="SavedColorList">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate><DataTemplate>
+                                        <Button Tag="{Binding Color}" Click="SavedColor_Click" Width="44" Height="44" Padding="9" ToolTip="{Binding Color}" AutomationProperties.Name="{Binding Color, StringFormat=Use pen color {0}}">
+                                            <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding Selected}" Value="True"><Setter Property="Background" Value="{DynamicResource Selected}"/><Setter Property="BorderBrush" Value="{DynamicResource Accent}"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                                            <Ellipse Fill="{Binding Color}" Stroke="{DynamicResource Muted}" StrokeThickness="1" Width="24" Height="24"/>
+                                            <Button.ContextMenu><ContextMenu><MenuItem Header="Remove color" Click="RemoveSavedColor_Click"/></ContextMenu></Button.ContextMenu>
+                                        </Button>
+                                    </DataTemplate></ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </DockPanel>
+                    </Border>
                     <Border x:Name="ToolInspector" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Width="64" Margin="12" Padding="5" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="14">
                         <StackPanel>
                             <StackPanel x:Name="SavedPensPanel">

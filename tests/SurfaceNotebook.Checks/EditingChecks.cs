@@ -40,7 +40,7 @@ internal static partial class Program
         var clipboard = Clipboard.GetDataObject();
         try
         {
-            Require(((ItemsControl)window.FindName("QuickPenList")).Items.Count == 3, "Saved pens are missing from the writing palette.");
+            Require(((ItemsControl)window.FindName("SavedColorList")).Items.Count == 3, "Saved colors are missing from the bottom bar.");
             var penButton = (RadioButton)window.FindName("PenButton");
             penButton.RaiseEvent(new MouseButtonEventArgs(Mouse.PrimaryDevice, Environment.TickCount, MouseButton.Left) { RoutedEvent = UIElement.PreviewMouseLeftButtonDownEvent });
             penButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent)); ArrangeWorkspace(window, 1440, 1000);
@@ -53,7 +53,8 @@ internal static partial class Program
             ((RadioButton)window.FindName("PenButton")).IsChecked = true;
             Require(ink.DefaultDrawingAttributes.Color == Color.FromRgb(0x12, 0x3a, 0xbc), "Switching tools lost a custom pen color.");
             var preset = window.AddPen("Custom study pen"); window.ApplyPenPreset(preset.Id);
-            Require(((ItemsControl)window.FindName("QuickPenList")).Items.OfType<PresetItem>().Any(p => p.Id == preset.Id && p.Selected),
+            window.AddSavedColor(preset.Color);
+            Require(((ItemsControl)window.FindName("SavedColorList")).Items.OfType<MainWindow.SavedColorItem>().Any(p => p.Color == preset.Color && p.Selected),
                 "The active saved pen is not available on the palette.");
             Require(InkMapper.Capture(ink.Strokes).Strokes.Single() == original ||
                 InkMapper.Capture(ink.Strokes).Strokes.Single().Points.SequenceEqual(original.Points), "Customizing tools changed existing handwriting.");

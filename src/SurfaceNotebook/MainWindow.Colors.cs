@@ -46,6 +46,8 @@ public partial class MainWindow
     }
     private void ConfigurePenEditor(bool adding)
     {
+        addingSavedColor = false;
+        PenEditorPopup.Placement = System.Windows.Controls.Primitives.PlacementMode.Left;
         creatingPen = adding; loadingPenEditor = true;
         try
         {
@@ -88,7 +90,12 @@ public partial class MainWindow
     }
     private void CommitPen_Click(object sender, RoutedEventArgs e)
     {
-        if (creatingPen)
+        if (addingSavedColor)
+        {
+            try { AddSavedColor(PenColorWheel.SelectedColor.ToString()); }
+            catch (InvalidOperationException ex) { ColorValidation.Text = ex.Message; return; }
+        }
+        else if (creatingPen)
         {
             try { AddPen(NewPenName.Text, PenColorWheel.SelectedColor.ToString(), monoline: NewBallButton.IsChecked == true); }
             catch (Exception ex) when (ex is ArgumentException or InvalidOperationException) { ColorValidation.Text = ex.Message; return; }
@@ -96,7 +103,7 @@ public partial class MainWindow
         PenEditorPopup.IsOpen = false;
     }
     private void ClosePenEditor_Click(object sender, RoutedEventArgs e) => PenEditorPopup.IsOpen = false;
-    private void PenEditor_Closed(object? sender, EventArgs e) => creatingPen = false;
+    private void PenEditor_Closed(object? sender, EventArgs e) => (creatingPen, addingSavedColor) = (false, false);
     private void AllPens_Click(object sender, RoutedEventArgs e)
     { PenEditorPopup.IsOpen = false; ToolOptionsPopup.IsOpen = false; AllPensPopup.IsOpen = !AllPensPopup.IsOpen; }
     private void ToolOptions_Click(object sender, RoutedEventArgs e)

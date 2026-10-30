@@ -141,6 +141,7 @@ public partial class MainWindow : Window
     {
         busy = value;
         Toolbar.IsEnabled = !value;
+        SavedColorBar.IsEnabled = !value;
         NavigationControls.IsEnabled = !value;
         DocumentTabs.IsEnabled = !value;
         PageHeader.IsEnabled = !value;

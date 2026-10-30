@@ -73,3 +73,7 @@ This uses the barrel-button signal exposed to Windows ink input, rather than the
 ## Calculate (v0.4 preview)
 
 Press **C** or choose **Calculate**, circle handwritten variables and expressions, then **Review selection**. Correct the recognition and choose **Add to page**. With Calculate selected, tap a saved card to edit its variables and recalculate. Original ink stays intact. The calculator supports numerical expressions; units and symbolic solving are not supported yet. See the [calculation guide](calculations.md) for examples, supported math, and Windows handwriting setup.
+
+## Saved color bar
+
+The floating bottom bar replaces the three saved-pen shortcuts on the main toolbar. Tap a color to resume Pen with the current thickness and Fountain/Ball style. Use + to add a color with the color wheel; canceling leaves the palette unchanged. Right-click or hold a swatch to remove it. Up to 24 colors save across restarts, including an intentionally empty palette. Existing saved-pen colors seed the palette on upgrade; saved pens remain available in the customization rail. Swipe the bar when colors overflow. The bar moves above a bottom-docked toolbar and follows Hide writing tools.

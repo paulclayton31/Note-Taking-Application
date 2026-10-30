@@ -184,6 +184,7 @@ public partial class MainWindow
     {
         toolbarHidden = !toolbarHidden;
         ToolbarFrame.Visibility = toolbarHidden ? Visibility.Collapsed : Visibility.Visible;
+        SavedColorBar.Visibility = toolbarHidden ? Visibility.Collapsed : Visibility.Visible;
         RevealToolbar.Visibility = toolbarHidden ? Visibility.Visible : Visibility.Collapsed;
         CloseToolInspector();
     }

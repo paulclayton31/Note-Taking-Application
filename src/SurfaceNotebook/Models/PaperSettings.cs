@@ -65,7 +65,7 @@ public sealed record PenPreset(Guid Id, string Name, string Color, double Width,
 public sealed record WritingPreferences(List<PenPreset>? Presets = null, Guid? ActivePreset = null,
     string PenColor = "#FF24324A", double PenWidth = 2.5, bool Monoline = false,
     string HighlighterColor = "#FFE7B944", double HighlighterWidth = 18, double EraserSize = 24, bool PrecisionEraser = false,
-    bool ScribbleErase = true, bool HoldShapes = true);
+    bool ScribbleErase = true, bool HoldShapes = true, List<string>? SavedColors = null);
 
 // Fractions of the available toolbar travel keep the palette reachable after
 // rotation, resizing, and opening side panels. Legacy preferences need no migration.
