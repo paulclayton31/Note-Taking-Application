@@ -81,7 +81,8 @@ public partial class MainWindow
     private void ApplyToolbarPosition()
     {
         if (MainStage.ActualWidth > 0) ToolbarFrame.MaxWidth = Math.Max(64, MainStage.ActualWidth - 24);
-        QuickPenStrip.Visibility = MainStage.ActualWidth >= 860 ? Visibility.Visible : Visibility.Collapsed;
+        SavedColorBar.MaxWidth = Math.Max(100, MainStage.ActualWidth - 24);
+        SavedColorBar.Margin = new Thickness(12, 12, 12, toolbarPosition.Vertical > .7 ? ToolbarFrame.ActualHeight + 24 : 12);
         var travel = ToolbarTravel;
         toolbarTranslation.X = travel.X * toolbarPosition.Horizontal;
         toolbarTranslation.Y = travel.Y * toolbarPosition.Vertical;
