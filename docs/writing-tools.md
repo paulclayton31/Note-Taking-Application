@@ -1,6 +1,6 @@
 # Writing tools
 
-See the [release notes and downloads](releases/v0.3.5.md).
+See the [release notes and downloads](releases/v0.3.6.md).
 
 ## Thin tool rail
 
