@@ -6,6 +6,24 @@ using SurfaceNotebook.Controls;
 
 internal static partial class Program
 {
+    private static void CheckWindowPlacement(string root)
+    {
+        var store=new SurfaceNotebook.Services.WindowPlacementStore(root);
+        var placement=new SurfaceNotebook.Services.WindowPlacement(180,90,1000,700,false);
+        store.Save(placement);
+        var desktop=new Rect(0,0,1920,1080);
+        Require(store.Load(desktop)==placement,"Window position and size did not round-trip.");
+        store.Save(placement with {Maximized=true});
+        Require(store.Load(desktop)?.Maximized==true,"Maximized state was not retained.");
+        store.Save(placement with {Left=3000,Top=-1200});
+        var moved=store.Load(desktop)!;
+        Require(desktop.Contains(new Rect(moved.Left,moved.Top,moved.Width,moved.Height)),"A detached display restored the window off-screen.");
+        var secondDisplay=new Rect(-1920,0,3840,1080);
+        store.Save(placement with {Left=-1500});
+        Require(store.Load(secondDisplay)?.Left==-1500,"Valid negative monitor coordinates were discarded.");
+        System.IO.File.WriteAllText(System.IO.Path.Combine(root,"window-layout.json"),"broken JSON");
+        Require(store.Load(desktop) is null,"Corrupt layout settings blocked startup.");
+    }
     private static void CheckCalculationGesturesAndGlyphs()
     {
         var view=new PageViewport { CalculationSelectionEnabled=true, CanStartCalculation = p => p.X>=0 && p.Y>=0 };

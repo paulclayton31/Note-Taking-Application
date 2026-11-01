@@ -102,3 +102,5 @@ GitHub Actions builds and checks the application on Windows. The release pipelin
 Calculation opens in the right sidebar while the page stays usable. Close it when finished and choose **Solution** beside the zoom controls to reopen it. Starting a new selection, area or typed question replaces the previous calculation. The sidebar keeps only the latest calculation during the current app session; it does not add a card or calculation history automatically.
 
 In Calculate mode, lasso with the pen or drag a rectangle with one finger/mouse; lifting opens the selection preview. Use two fingers to navigate. Close the sidebar with its top-right ✕.
+
+The app restores its last closed window position, size and maximized state on the next launch. Saved window placement is local to this Windows library folder.

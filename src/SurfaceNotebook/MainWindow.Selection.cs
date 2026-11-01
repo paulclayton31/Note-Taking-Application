@@ -61,7 +61,7 @@ public partial class MainWindow
         {
             if (!ready || busy || homeVisible) return;
             var pagePoint = Viewport.TranslatePoint(point, InkSurface);
-            if (pagePoint.X >= 0 && pagePoint.Y >= 0 && pagePoint.X <= InkSurface.Width && pagePoint.Y <= InkSurface.Height)
+            if (pagePoint.X >= 0 && pagePoint.Y >= 0 && pagePoint.X <= InkSurface.ActualWidth && pagePoint.Y <= InkSurface.ActualHeight)
                 OpenSelectionMenu(pagePoint);
         };
         Viewport.SelectionTapped += point => OpenSelectionMenu(Viewport.TranslatePoint(point, InkSurface));

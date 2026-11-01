@@ -13,14 +13,14 @@ public partial class MainWindow
     private Point CalculationPagePoint(Point point)
     {
         var p=Viewport.TranslatePoint(point,InkSurface);
-        return new Point(Math.Clamp(p.X,0,InkSurface.Width),Math.Clamp(p.Y,0,InkSurface.Height));
+        return new Point(Math.Clamp(p.X,0,InkSurface.ActualWidth),Math.Clamp(p.Y,0,InkSurface.ActualHeight));
     }
     private void InitializeCalculationGestures()
     {
         Deactivated += (_, _) => CancelCalculationArea();
         Viewport.CanStartCalculation = point => {
             var p=Viewport.TranslatePoint(point,InkSurface);
-            return ready && !busy && !homeVisible && CalculationMode && p.X>=0 && p.Y>=0 && p.X<=InkSurface.Width && p.Y<=InkSurface.Height;
+            return ready && !busy && !homeVisible && CalculationMode && p.X>=0 && p.Y>=0 && p.X<=InkSurface.ActualWidth && p.Y<=InkSurface.ActualHeight;
         };
         Viewport.CalculationStarted += (point,lasso) => {
             CommitTextEditor(); ClearPageSelection(); CloseToolInspector();

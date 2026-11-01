@@ -38,7 +38,7 @@ internal static partial class Program
             Require(ink.EditingMode == InkCanvasEditingMode.None && ((PageViewport)window.FindName("Viewport")).CalculationSelectionEnabled && window.FindName("CalculationActionsPanel") is null,
                 "Calculate did not expose its own selection workflow.");
             ink.Select(new StrokeCollection { ink.Strokes[0] });
-            Require(((Button)window.FindName("ReviewCalculationButton")).IsEnabled && ((Button)window.FindName("SelectionActionsButton")).Visibility == Visibility.Collapsed,
+            Require(window.FindName("ReviewCalculationButton") is null && ((Button)window.FindName("SelectionActionsButton")).Visibility == Visibility.Collapsed,
                 "Calculate selection was mixed with lasso actions.");
             card = window.SaveCalculation(source, new Point(80, 260));
             var box = ink.Children.OfType<TextBox>().Single();
