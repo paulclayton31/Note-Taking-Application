@@ -10,6 +10,18 @@ public sealed class PageViewport : Canvas
 {
     private readonly Dictionary<int, Point> contacts = [];
     private bool penInRange;
+    private readonly System.Windows.Threading.DispatcherTimer holdTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
+    private (int Id, Point Origin, long Started)? touchHold;
+    private bool holdOpened;
+    public event Action<Point>? TouchHeld;
+    public void CheckTouchHold(long now)
+    {
+        if (touchHold is not { } hold || now - hold.Started < 650) return;
+        touchHold = null; holdTimer.Stop();
+        if (!penInRange && contacts.Count == 1 && contacts.ContainsKey(hold.Id))
+        { holdOpened = true; selectionTap = null; TouchHeld?.Invoke(hold.Origin); }
+    }
+    private void CancelTouchHold() { touchHold = null; holdTimer.Stop(); }
     private Point? dragPoint;
     private double scrollBeyondEdge;
     private bool pinching;
@@ -27,6 +39,8 @@ public sealed class PageViewport : Canvas
 
     public PageViewport()
     {
+        holdTimer.Tick += (_, _) => CheckTouchHold(Environment.TickCount64);
+        Unloaded += (_, _) => { CancelTouchHold(); contacts.Clear(); };
         ClipToBounds = true;
         Background = new SolidColorBrush(Color.FromRgb(238, 241, 245));
         // Handle at the ancestor preview stage, before InkCanvas's device handlers.
@@ -80,6 +94,7 @@ public sealed class PageViewport : Canvas
 
     public void SetPenPresence(bool present)
     {
+        CancelTouchHold(); holdOpened = false;
         penInRange = present;
         contacts.Clear();
         selectionTap = null;
@@ -123,16 +138,23 @@ public sealed class PageViewport : Canvas
         {
             if (contacts.Count == 0)
             {
-                pinching = false; scrollBeyondEdge = 0;
+                pinching = false; scrollBeyondEdge = 0; holdOpened = false;
+                touchHold = (id, position, Environment.TickCount64); holdTimer.Start();
                 selectionTap = IsSelectionTapTarget?.Invoke(position) == true ? (id, position, Environment.TickCount64) : null;
             }
             contacts[id] = position;
-            if (contacts.Count > 1) { pinching = true; scrollBeyondEdge = 0; selectionTap = null; }
+            if (contacts.Count > 1) { CancelTouchHold(); pinching = true; scrollBeyondEdge = 0; selectionTap = null; }
         }
     }
     public void MoveContact(int id, Point position)
     {
         if (penInRange || !contacts.ContainsKey(id)) return;
+        if (holdOpened) return;
+        if (touchHold is { } hold)
+        {
+            if ((position-hold.Origin).Length <= 8) return;
+            CancelTouchHold();
+        }
         if (selectionTap is { } tap)
         {
             if ((position - tap.Origin).Length <= 8) return;
@@ -160,6 +182,8 @@ public sealed class PageViewport : Canvas
     public void EndContact(int id, bool canceled = false)
     {
         if (!contacts.Remove(id)) return;
+        CancelTouchHold();
+        if (holdOpened) { if (contacts.Count == 0) holdOpened = false; return; }
         var tap = selectionTap; selectionTap = null;
         if (contacts.Count == 0 && !canceled && !penInRange && !pinching &&
             tap is { } candidate && candidate.Id == id && Environment.TickCount64 - candidate.Started <= 500)

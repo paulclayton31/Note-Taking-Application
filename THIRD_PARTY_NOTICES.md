@@ -49,3 +49,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ## PDFium binary distribution chromium/8111
 
 bblanchon.PDFium.Win32 158.0.8111 provides the Windows x64 and ARM64 renderer. Distribution and component license notices are included in `licenses/PDFium-NOTICES.txt` and embedded in the executable. Source: https://github.com/bblanchon/pdfium-binaries/releases/tag/chromium/8111
+
+## WPF-Math 2.1.0
+
+Math rendering uses [WPF-Math](https://github.com/ForNeVeR/xaml-math), distributed under the MIT license, including its bundled font/resource notices. See the upstream repository for full notices.

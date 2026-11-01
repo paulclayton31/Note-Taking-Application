@@ -28,6 +28,12 @@ public static class CalculationCapture
             InkMapper.Restore(page).Draw(dc);
             foreach (var text in page.Texts ?? [])
             {
+                if (text.AiCalculation is { Steps: not null } ai)
+                {
+                    var rendered = SolutionCardRenderer.Render(ai, text.Width);
+                    dc.DrawImage(rendered, new Rect(text.X, text.Y, text.Width, rendered.Height));
+                    continue;
+                }
                 var formatted = new FormattedText(text.Text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
                     new Typeface("Segoe UI Variable, Segoe UI"), text.FontSize, PaperSurface.Brush(text.Color), 1)
                     { MaxTextWidth = Math.Max(1, text.Width - 4) };

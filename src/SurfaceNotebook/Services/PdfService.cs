@@ -105,6 +105,14 @@ public static class PdfService
                 }
                 foreach (var text in document.Texts ?? [])
                 {
+                    if (text.AiCalculation is { Steps: not null } ai)
+                    {
+                        var rendered = SolutionCardRenderer.Render(ai, text.Width);
+                        using var imageStream = new MemoryStream(SolutionCardRenderer.Png(rendered));
+                        using var cardImage = XImage.FromStream(imageStream);
+                        gfx.DrawImage(cardImage, text.X, text.Y, text.Width, rendered.Height);
+                        continue;
+                    }
                     var inset = text.CalculationSource is null ? 2 : 9;
                     var formatted = new FormattedText(text.Text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
                         new Typeface("Segoe UI Variable, Segoe UI"), text.FontSize, Brushes.Black, 1) { MaxTextWidth = Math.Max(1, text.Width - inset * 2) };

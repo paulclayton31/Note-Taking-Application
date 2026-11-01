@@ -53,11 +53,9 @@ public static class PreviewCapture
             window.SaveCalculation(calculation, new Point(70, 160));
             ((System.Windows.Controls.RadioButton)window.FindName("CalculateButton")).IsChecked = true;
             await CaptureAsync(window, Path.Combine(outputDirectory, "calculations.png"), 1440, 1000);
-            var example = new AiCalculation(GeminiCalculator.Model, "F = m × a; m = 2 kg; a = 3 m/s²", "F = 6 N", "Use Newton's second law.", calculation, Steps: [
-                new SolutionStep("Identify the known values", "Mass and acceleration are given in SI units.", ["m = 2 kg", "a = 3 m/s²"]),
-                new SolutionStep("Apply Newton's second law", "Substitute the mass and acceleration.", ["F = ma", "F = 2 × 3 = 6 N"]),
-                new SolutionStep("Check units", "The result has the units of force.", ["kg × m/s² = N"])
-            ]);
+            var circuit = new DcCircuit([new("s","a",2),new("a","0",4),new("a","b",2),new("b","0",6)], [new("s","0",8)], [new("0","a",6)], "b","0");
+            var checkedCircuit = DcCircuitSolver.Solve(circuit);
+            var example = new AiCalculation(GeminiCalculator.Model, "8 V source; 6 A enters node a; output across 6 ohms.", checkedCircuit.Answer, "Calculated locally from the interpreted circuit.", calculation, Steps: checkedCircuit.Steps);
             var editor = new Controls.GeminiCalculationEditor { Width = 600, Height = 820 };
             editor.Prepare(null, calculation, new GeminiKeyStore(Path.Combine(temporary, "preview-credentials")), example);
             ((System.Windows.Controls.TextBlock)editor.FindName("StatusText")).Text = "Example result preview · no API request sent";
@@ -171,3 +169,4 @@ public static class PreviewCapture
         db.SelectPage(first); db.MarkClean();
     }
 }
+

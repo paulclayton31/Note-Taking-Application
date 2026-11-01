@@ -43,7 +43,7 @@ public partial class GeminiCalculationEditor : UserControl
     private void InvalidateResult()
     {
         if (loading || SolveButton is null) return;
-        ClearSolution(); Result = null; ProblemText.Text = AnswerText.Text = ExplanationText.Text = "";
+        ClearSolution(); Result = null; ProblemText.Text = ExplanationText.Text = ""; AnswerText.Formula = "";
         StatusText.Text = ""; ErrorText.Text = ""; RefreshButtons();
     }
     private void Question_Changed(object sender, TextChangedEventArgs e) => InvalidateResult();
@@ -51,7 +51,7 @@ public partial class GeminiCalculationEditor : UserControl
     public async Task SolveAsync()
     {
         if (closed || request is not null) return;
-        ClearSolution(); Result = null; ErrorText.Text = ""; ProblemText.Text = AnswerText.Text = ExplanationText.Text = "";
+        ClearSolution(); Result = null; ErrorText.Text = ""; ProblemText.Text = ExplanationText.Text = ""; AnswerText.Formula = "";
         var current = new CancellationTokenSource(); request = current; RefreshButtons();
         StatusText.Text = "Reading the problem and calculating…";
         try
@@ -77,9 +77,9 @@ public partial class GeminiCalculationEditor : UserControl
     }
     private void ShowResult(GeminiCalculator.Result result)
     {
-        ProblemText.Text = result.Problem; AnswerText.Text = result.Answer; ExplanationText.Text = result.Explanation;
+        ProblemText.Text = result.Problem; AnswerText.Formula = result.Answer; ExplanationText.Text = result.Explanation;
         StepsList.ItemsSource = result.Steps?.Select((step, i) => new {
-            Heading = $"{i + 1}. {step.Title}", step.Detail, step.EquationText,
+            Heading = $"{i + 1}. {step.Title}", step.Detail, step.Equations,
             EquationVisibility = step.Equations.Length > 0 ? Visibility.Visible : Visibility.Collapsed
         }).ToArray();
         ResultPanel.Visibility = Visibility.Visible;
@@ -113,3 +113,4 @@ public partial class GeminiCalculationEditor : UserControl
         catch (Exception ex) when (ex is InvalidOperationException or System.ComponentModel.Win32Exception) { ErrorText.Text = "Open https://aistudio.google.com/api-keys in your browser to create a key."; }
     }
 }
+

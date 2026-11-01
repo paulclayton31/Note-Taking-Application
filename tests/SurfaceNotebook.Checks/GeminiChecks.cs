@@ -17,7 +17,7 @@ internal static partial class Program
     {
         public int Requests;
         public HttpStatusCode Status = HttpStatusCode.OK;
-        public bool Clarify, Block, Malformed, InvalidSteps;
+        public bool Clarify, Block, Malformed, InvalidSteps, Circuit;
         public string? Body, Key, Url;
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
         {
@@ -25,7 +25,7 @@ internal static partial class Program
             Key = request.Headers.GetValues("x-goog-api-key").Single();
             Body = await request.Content!.ReadAsStringAsync(cancellation);
             if (Block) await Task.Delay(Timeout.Infinite, cancellation);
-            var result = new { problem = "x = 2; x + 3", answer = Clarify ? "" : "5", explanation = Clarify ? "Is the handwritten value 2 or 7?" : "Substitute x: 2 + 3 = 5.", needsClarification = Clarify, steps = Clarify ? Array.Empty<object>() : new object[] { new { title = InvalidSteps ? "" : "Substitute the known value", detail = "Use x = 2 in the expression.", equations = new[] { "x + 3 = 2 + 3", "2 + 3 = 5" } } } };
+            var result = new { problem = "x = 2; x + 3", answer = Clarify ? "" : Circuit ? "18 V" : "5", explanation = Clarify ? "Is the handwritten value 2 or 7?" : "Substitute x: 2 + 3 = 5.", circuit = Circuit ? new DcCircuit([new("s","a",2),new("a","0",4),new("a","b",2),new("b","0",6)], [new("s","0",8)], [new("0","a",6)], "b","0") : null, needsClarification = Clarify, steps = Clarify ? Array.Empty<object>() : new object[] { new { title = InvalidSteps ? "" : "Substitute the known value", detail = "Use x = 2 in the expression.", equations = new[] { "x + 3 = 2 + 3", "2 + 3 = 5" } } } };
             var envelope = new { candidates = new[] { new { finishReason = "STOP", content = new { parts = new[] { new { text = JsonSerializer.Serialize(result) } } } } } };
             return new HttpResponseMessage(Status) { Content = new StringContent(Malformed ? "{}" : JsonSerializer.Serialize(envelope), Encoding.UTF8, "application/json") };
         }
@@ -33,6 +33,29 @@ internal static partial class Program
     private static void CheckGemini(string root)
     {
         Directory.CreateDirectory(root);
+        var touchViewport = new PageViewport(); int holds=0;
+        touchViewport.TouchHeld += _ => holds++;
+        touchViewport.BeginContact(1,new Point(100,100)); touchViewport.CheckTouchHold(Environment.TickCount64+700);
+        Require(holds==1,"Finger hold did not open page actions."); touchViewport.EndContact(1);
+        touchViewport.BeginContact(1,new Point(100,100)); touchViewport.MoveContact(1,new Point(130,130)); touchViewport.CheckTouchHold(Environment.TickCount64+700);
+        Require(holds==1,"Scrolling triggered a hold menu."); touchViewport.EndContact(1);
+        touchViewport.BeginContact(1,new Point(100,100)); touchViewport.BeginContact(2,new Point(200,200)); touchViewport.CheckTouchHold(Environment.TickCount64+700);
+        Require(holds==1,"Pinch triggered a hold menu."); touchViewport.EndContact(1); touchViewport.EndContact(2);
+        touchViewport.SetPenPresence(true); touchViewport.BeginContact(1,new Point(100,100)); touchViewport.CheckTouchHold(Environment.TickCount64+700);
+        Require(holds==1,"Palm contact during pen input triggered a hold menu.");
+        var graph = new DcCircuit(
+            [new("s","a",2),new("a","0",4),new("a","b",2),new("b","0",6)],
+            [new("s","0",8)], [new("0","a",6)], "b","0");
+        var circuitResult = DcCircuitSolver.Solve(graph);
+        Require(circuitResult.Answer.Contains("8.57143") && circuitResult.Steps.Any(s => s.Equations.Any(e => e.Contains("3.42857"))) &&
+            circuitResult.Steps.Any(s => s.Equations.Any(e => e.Contains("5.14286"))), "Circuit regression: node/superposition did not give 60/7 V.");
+        var formula = new MathDisplay { Formula = @"V_{0}=\frac{60}{7}\,\mathrm{V}\approx8.57\,\mathrm{V}" };
+        formula.Measure(new Size(500,200)); formula.Arrange(new Rect(0,0,500,200));
+        Require(formula.Content is ScrollViewer, "Fraction/subscript renderer fell back to raw text.");
+        var power = new MathDisplay { Formula = @"x^{2}+\frac{1}{2}" };
+        Require(power.Content is ScrollViewer, "Exponent renderer failed.");
+        var card = new AiCalculation(GeminiCalculator.Model,"Circuit",circuitResult.Answer,"Locally calculated", "", Steps:circuitResult.Steps);
+        card.Validate(); Require(SolutionCardRenderer.Render(card,540).PixelHeight>100, "Formatted note card did not render.");
         var original = InkMapper.Capture(new StrokeCollection { SampleStroke() });
         var png = CalculationCapture.Create(original, new Rect(60, 70, 160, 100));
         var image = PageImageSource.Decode(png);
@@ -53,12 +76,15 @@ internal static partial class Program
             Require(!handler.Body!.Contains(testKey), "API key leaked into model input.");
         }
         editor.Measure(new Size(600, 820)); editor.Arrange(new Rect(0, 0, 600, 820)); editor.UpdateLayout();
+        handler.Circuit = true; Await(editor.SolveAsync());
+        Require(editor.Result!.Answer.Contains("8.57143") && !editor.Result.Answer.Contains("18"), "AI's contradictory 18 V overrode the local circuit result.");
+        handler.Circuit = false; Await(editor.SolveAsync());
         var saved = editor.Result!;
         Require(saved.Steps?.Length == 1 && ((ItemsControl)editor.FindName("StepsList")).Items.Count == 1 &&
             saved.DisplayText.Contains("1. Substitute the known value\n") && saved.DisplayText.Contains("x + 3 = 2 + 3\n2 + 3 = 5"),
             "Worked solution lost step boundaries or separate equations.");
         var reopened = new GeminiCalculationEditor(); reopened.Prepare(png, saved.Instruction, keys, saved, service);
-        Require(((ItemsControl)reopened.FindName("StepsList")).Items.Count == 1 && handler.Requests == 1, "Saved steps did not reopen offline.");
+        Require(((ItemsControl)reopened.FindName("StepsList")).Items.Count == 1 && handler.Requests == 3, "Saved steps did not reopen offline.");
         var legacy = saved with { Steps = null };
         reopened.Prepare(png, legacy.Instruction, keys, legacy, service);
         Require(((TextBox)reopened.FindName("ExplanationText")).Text == legacy.Explanation, "Older saved explanations became unreadable.");
@@ -118,3 +144,4 @@ internal static partial class Program
         finally { Await(window.ShutdownLibraryAsync()); }
     }
 }
+
