@@ -58,6 +58,7 @@ public partial class MainWindow : Window
     {
         this.libraryDirectory = libraryDirectory;
         InitializeComponent();
+        InitializeWindowPlacement();
         DataContext = model;
         NotebookPicker.ItemsSource = notebooks;
         DocumentTabs.ItemsSource = openNotebooks;

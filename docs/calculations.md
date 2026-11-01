@@ -3,13 +3,13 @@
 Calculate now sends a reviewed image or typed question to Gemini instead of relying on Windows handwriting recognition.
 
 1. Choose **Calculate** (C).
-2. Circle handwriting/objects, then choose **Solve selection**. For a printed PDF question, diagram, or image region, choose **Select area** and drag a rectangle with your pen or mouse. Press Esc to cancel area selection. You can also choose **Type question**.
+2. With Calculate active, use your **pen to lasso** a problem or **one finger/mouse to drag a rectangle**. Lift to open the captured region in the sidebar. Two fingers navigate; pen proximity suppresses palm touches. Press Esc or switch tools to cancel a selection. There is no floating actions popup. Open the sidebar with Calculate or Solution and choose **New typed question** for text entry.
 3. Review the exact image that will be sent. Add a question such as “Find V3” or corrections to an ambiguous symbol.
 4. Expand **Gemini API key**, choose **Get a key**, and create a key for your own project in Google AI Studio. Paste it into the masked key field. **Keep billing disabled in Google AI Studio to use the free tier.** The app cannot determine your project's billing tier. A billing-enabled project can incur charges, even for a free-tier-eligible model.
 5. Optionally choose **Remember on this Windows account**. The key is encrypted using Windows user protection in `%LOCALAPPDATA%/SurfaceNotebook/Credentials/gemini-key.bin`, outside notebook data. **Forget saved key** deletes it. No shared developer credential is distributed with the app.
 6. Choose **Solve with Gemini**. Opening a preview or selecting content never uploads it automatically.
 7. Check **What I read**, **Answer**, and **Solution / clarification**. If Gemini cannot read a symbol or lacks necessary information, correct the question and solve again. Changing the question invalidates the old result.
-8. Keep the solution open in the right sidebar while you write on the page. Choose **Close** or press Esc to hide it, then use **Solution** beside the zoom controls to reopen the same answer without another upload. Starting a new selection, area or typed question replaces the old calculation. Only the latest calculation is kept in memory for the current app session. New solutions are not automatically added to notebook data or saved as history. Existing cards explicitly saved in earlier versions remain part of those notes.
+8. Keep the solution open in the right sidebar while you write on the page. Choose the **top-right Close (✕)** or press Esc to hide it, then use **Solution** beside the zoom controls to reopen the same answer without another upload. Starting a new selection, area or typed question replaces the old calculation. Only the latest calculation is kept in memory for the current app session. New solutions are not automatically added to notebook data or saved as history. Existing cards explicitly saved in earlier versions remain part of those notes.
 
 ## Free-tier behavior and privacy
 
@@ -40,3 +40,5 @@ New results use LaTeX for equations, including stacked fractions, subscripts and
 For small circuits containing only resistors and independent DC sources, Gemini supplies a component graph, then the app calculates the answer using modified nodal analysis and checks source contributions using superposition. The app generates the numerical worked steps from this calculation instead of trusting an inconsistent model answer. The interpreted component endpoints are shown for review. The graph solver currently supports up to eight components, six non-reference nodes and six sources; unsupported, floating or inconsistent graphs produce a recoverable error. These checks validate the interpreted graph; they do not prove the image was read correctly. Other math problems still use the AI result.
 
 Hold one finger still on the page for about 650 milliseconds, then tap Paste in the page menu to paste images, text or copied note objects. Movement, multiple fingers, pen proximity, early release and view changes cancel the hold.
+
+Equation rows normalize the full glyph geometry bounds before layout, including ascenders, descenders, subscripts and fraction bars. Wide equations scroll horizontally without cropping their vertical extent.

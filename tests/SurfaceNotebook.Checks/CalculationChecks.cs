@@ -35,10 +35,10 @@ internal static partial class Program
         try
         {
             ((RadioButton)window.FindName("CalculateButton")).IsChecked = true;
-            Require(ink.EditingMode == InkCanvasEditingMode.Select && ((FrameworkElement)window.FindName("CalculationActionsPanel")).Visibility == Visibility.Visible,
+            Require(ink.EditingMode == InkCanvasEditingMode.None && ((PageViewport)window.FindName("Viewport")).CalculationSelectionEnabled && window.FindName("CalculationActionsPanel") is null,
                 "Calculate did not expose its own selection workflow.");
             ink.Select(new StrokeCollection { ink.Strokes[0] });
-            Require(((Button)window.FindName("ReviewCalculationButton")).IsEnabled && ((Button)window.FindName("SelectionActionsButton")).Visibility == Visibility.Collapsed,
+            Require(window.FindName("ReviewCalculationButton") is null && ((Button)window.FindName("SelectionActionsButton")).Visibility == Visibility.Collapsed,
                 "Calculate selection was mixed with lasso actions.");
             card = window.SaveCalculation(source, new Point(80, 260));
             var box = ink.Children.OfType<TextBox>().Single();
@@ -69,10 +69,10 @@ internal static partial class Program
             Require(ink.Children.OfType<TextBox>().Single().IsReadOnly, "The Text tool could overwrite a calculation's cached result.");
             ((RadioButton)window.FindName("CalculateButton")).IsChecked = true;
             window.SetBarrelSelection(true);
-            Require(ink.EditingMode == InkCanvasEditingMode.Select && ((FrameworkElement)window.FindName("CalculationActionsPanel")).Visibility == Visibility.Collapsed,
+            Require(ink.EditingMode == InkCanvasEditingMode.Select && !((PageViewport)window.FindName("Viewport")).CalculationSelectionEnabled,
                 "Barrel lasso left Calculate actions active.");
             window.SetBarrelSelection(false);
-            Require(((RadioButton)window.FindName("CalculateButton")).IsChecked == true && ((FrameworkElement)window.FindName("CalculationActionsPanel")).Visibility == Visibility.Visible,
+            Require(((RadioButton)window.FindName("CalculateButton")).IsChecked == true && ((PageViewport)window.FindName("Viewport")).CalculationSelectionEnabled,
                 "Barrel lasso did not restore Calculate.");
             var editor = new CalculationEditor(); editor.Prepare([], source, false);
             Require(editor.Result?.Rows[0].Value == 6 && ((Button)editor.FindName("AcceptButton")).IsEnabled, "The review editor did not preview the calculation.");

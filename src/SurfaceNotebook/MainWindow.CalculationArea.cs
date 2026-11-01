@@ -1,6 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
+using System.Windows.Media;
 
 namespace SurfaceNotebook;
 
@@ -8,51 +8,62 @@ public partial class MainWindow
 {
     private Point? calculationAreaStart;
     private Guid? calculationAreaPage;
-    private void SelectCalculationArea_Click(object sender, RoutedEventArgs e)
+    private bool calculationLasso;
+    private readonly List<Point> calculationPath = [];
+    private Point CalculationPagePoint(Point point)
     {
-        if (!CalculationMode || busy || session is null) return;
-        CommitTextEditor(); ClearPageSelection(); CloseToolInspector();
-        CalculationAreaOverlay.Visibility = Visibility.Visible;
-        calculationAreaPage = currentPageId;
-        model.Status = "Drag around a problem with your pen or mouse · Esc to cancel";
+        var p=Viewport.TranslatePoint(point,InkSurface);
+        return new Point(Math.Clamp(p.X,0,InkSurface.ActualWidth),Math.Clamp(p.Y,0,InkSurface.ActualHeight));
     }
-    private void CancelCalculationArea()
+    private void InitializeCalculationGestures()
     {
-        calculationAreaStart = null; calculationAreaPage = null;
-        if (CalculationAreaOverlay is null) return;
-        CalculationAreaOverlay.Visibility = Visibility.Collapsed;
-        CalculationAreaOutline.Visibility = Visibility.Collapsed;
-        if (CalculationAreaOverlay.IsMouseCaptured) CalculationAreaOverlay.ReleaseMouseCapture();
+        Deactivated += (_, _) => CancelCalculationArea();
+        Viewport.CanStartCalculation = point => {
+            var p=Viewport.TranslatePoint(point,InkSurface);
+            return ready && !busy && !homeVisible && CalculationMode && p.X>=0 && p.Y>=0 && p.X<=InkSurface.ActualWidth && p.Y<=InkSurface.ActualHeight;
+        };
+        Viewport.CalculationStarted += (point,lasso) => {
+            CommitTextEditor(); ClearPageSelection(); CloseToolInspector();
+            calculationAreaPage=currentPageId; calculationAreaStart=CalculationPagePoint(point); calculationLasso=lasso;
+            calculationPath.Clear(); calculationPath.Add(calculationAreaStart.Value);
+            CalculationAreaOverlay.Visibility=Visibility.Visible;
+            CalculationAreaOutline.Visibility=lasso ? Visibility.Collapsed : Visibility.Visible;
+            CalculationLassoOutline.Visibility=lasso ? Visibility.Visible : Visibility.Collapsed;
+            CalculationLassoOutline.Points=new PointCollection(calculationPath);
+            UpdateCalculationGesture(point);
+        };
+        Viewport.CalculationMoved += UpdateCalculationGesture;
+        Viewport.CalculationCanceled += ClearCalculationGesture;
+        Viewport.CalculationCompleted += point => {
+            UpdateCalculationGesture(point);
+            var page=calculationAreaPage;
+            var bounds=calculationAreaStart is Point start ? new Rect(start,CalculationPagePoint(point)) : Rect.Empty;
+            if (calculationLasso) { bounds=Rect.Empty; foreach(var p in calculationPath) bounds.Union(p); }
+            var valid=!bounds.IsEmpty && bounds.Width>=8 && bounds.Height>=8 && (!calculationLasso || calculationPath.Count>=3);
+            ClearCalculationGesture();
+            if (!valid || page!=currentPageId) return;
+            Dispatcher.BeginInvoke(() => { if(page==currentPageId && CalculationMode) OpenCalculationEditor(false,region:bounds); });
+        };
     }
-    private Point CalculationAreaPoint(MouseEventArgs e)
+    private void UpdateCalculationGesture(Point point)
     {
-        var point = e.GetPosition(CalculationAreaOverlay);
-        return new Point(Math.Clamp(point.X, 0, CalculationAreaOverlay.ActualWidth), Math.Clamp(point.Y, 0, CalculationAreaOverlay.ActualHeight));
+        if(calculationAreaStart is not Point start) return;
+        var p=CalculationPagePoint(point);
+        if(calculationLasso) { if(calculationPath.Count<10000) calculationPath.Add(p); CalculationLassoOutline.Points=new PointCollection(calculationPath); }
+        else {
+            var bounds=new Rect(start,p);
+            Canvas.SetLeft(CalculationAreaOutline,bounds.Left); Canvas.SetTop(CalculationAreaOutline,bounds.Top);
+            CalculationAreaOutline.Width=bounds.Width; CalculationAreaOutline.Height=bounds.Height;
+        }
     }
-    private void CalculationArea_Down(object sender, MouseButtonEventArgs e)
+    private void ClearCalculationGesture()
     {
-        if (e.StylusDevice?.TabletDevice.Type == TabletDeviceType.Touch || !CalculationMode || busy) return;
-        calculationAreaStart = CalculationAreaPoint(e); CalculationAreaOverlay.CaptureMouse();
-        CalculationAreaOutline.Visibility = Visibility.Visible;
-        Canvas.SetLeft(CalculationAreaOutline, calculationAreaStart.Value.X); Canvas.SetTop(CalculationAreaOutline, calculationAreaStart.Value.Y);
-        CalculationAreaOutline.Width = CalculationAreaOutline.Height = 0; e.Handled = true;
+        calculationAreaStart=null; calculationAreaPage=null; calculationPath.Clear();
+        if(CalculationAreaOverlay is null) return;
+        CalculationAreaOverlay.Visibility=Visibility.Collapsed;
+        CalculationAreaOutline.Visibility=Visibility.Collapsed;
+        CalculationLassoOutline.Visibility=Visibility.Collapsed;
+        CalculationLassoOutline.Points.Clear();
     }
-    private void CalculationArea_Move(object sender, MouseEventArgs e)
-    {
-        if (calculationAreaStart is not Point start) return;
-        if (e.LeftButton != MouseButtonState.Pressed) { CancelCalculationArea(); return; }
-        var bounds = new Rect(start, CalculationAreaPoint(e));
-        Canvas.SetLeft(CalculationAreaOutline, bounds.Left); Canvas.SetTop(CalculationAreaOutline, bounds.Top);
-        CalculationAreaOutline.Width = bounds.Width; CalculationAreaOutline.Height = bounds.Height; e.Handled = true;
-    }
-    private void CalculationArea_Up(object sender, MouseButtonEventArgs e)
-    {
-        if (calculationAreaStart is not Point start) return;
-        var bounds = new Rect(start, CalculationAreaPoint(e)); var page = calculationAreaPage;
-        CancelCalculationArea(); e.Handled = true;
-        if (page != currentPageId || bounds.Width < 8 || bounds.Height < 8) return;
-        Dispatcher.BeginInvoke(() => { if (page == currentPageId && CalculationMode) OpenCalculationEditor(false, region: bounds); });
-    }
-    private void CalculationArea_LostCapture(object sender, MouseEventArgs e)
-    { if (calculationAreaStart is not null) CancelCalculationArea(); }
+    private void CancelCalculationArea() { Viewport?.CancelCalculationPointer(); ClearCalculationGesture(); }
 }

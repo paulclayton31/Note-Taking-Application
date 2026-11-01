@@ -46,6 +46,8 @@ internal static partial class Program
             ExecuteCheck("CheckScribbleEditing", () => CheckScribbleEditing(Path.Combine(root, "scribble-editing")));
             ExecuteCheck("CheckEasyScratchOuts", () => CheckEasyScratchOuts(Path.Combine(root, "easy-scratch-outs")));
             ExecuteCheck("CheckPenGestures", () => CheckPenGestures(Path.Combine(root, "pen-gestures")));
+            ExecuteCheck("CheckWindowPlacement", () => CheckWindowPlacement(Path.Combine(root,"window-placement")));
+            ExecuteCheck("CheckCalculationGesturesAndGlyphs", CheckCalculationGesturesAndGlyphs);
             ExecuteCheck("CheckGemini", () => CheckGemini(Path.Combine(root, "gemini")));
             ExecuteCheck("CheckCalculations", () => CheckCalculations(Path.Combine(root, "calculations")));
             ExecuteCheck("CheckPdfWorkflows", () => CheckPdfWorkflows(Path.Combine(root, "pdf-workflows")));

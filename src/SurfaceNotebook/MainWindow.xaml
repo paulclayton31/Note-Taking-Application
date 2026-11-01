@@ -175,8 +175,8 @@
                             <Image x:Name="PdfPageImage" Stretch="Fill" IsHitTestVisible="False"/>
                             <Canvas x:Name="PageImages" IsHitTestVisible="False" ClipToBounds="True"/>
                             <local:PenCanvas x:Name="InkSurface" Background="Transparent" ClipToBounds="True" EditingMode="Ink" EditingModeInverted="EraseByStroke" UseCustomCursor="False"/>
-                            <Canvas x:Name="CalculationAreaOverlay" Visibility="Collapsed" Background="Transparent" Cursor="Cross"
-                                    MouseLeftButtonDown="CalculationArea_Down" MouseMove="CalculationArea_Move" MouseLeftButtonUp="CalculationArea_Up" LostMouseCapture="CalculationArea_LostCapture">
+                            <Canvas x:Name="CalculationAreaOverlay" Visibility="Collapsed" IsHitTestVisible="False">
+                                <Polyline x:Name="CalculationLassoOutline" Visibility="Collapsed" Stroke="{DynamicResource Accent}" StrokeThickness="2"/>
                                 <Border x:Name="CalculationAreaOutline" Visibility="Collapsed" BorderBrush="{DynamicResource Accent}" BorderThickness="2" Background="#205C55B3" IsHitTestVisible="False"/>
                             </Canvas>
                         </Grid>
@@ -336,13 +336,6 @@
                             </ScrollViewer>
                         </Border>
                     </Popup>
-                    <Border x:Name="CalculationActionsPanel" Visibility="Collapsed" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="12,80,12,12" Padding="12" MaxWidth="320" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="12">
-                        <StackPanel>
-                            <TextBlock Text="Calculate · Gemini" FontWeight="SemiBold"/>
-                            <TextBlock Text="Circle handwriting or select an area. Review the image before sending it to Gemini." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="12" Margin="0,5,0,8"/>
-                            <WrapPanel><Button x:Name="ReviewCalculationButton" Content="Solve selection" Click="ReviewCalculation_Click" IsEnabled="False" Padding="10,8" Margin="0,0,6,0"/><Button x:Name="SelectCalculationAreaButton" Content="Select area" Click="SelectCalculationArea_Click" Padding="10,8" Margin="0,0,6,0"/><Button Content="Type question" Click="NewCalculation_Click" Padding="10,8"/></WrapPanel>
-                        </StackPanel>
-                    </Border>
                     <Button x:Name="RevealToolbar" Visibility="Collapsed" Click="HideToolbar_Click" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,12,0,0" Background="{DynamicResource Surface}" ToolTip="Show writing tools"><local:WorkspaceIcon Kind="Pen" Foreground="{DynamicResource Accent}"/></Button>
 
 
