@@ -51,7 +51,7 @@ internal static partial class Program
         var portable = Path.Combine(root, "Annotated.stempage");
         Await(PageStore.SaveAsync(portable, imported[0] with { Strokes = [SampleData()] }));
         var restored = Await(PageStore.LoadAsync(portable));
-        Require(restored.Version == 3 && restored.Background!.SourcePdf.SequenceEqual(imported[0].Background!.SourcePdf) && restored.Strokes.Count == 1,
+        Require(restored.Version == PageDocument.CurrentVersion && restored.Background!.SourcePdf.SequenceEqual(imported[0].Background!.SourcePdf) && restored.Strokes.Count == 1,
             "Portable page round-trip lost the PDF background or ink.");
         var library = Path.Combine(root, "library");
         var window = new MainWindow(library); Await(window.InitializeLibraryAsync()); window.ShowWorkspace(); ArrangeWorkspace(window);
