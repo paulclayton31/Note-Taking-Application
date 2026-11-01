@@ -6,7 +6,7 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Download and run
 
-**New prerelease: [v0.4.0-preview.4](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.4.0-preview.4)** introduces **Calculate with Gemini**: select handwriting or a PDF/image region, preview the crop, and explicitly request an AI solution using your own Gemini key. Keep billing disabled on your Google project for free-tier use. Results save locally for offline review. Includes image paste and the undo-selection fix. [Setup and privacy details](docs/calculations.md). AI accuracy is experimental; v0.3.6 remains stable.
+**New prerelease: [v0.4.0](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.4.0)** introduces **Calculate with Gemini**: select handwriting or a PDF/image region, preview the crop, and explicitly request an AI solution using your own Gemini key. Keep billing disabled on your Google project for free-tier use. Results save locally for offline review. Includes image paste and the undo-selection fix. [Setup and privacy details](docs/calculations.md). AI accuracy is experimental; v0.3.6 remains stable.
 
 **[Surface Notebook v0.3.6](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.6)** is the stable release: a Home library with folders, a compact writing toolbar, thin vertical tool rail, pens that save edits automatically, color-wheel selection, lasso actions, easier undoable scribble erasing, notebook copy/paste and deletion, fully closable tabs, smoother page navigation, PDF import/export, easier rounded/vertical scratch-outs, draw-and-hold shapes, and Surface Pen side-button lasso. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md) · [PDF import/export guide](docs/pdf-workflows.md).
 
@@ -96,3 +96,7 @@ dotnet run --project tests/SurfaceNotebook.Checks --configuration Release --no-b
 ```
 
 GitHub Actions builds and checks the application on Windows. The release pipeline publishes self-contained single-file x64 and ARM64 executables after the automated checks and x64 bundled startup check pass. The stack is C#/.NET 10, WPF, and SQLite (`Microsoft.Data.Sqlite`). Versioned `.stempage` JSON files remain supported for portable page import/export.
+
+### Calculate beside your notes
+
+Calculation opens in the right sidebar while the page stays usable. Close it when finished and choose **Solution** beside the zoom controls to reopen it. Starting a new selection, area or typed question replaces the previous calculation. The sidebar keeps only the latest calculation during the current app session; it does not add a card or calculation history automatically.

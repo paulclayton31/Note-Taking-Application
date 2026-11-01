@@ -15,11 +15,12 @@ public partial class MainWindow
     {
         SetBarrelSelection(false);
         if (sender is RadioButton button && (string)button.Tag == toolBeforeClick) ToggleToolInspector();
+        if (sender is RadioButton calculate && (string)calculate.Tag == "Calculate" && !HasSelection) ReopenCalculation();
         toolBeforeClick = null;
     }
     private void ToggleToolInspector()
     {
-        if (CalculationMode) { OpenCalculationEditor(useSelection: true); return; }
+        if (CalculationMode) { if (HasSelection) OpenCalculationEditor(useSelection: true); else ReopenCalculation(); return; }
         if (IsToolInspectorOpen) CloseToolInspector(); else ShowToolInspector();
     }
     public void ShowToolInspector()

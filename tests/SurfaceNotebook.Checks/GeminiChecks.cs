@@ -135,6 +135,35 @@ internal static partial class Program
         var ink = (PenCanvas)window.FindName("InkSurface"); var page = window.CurrentPageId!.Value;
         try
         {
+            window.ShowCalculation(png, saved.Instruction, saved, service, keys);
+            ArrangeWorkspace(window);
+            Require(window.IsCalculationPanelOpen && window.LatestCalculation == saved && window.OwnedWindows.Count == 0 && ink.IsEnabled,
+                "Calculation did not open as a nonmodal dock beside the writing page.");
+            Require(((FrameworkElement)window.FindName("Viewport")).ActualWidth > 200, "Calculation panel covered the writing workspace.");
+            var firstEditor = (GeminiCalculationEditor)((ContentControl)window.FindName("CalculationDockContent")).Content;
+            Require(((FrameworkElement)firstEditor.FindName("AcceptButton")).Visibility == Visibility.Collapsed, "Temporary solution still offered to create permanent history.");
+            window.CloseCalculation();
+            Require(!window.IsCalculationPanelOpen && window.LatestCalculation == saved, "Closing the dock discarded the latest answer.");
+            Click((Button)window.FindName("ReopenCalculationButton"));
+            Require(window.IsCalculationPanelOpen && ReferenceEquals(firstEditor, ((ContentControl)window.FindName("CalculationDockContent")).Content), "Reopening replaced or uploaded the cached calculation.");
+            ((RadioButton)window.FindName("PenButton")).IsChecked = true;
+            Collect(ink, SampleStroke());
+            Require(window.IsCalculationPanelOpen && ink.Strokes.Count == 1, "Writing was blocked while the solution was visible.");
+            Click((Button)window.FindName("UndoButton"));
+            window.ShowCalculation(null, "New question", service: service, keyStore: keys);
+            Require(window.LatestCalculation is null && firstEditor.Result is null, "A new calculation retained the previous answer.");
+            var secondEditor = (GeminiCalculationEditor)((ContentControl)window.FindName("CalculationDockContent")).Content;
+            window.CloseCalculation(); window.ReopenCalculation();
+            Require(ReferenceEquals(secondEditor, ((ContentControl)window.FindName("CalculationDockContent")).Content) && window.LatestCalculation is null,
+                "Closing and reopening restored an older calculation.");
+            keys.Save(testKey); handler.Block = true;
+            // Prepare a fresh session while a solve is waiting; the replaced editor must not publish a late result.
+            window.ShowCalculation(png, "Solve", service: service, keyStore: keys);
+            var pendingEditor = (GeminiCalculationEditor)((ContentControl)window.FindName("CalculationDockContent")).Content;
+            var pendingSolve = pendingEditor.SolveAsync();
+            window.ShowCalculation(null, "Replacement", service: service, keyStore: keys); Await(pendingSolve);
+            Require(window.LatestCalculation is null && pendingEditor.Result is null, "A replaced request resurrected the old answer.");
+            handler.Block = false; window.CloseCalculation();
             ((RadioButton)window.FindName("CalculateButton")).IsChecked = true;
             Click((Button)window.FindName("SelectCalculationAreaButton"));
             Require(((FrameworkElement)window.FindName("CalculationAreaOverlay")).Visibility == Visibility.Visible, "Calculate could not select a PDF/image area.");

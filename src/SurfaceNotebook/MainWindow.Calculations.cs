@@ -11,6 +11,44 @@ namespace SurfaceNotebook;
 
 public partial class MainWindow
 {
+    private GeminiCalculationEditor? calculationEditor;
+    public AiCalculation? LatestCalculation => calculationEditor?.Result;
+    public bool IsCalculationPanelOpen => CalculationDock.Visibility == Visibility.Visible;
+    public void ShowCalculation(byte[]? png, string question, AiCalculation? saved = null,
+        GeminiCalculator? service = null, GeminiKeyStore? keyStore = null)
+    {
+        if (!ready || busy || homeVisible || session is null) return;
+        CommitTextEditor(); CloseToolInspector(); CloseContextPanel();
+        calculationEditor?.Stop();
+        var editor = new GeminiCalculationEditor();
+        calculationEditor = editor; CalculationDockContent.Content = editor;
+        editor.Prepare(png, question, keyStore ?? new GeminiKeyStore(Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SurfaceNotebook", "Credentials")), saved, service);
+        editor.UseAsSidePanel();
+        editor.Canceled += CloseCalculation;
+        ReopenCalculationButton.Visibility = Visibility.Visible;
+        ReopenCalculation();
+    }
+    public void ReopenCalculation()
+    {
+        if (!ready || busy || homeVisible) return;
+        if (calculationEditor is null) { ShowCalculation(null, ""); return; }
+        CloseContextPanel();
+        CalculationDock.Visibility = Visibility.Visible;
+        UpdateCalculationPanelWidth(ActualWidth);
+    }
+    public void CloseCalculation()
+    {
+        calculationEditor?.CancelPending();
+        CalculationDock.Visibility = Visibility.Collapsed;
+    }
+    private void ReopenCalculation_Click(object sender, RoutedEventArgs e) => ReopenCalculation();
+    private void UpdateCalculationPanelWidth(double width)
+    {
+        if (CalculationDock is null || !IsCalculationPanelOpen) return;
+        CalculationDock.Width = Math.Clamp(width * .38, 300, 480);
+        if (width < 1280) NavigationPanel.Visibility = Visibility.Collapsed;
+    }
     private bool CalculationMode => toolName == "Calculate" && !barrelSelection;
     private void UpdateCalculationActions()
     {
@@ -58,14 +96,7 @@ public partial class MainWindow
                 if (bounds.IsEmpty) { model.Status = "Circle a problem first, or choose Select area for a PDF or image."; return; }
                 bounds.Inflate(8, 8); png = CalculationCapture.Create(CaptureCurrent(), bounds);
             }
-            var center = Viewport.TranslatePoint(new Point(Viewport.ActualWidth / 2, Viewport.ActualHeight / 2), InkSurface);
-            var position = existing is not null ? new Point(existing.X, existing.Y) : !bounds.IsEmpty && (useSelection || region is not null)
-                ? new Point(bounds.Left, bounds.Bottom + 18) : center;
-            var originalPage = currentPageId;
-            var dialog = new GeminiCalculationDialog(png, existing?.AiCalculation?.Instruction ?? "",
-                new GeminiKeyStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SurfaceNotebook", "Credentials")), existing?.AiCalculation) { Owner = this };
-            if (dialog.ShowDialog() == true && originalPage == currentPageId && dialog.Result is { } result)
-                SaveAiCalculation(result, position, existing?.Id);
+            ShowCalculation(png, existing?.AiCalculation?.Instruction ?? "", existing?.AiCalculation);
         }
         catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or NotSupportedException) { ShowError(ex); }
     }

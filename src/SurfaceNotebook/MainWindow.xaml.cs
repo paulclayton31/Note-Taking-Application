@@ -140,7 +140,7 @@ public partial class MainWindow : Window
     }
     private void SetBusy(bool value)
     {
-        if (value) CancelCalculationArea();
+        if (value) { CancelCalculationArea(); CloseCalculation(); }
         busy = value;
         Toolbar.IsEnabled = !value;
         SavedColorBar.IsEnabled = !value;
@@ -418,6 +418,7 @@ public partial class MainWindow : Window
     }
     public async Task<bool> ShutdownLibraryAsync()
     {
+        calculationEditor?.Stop();
         CommitTextEditor(); SaveCurrentView(); SavePreferences(); thumbnailTimer.Stop(); textTimer.Stop(); writingTimer.Stop(); editNoticeTimer.Stop();
         if (writer is null) return true;
         if (!writer.Initialized.IsCompletedSuccessfully) { writer.Dispose(); return true; }
@@ -452,6 +453,7 @@ public partial class MainWindow : Window
             else if (selectionMenu.IsOpen) selectionMenu.IsOpen = false;
             else if (ZoomPopup.IsOpen) ZoomPopup.IsOpen = false;
             else if (IsToolInspectorOpen) CloseToolInspector();
+            else if (IsCalculationPanelOpen) CloseCalculation();
             else if (textEditor is not null) CommitTextEditor();
             else if (ContextPanel.Visibility == Visibility.Visible) CloseContextPanel();
             else if (focusMode) ToggleFocus();
