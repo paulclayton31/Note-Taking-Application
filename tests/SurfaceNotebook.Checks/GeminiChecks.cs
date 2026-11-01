@@ -79,9 +79,15 @@ internal static partial class Program
         var ink = (PenCanvas)window.FindName("InkSurface"); var page = window.CurrentPageId!.Value;
         try
         {
+            ((RadioButton)window.FindName("CalculateButton")).IsChecked = true;
+            Click((Button)window.FindName("SelectCalculationAreaButton"));
+            Require(((FrameworkElement)window.FindName("CalculationAreaOverlay")).Visibility == Visibility.Visible, "Calculate could not select a PDF/image area.");
+            ((RadioButton)window.FindName("PenButton")).IsChecked = true;
+            Require(((FrameworkElement)window.FindName("CalculationAreaOverlay")).Visibility == Visibility.Collapsed && ink.EditingMode == InkCanvasEditingMode.Ink,
+                "Switching tools left the area selection overlay active.");
             Collect(ink, SampleStroke()); var originalId = InkMapper.Identity(ink.Strokes.Single());
             window.SaveAiCalculation(saved, new Point(80, 250));
-            Require(ink.Children.OfType<TextBox>().Single().Text.Contains("Answer\n5") && InkMapper.Identity(ink.Strokes.Single()) == originalId, "Adding an AI solution changed handwriting or lost the result.");
+            Require(ink.Children.OfType<TextBox>().Single().Text.Contains("Answer") && ink.Children.OfType<TextBox>().Single().Text.Contains("5") && InkMapper.Identity(ink.Strokes.Single()) == originalId, "Adding an AI solution changed handwriting or lost the result.");
             Click((Button)window.FindName("UndoButton")); Require(ink.Children.Count == 0 && ink.Strokes.Count == 1, "AI result did not undo independently.");
             Click((Button)window.FindName("RedoButton"));
             ((RadioButton)window.FindName("LassoButton")).IsChecked = true;

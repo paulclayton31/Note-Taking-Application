@@ -340,7 +340,7 @@
                         <StackPanel>
                             <TextBlock Text="Calculate · Gemini" FontWeight="SemiBold"/>
                             <TextBlock Text="Circle handwriting or select an area. Review the image before sending it to Gemini." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="12" Margin="0,5,0,8"/>
-                            <WrapPanel><Button x:Name="ReviewCalculationButton" Content="Solve selection" Click="ReviewCalculation_Click" IsEnabled="False" Padding="10,8" Margin="0,0,6,0"/><Button Content="Select area" Click="SelectCalculationArea_Click" Padding="10,8" Margin="0,0,6,0"/><Button Content="Type question" Click="NewCalculation_Click" Padding="10,8"/></WrapPanel>
+                            <WrapPanel><Button x:Name="ReviewCalculationButton" Content="Solve selection" Click="ReviewCalculation_Click" IsEnabled="False" Padding="10,8" Margin="0,0,6,0"/><Button x:Name="SelectCalculationAreaButton" Content="Select area" Click="SelectCalculationArea_Click" Padding="10,8" Margin="0,0,6,0"/><Button Content="Type question" Click="NewCalculation_Click" Padding="10,8"/></WrapPanel>
                         </StackPanel>
                     </Border>
                     <Button x:Name="RevealToolbar" Visibility="Collapsed" Click="HideToolbar_Click" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,12,0,0" Background="{DynamicResource Surface}" ToolTip="Show writing tools"><local:WorkspaceIcon Kind="Pen" Foreground="{DynamicResource Accent}"/></Button>
