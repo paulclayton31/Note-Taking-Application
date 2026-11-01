@@ -272,9 +272,19 @@ public partial class MainWindow
     private void RenderTexts()
     {
         textEditor = null; textBeforeEdit = null; selectedTextId = null;
-        InkSurface.Children.Clear();
+        InkSurface.Children.Clear(); PageImages.Children.Clear();
         if (session is null) return;
-        foreach (var image in session.Images) InkSurface.Children.Add(CreateImage(image));
+        foreach (var image in session.Images)
+        {
+            var element = CreateImage(image); InkSurface.Children.Add(element);
+            var visual = new Image { Source = element.Source, Stretch = Stretch.Fill };
+            // The selectable proxy lives in InkCanvas; the visible image stays below ink.
+            foreach (var property in new[] { FrameworkElement.WidthProperty, FrameworkElement.HeightProperty })
+                visual.SetBinding(property, new System.Windows.Data.Binding { Source = element, Path = new PropertyPath(property) });
+            visual.SetBinding(Canvas.LeftProperty, new System.Windows.Data.Binding { Source = element, Path = new PropertyPath(InkCanvas.LeftProperty) });
+            visual.SetBinding(Canvas.TopProperty, new System.Windows.Data.Binding { Source = element, Path = new PropertyPath(InkCanvas.TopProperty) });
+            PageImages.Children.Add(visual);
+        }
         foreach (var text in session.Texts) InkSurface.Children.Add(CreateTextBox(text));
     }
     private void UpdateTextDraft()

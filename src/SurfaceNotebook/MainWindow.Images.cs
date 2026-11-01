@@ -53,7 +53,7 @@ public partial class MainWindow
     private static Image CreateImage(PageImage image)
     {
         var element = new Image { Tag = image.Id, Source = PageImageSource.Decode(image.Png), Width = image.Width, Height = image.Height,
-            Stretch = Stretch.Fill, IsHitTestVisible = false };
+            Stretch = Stretch.Fill, Opacity = 0, IsHitTestVisible = false };
         InkCanvas.SetLeft(element, image.X); InkCanvas.SetTop(element, image.Y);
         return element;
     }
