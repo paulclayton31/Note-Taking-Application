@@ -45,8 +45,8 @@
          <Border BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,0,1" Padding="0,0,0,16" Margin="0,0,0,16">
           <StackPanel>
            <TextBlock Text="{Binding Heading}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
-           <TextBox Text="{Binding Detail}" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Margin="0,0,0,8"/>
-           <TextBox Text="{Binding EquationText}" FontFamily="Cambria Math" FontSize="18" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="{DynamicResource Surface}" Padding="10" Visibility="{Binding EquationVisibility}"/>
+           <TextBox Text="{Binding Detail, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Margin="0,0,0,8"/>
+           <TextBox Text="{Binding EquationText, Mode=OneWay}" FontFamily="Cambria Math" FontSize="18" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="{DynamicResource Surface}" Padding="10" Visibility="{Binding EquationVisibility}"/>
           </StackPanel>
          </Border>
         </DataTemplate>

@@ -52,6 +52,7 @@ internal static partial class Program
             Require(Convert.FromBase64String(part.GetProperty("inlineData").GetProperty("data").GetString()!).SequenceEqual(png), "The sent image differed from the preview.");
             Require(!handler.Body!.Contains(testKey), "API key leaked into model input.");
         }
+        editor.Measure(new Size(600, 820)); editor.Arrange(new Rect(0, 0, 600, 820)); editor.UpdateLayout();
         var saved = editor.Result!;
         Require(saved.Steps?.Length == 1 && ((ItemsControl)editor.FindName("StepsList")).Items.Count == 1 &&
             saved.DisplayText.Contains("1. Substitute the known value\n") && saved.DisplayText.Contains("x + 3 = 2 + 3\n2 + 3 = 5"),
