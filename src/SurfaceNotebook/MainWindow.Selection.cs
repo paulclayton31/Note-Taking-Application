@@ -37,7 +37,7 @@ public partial class MainWindow
         selectionMenu.Opened += (_, _) =>
         {
             copySelectionItem.IsEnabled = duplicateSelectionItem.IsEnabled = deleteSelectionItem.IsEnabled = !busy && HasSelection;
-            try { pasteSelectionItem.IsEnabled = !busy && Clipboard.ContainsData(SelectionClipboardFormat); }
+            try { pasteSelectionItem.IsEnabled = !busy && session is not null && CanPastePageContent(); }
             catch (ExternalException) { pasteSelectionItem.IsEnabled = false; }
         };
         InkSurface.ContextMenu = selectionMenu;
@@ -49,7 +49,7 @@ public partial class MainWindow
                 if (node is TextBox) return;
             e.Handled = true;
             if (barrelSelection && !HasSelection) return;
-            if (EffectiveLasso && !busy) OpenSelectionMenu(Mouse.GetPosition(InkSurface));
+            if (!busy) OpenSelectionMenu(Mouse.GetPosition(InkSurface));
         };
         InkSurface.SelectionChanged += (_, _) => { selectionMenu.IsOpen = false; UpdateSelectionActions(); };
         InkSurface.SelectionMoved += (_, _) => UpdateSelectionActions();
@@ -106,7 +106,7 @@ public partial class MainWindow
     }
     private void OpenSelectionMenu(Point point)
     {
-        if (busy || !EffectiveLasso) return;
+        if (busy || session is null) return;
         CloseToolInspector();
         selectionMenuPoint = point;
         var position = InkSurface.TranslatePoint(point, MainStage);
@@ -118,7 +118,7 @@ public partial class MainWindow
     {
         selectionMenu.IsOpen = false;
         try { action(); }
-        catch (Exception ex) when (ex is ExternalException or InvalidDataException or JsonException or InvalidOperationException)
+        catch (Exception ex) when (ex is ExternalException or IOException or JsonException or InvalidOperationException or NotSupportedException or ArgumentException)
         { model.Status = ex is ExternalException ? "Clipboard is busy. Try copying or pasting again." : ex.Message; }
     }
     private PageDocument? CaptureSelectedObjects()
@@ -129,7 +129,7 @@ public partial class MainWindow
         strokes.Transform(new Matrix(1, 0, 0, 1, -bounds.Left, -bounds.Top), false);
         var ids = InkSurface.GetSelectedElements().OfType<TextBox>().Select(box => (Guid)box.Tag).ToHashSet();
         var texts = session.Texts.Where(t => ids.Contains(t.Id)).Select(t => t with { X = t.X - bounds.Left, Y = t.Y - bounds.Top }).ToList();
-        return InkMapper.Capture(strokes) with { Width = session.Paper.Width, Height = session.Paper.Height, Paper = session.Paper, Texts = texts };
+        return InkMapper.Capture(strokes) with { Width = session.Paper.Width, Height = session.Paper.Height, Paper = session.Paper, Texts = texts, Images = session.Images.Where(i => InkSurface.GetSelectedElements().OfType<Image>().Any(e => (Guid)e.Tag == i.Id)).Select(i => i with { X = i.X - bounds.Left, Y = i.Y - bounds.Top }).ToList() };
     }
     public void CopySelectedObjects()
     {
@@ -155,6 +155,7 @@ public partial class MainWindow
     public void DeleteSelectedObjects()
     {
         if (busy || session is null || !HasSelection) return;
+        var selectedImageIds = InkSurface.GetSelectedElements().OfType<Image>().Select(i => (Guid)i.Tag).ToHashSet();
         var strokes = InkSurface.GetSelectedStrokes();
         var ids = InkSurface.GetSelectedElements().OfType<TextBox>().Select(box => (Guid)box.Tag).ToHashSet();
         restoring = true;
@@ -162,14 +163,20 @@ public partial class MainWindow
         {
             InkSurface.Select(new StrokeCollection(), Array.Empty<UIElement>());
             if (strokes.Count > 0) InkSurface.Strokes.Remove(strokes);
-            session.Texts.RemoveAll(t => ids.Contains(t.Id)); RenderTexts();
+            session.Texts.RemoveAll(t => ids.Contains(t.Id));
+            session.Images.RemoveAll(i => selectedImageIds.Contains(i.Id)); RenderTexts();
         }
         finally { restoring = false; }
         SaveFullPage(); UpdateSelectionActions();
     }
     public void PasteSelectedObjects(Point? position = null)
     {
-        if (busy || session is null || Clipboard.GetData(SelectionClipboardFormat) is not string json) return;
+        if (busy || session is null) return;
+        CommitTextEditor();
+        if (Clipboard.GetData(SelectionClipboardFormat) is not string json)
+        {
+            PasteClipboardImage(position); return;
+        }
         if (json.Length > 64 * 1024 * 1024) throw new InvalidDataException("This selection is too large to paste.");
         var document = JsonSerializer.Deserialize<PageDocument>(json) ?? throw new InvalidDataException("The copied selection is invalid.");
         document.Validate();
@@ -178,23 +185,28 @@ public partial class MainWindow
     }
     private void InsertSelection(PageDocument document, Point position)
     {
-        if (session is null || document.Strokes.Count + (document.Texts?.Count ?? 0) == 0) return;
+        if (session is null || document.Strokes.Count + (document.Texts?.Count ?? 0) + (document.Images?.Count ?? 0) == 0) return;
         if (session.Texts.Count + (document.Texts?.Count ?? 0) > 2000) throw new InvalidOperationException("This page has too many text objects to paste more.");
+        if (session.Images.Count + (document.Images?.Count ?? 0) > 200 ||
+            session.Images.Sum(i => (long)i.Png.Length) + (document.Images?.Sum(i => (long)i.Png.Length) ?? 0) > 32_000_000)
+            throw new InvalidOperationException("This page has too many images to paste more.");
         var strokes = InkMapper.Restore(document);
         var bounds = strokes.GetBounds();
         foreach (var text in document.Texts ?? [])
             bounds.Union(new Rect(text.X, text.Y, text.Width, text.FontSize * 1.5));
+        foreach (var image in document.Images ?? []) bounds.Union(new Rect(image.X, image.Y, image.Width, image.Height));
         var x = Math.Clamp(position.X, 0, Math.Max(0, session.Paper.Width - bounds.Right));
         var y = Math.Clamp(position.Y, 0, Math.Max(0, session.Paper.Height - bounds.Bottom));
         strokes.Transform(new Matrix(1, 0, 0, 1, x, y), false);
         foreach (var stroke in strokes) InkMapper.RenewIdentity(stroke);
         var texts = (document.Texts ?? []).Select(t => t with { Id = Guid.NewGuid(), X = t.X + x, Y = t.Y + y }).ToList();
+        var images = (document.Images ?? []).Select(i => i with { Id = Guid.NewGuid(), X = i.X + x, Y = i.Y + y }).ToList();
         restoring = true;
-        try { InkSurface.Strokes.Add(strokes); session.Texts.AddRange(texts); RenderTexts(); }
+        try { InkSurface.Strokes.Add(strokes); session.Texts.AddRange(texts); session.Images.AddRange(images); RenderTexts(); }
         finally { restoring = false; }
-        var ids = texts.Select(t => t.Id).ToHashSet();
+        var ids = texts.Select(t => t.Id).Concat(images.Select(i => i.Id)).ToHashSet();
         LassoButton.IsChecked = true;
-        InkSurface.Select(strokes, InkSurface.Children.OfType<TextBox>().Where(box => ids.Contains((Guid)box.Tag)).Cast<UIElement>());
+        InkSurface.Select(strokes, InkSurface.Children.OfType<FrameworkElement>().Where(box => box.Tag is Guid id && ids.Contains(id)).Cast<UIElement>());
         SaveFullPage(); UpdateSelectionActions();
     }
 }

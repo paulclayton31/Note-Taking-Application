@@ -51,7 +51,7 @@ internal static partial class Program
         var portable = Path.Combine(root, "Annotated.stempage");
         Await(PageStore.SaveAsync(portable, imported[0] with { Strokes = [SampleData()] }));
         var restored = Await(PageStore.LoadAsync(portable));
-        Require(restored.Version == 3 && restored.Background!.SourcePdf.SequenceEqual(imported[0].Background!.SourcePdf) && restored.Strokes.Count == 1,
+        Require(restored.Version == PageDocument.CurrentVersion && restored.Background!.SourcePdf.SequenceEqual(imported[0].Background!.SourcePdf) && restored.Strokes.Count == 1,
             "Portable page round-trip lost the PDF background or ink.");
         var library = Path.Combine(root, "library");
         var window = new MainWindow(library); Await(window.InitializeLibraryAsync()); window.ShowWorkspace(); ArrangeWorkspace(window);
@@ -160,7 +160,7 @@ internal static partial class Program
         using (var connection = new SqliteConnection($"Data Source={Path.Combine(migration, "library.db")};Pooling=False"))
         {
             connection.Open(); using var command = connection.CreateCommand();
-            command.CommandText = "ALTER TABLE pages DROP COLUMN background_json; PRAGMA user_version=3;"; command.ExecuteNonQuery();
+            command.CommandText = "ALTER TABLE pages DROP COLUMN images_json; ALTER TABLE pages DROP COLUMN background_json; PRAGMA user_version=3;"; command.ExecuteNonQuery();
         }
         File.Delete(Path.Combine(migration, "library-v032-backup.db"));
         using (var db = new NotebookDatabase(migration)) { Require(db.LoadPage(legacyPage).Strokes.Count == 1, "Schema 4 migration lost existing ink."); db.MarkClean(); }

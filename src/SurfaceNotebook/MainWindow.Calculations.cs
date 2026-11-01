@@ -70,7 +70,7 @@ public partial class MainWindow
     }
     private void UpdateTextInputModes()
     {
-        foreach (TextBox box in InkSurface.Children)
+        foreach (var box in InkSurface.Children.OfType<TextBox>())
         {
             var calculation = session?.Texts.FirstOrDefault(t => t.Id == (Guid)box.Tag)?.CalculationSource is not null;
             box.IsReadOnly = barrelSelection || toolName != "Text" || calculation;

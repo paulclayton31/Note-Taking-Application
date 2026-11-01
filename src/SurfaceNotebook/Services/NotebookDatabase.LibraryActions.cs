@@ -15,7 +15,8 @@ public sealed partial class NotebookDatabase
             var document = item.Document with
             {
                 Strokes = item.Document.Strokes.Select(s => s with { Id = Guid.NewGuid() }).ToList(),
-                Texts = item.Document.Texts?.Select(t => t with { Id = Guid.NewGuid() }).ToList()
+                Texts = item.Document.Texts?.Select(t => t with { Id = Guid.NewGuid() }).ToList(),
+                Images = item.Document.Images?.Select(t => t with { Id = Guid.NewGuid() }).ToList()
             };
             return new DuplicatedPage(item.Page with { Id = Guid.NewGuid(), NotebookId = notebook.Id, Position = index }, document);
         }).ToList();
@@ -25,9 +26,9 @@ public sealed partial class NotebookDatabase
         foreach (var copy in copies)
         {
             cancellation.ThrowIfCancellationRequested();
-            Execute("INSERT INTO pages(id,notebook_id,name,position,view_json,paper_json,objects_json,background_json) VALUES($id,$book,$name,$position,$view,$paper,$texts,$background);", transaction,
+            Execute("INSERT INTO pages(id,notebook_id,name,position,view_json,paper_json,objects_json,images_json,background_json) VALUES($id,$book,$name,$position,$view,$paper,$texts,$images,$background);", transaction,
                 ("$id", copy.Page.Id.ToString()), ("$book", notebook.Id.ToString()), ("$name", copy.Page.Name), ("$position", copy.Page.Position),
-                ("$view", JsonSerializer.Serialize(copy.Page.View)), ("$paper", JsonSerializer.Serialize(copy.Document.Paper)), ("$texts", JsonSerializer.Serialize(copy.Document.Texts ?? [])),
+                ("$view", JsonSerializer.Serialize(copy.Page.View)), ("$paper", JsonSerializer.Serialize(copy.Document.Paper)), ("$texts", JsonSerializer.Serialize(copy.Document.Texts ?? [])), ("$images", JsonSerializer.Serialize(copy.Document.Images ?? [])),
                 ("$background", copy.Document.Background is null ? DBNull.Value : JsonSerializer.Serialize(copy.Document.Background)));
             for (var i = 0; i < copy.Document.Strokes.Count; i++)
             {

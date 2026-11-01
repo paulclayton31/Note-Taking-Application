@@ -173,6 +173,7 @@
                             <Border Background="#09141C30" Margin="-3,7,-3,-9" CornerRadius="3" IsHitTestVisible="False"/>
                             <local:PaperSurface x:Name="PaperBackground"/>
                             <Image x:Name="PdfPageImage" Stretch="Fill" IsHitTestVisible="False"/>
+                            <Canvas x:Name="PageImages" IsHitTestVisible="False" ClipToBounds="True"/>
                             <local:PenCanvas x:Name="InkSurface" Background="Transparent" ClipToBounds="True" EditingMode="Ink" EditingModeInverted="EraseByStroke" UseCustomCursor="False"/>
                         </Grid>
                     </local:PageViewport>

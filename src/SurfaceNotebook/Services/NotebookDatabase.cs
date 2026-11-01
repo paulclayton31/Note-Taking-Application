@@ -27,7 +27,7 @@ public sealed partial class NotebookDatabase : IDisposable
             connection.Open();
             Execute("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;");
             var version = Convert.ToInt32(Scalar("PRAGMA user_version;"));
-            if (version is < 0 or > 4) throw new InvalidDataException("This notebook library requires a newer app version.");
+            if (version is < 0 or > 5) throw new InvalidDataException("This notebook library requires a newer app version.");
             // Take a consistent SQLite backup before the first v0.2 library migration.
             var backupPath = Path.Combine(directory, "library-v02-backup.db");
             if (version == 1 && !File.Exists(backupPath))
@@ -67,6 +67,13 @@ public sealed partial class NotebookDatabase : IDisposable
                 Backup(Path.Combine(directory, "library-v032-backup.db"));
                 using var migration = connection.BeginTransaction();
                 Execute("ALTER TABLE pages ADD COLUMN background_json TEXT; PRAGMA user_version=4;", migration);
+                migration.Commit();
+            }
+            if (version < 5)
+            {
+                Backup(Path.Combine(directory, "library-v035-backup.db"));
+                using var migration = connection.BeginTransaction();
+                Execute("ALTER TABLE pages ADD COLUMN images_json TEXT; PRAGMA user_version=5;", migration);
                 migration.Commit();
             }
             if (!string.Equals(Convert.ToString(Scalar("PRAGMA quick_check;")), "ok", StringComparison.OrdinalIgnoreCase))
@@ -167,8 +174,8 @@ public sealed partial class NotebookDatabase : IDisposable
         using var transaction = connection.BeginTransaction();
         var paper = page.Paper ?? (page.Width == PageDocument.DefaultWidth && page.Height == PageDocument.DefaultHeight
             ? PaperSettings.Default : PaperSettings.Default with { Format = PaperFormat.Custom, CustomWidth = page.Width / 96, CustomHeight = page.Height / 96 });
-        Execute("UPDATE pages SET paper_json=$paper,objects_json=$texts,background_json=$background WHERE id=$page;", transaction,
-            ("$page", id.ToString()), ("$paper", JsonSerializer.Serialize(paper)), ("$texts", JsonSerializer.Serialize(page.Texts ?? [])), ("$background", page.Background is null ? DBNull.Value : JsonSerializer.Serialize(page.Background)));
+        Execute("UPDATE pages SET paper_json=$paper,objects_json=$texts,images_json=$images,background_json=$background WHERE id=$page;", transaction,
+            ("$page", id.ToString()), ("$paper", JsonSerializer.Serialize(paper)), ("$texts", JsonSerializer.Serialize(page.Texts ?? [])), ("$images", JsonSerializer.Serialize(page.Images ?? [])), ("$background", page.Background is null ? DBNull.Value : JsonSerializer.Serialize(page.Background)));
         Execute("DELETE FROM strokes WHERE page_id=$page;", transaction, ("$page", id.ToString()));
         for (var index = 0; index < page.Strokes.Count; index++)
         {
@@ -191,7 +198,9 @@ public sealed partial class NotebookDatabase : IDisposable
         var texts = string.IsNullOrEmpty(objectsJson) ? [] : JsonSerializer.Deserialize<List<PageText>>(objectsJson) ?? [];
         var backgroundJson = Convert.ToString(Scalar("SELECT background_json FROM pages WHERE id=$page;", ("$page", page.ToString())));
         var background = string.IsNullOrEmpty(backgroundJson) ? null : JsonSerializer.Deserialize<PdfBackground>(backgroundJson);
-        var document = new PageDocument(PageDocument.CurrentVersion, paper.Width, paper.Height, strokes, paper, texts, background);
+        var imagesJson = Convert.ToString(Scalar("SELECT images_json FROM pages WHERE id=$page;", ("$page", page.ToString())));
+        var images = string.IsNullOrEmpty(imagesJson) ? [] : JsonSerializer.Deserialize<List<PageImage>>(imagesJson) ?? [];
+        var document = new PageDocument(PageDocument.CurrentVersion, paper.Width, paper.Height, strokes, paper, texts, background, images);
         document.Validate(enforceSizeLimits: false);
         return document;
     }
@@ -230,16 +239,17 @@ public sealed partial class NotebookDatabase : IDisposable
         var document = original with
         {
             Strokes = original.Strokes.Select(s => s with { Id = Guid.NewGuid() }).ToList(),
-            Texts = original.Texts?.Select(t => t with { Id = Guid.NewGuid() }).ToList()
+            Texts = original.Texts?.Select(t => t with { Id = Guid.NewGuid() }).ToList(),
+                Images = original.Images?.Select(t => t with { Id = Guid.NewGuid() }).ToList()
         };
         var page = new PageSummary(destination, notebook, name, position, view, document.Paper, document.Background is not null);
         using var transaction = connection.BeginTransaction();
         Execute("UPDATE pages SET position=position+1 WHERE notebook_id=$book AND position >= $position;", transaction,
             ("$book", notebook.ToString()), ("$position", position));
-        Execute("INSERT INTO pages(id,notebook_id,name,position,view_json,paper_json,objects_json,background_json) VALUES($id,$book,$name,$position,$view,$paper,$texts,$background);", transaction,
+        Execute("INSERT INTO pages(id,notebook_id,name,position,view_json,paper_json,objects_json,images_json,background_json) VALUES($id,$book,$name,$position,$view,$paper,$texts,$images,$background);", transaction,
             ("$id", destination.ToString()), ("$book", notebook.ToString()), ("$name", name), ("$position", position),
             ("$view", JsonSerializer.Serialize(view)), ("$paper", JsonSerializer.Serialize(document.Paper)),
-            ("$texts", JsonSerializer.Serialize(document.Texts ?? [])), ("$background", document.Background is null ? DBNull.Value : JsonSerializer.Serialize(document.Background)));
+            ("$texts", JsonSerializer.Serialize(document.Texts ?? [])), ("$images", JsonSerializer.Serialize(document.Images ?? [])), ("$background", document.Background is null ? DBNull.Value : JsonSerializer.Serialize(document.Background)));
         for (var i = 0; i < document.Strokes.Count; i++)
         {
             var stroke = document.Strokes[i];

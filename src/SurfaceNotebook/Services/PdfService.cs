@@ -91,6 +91,12 @@ public static class PdfService
                     gfx.DrawImage(image, 0, 0, document.Width, document.Height);
                 }
                 else DrawPaper(gfx, document.Paper ?? PaperSettings.Default with { Format = PaperFormat.Custom, CustomWidth = document.Width / 96, CustomHeight = document.Height / 96 });
+                foreach (var item in document.Images ?? [])
+                {
+                    using var stream = new MemoryStream(item.Png, writable: false);
+                    using var image = XImage.FromStream(stream);
+                    gfx.DrawImage(image, item.X, item.Y, item.Width, item.Height);
+                }
                 foreach (var stroke in InkMapper.Restore(document))
                 {
                     var color = stroke.DrawingAttributes.Color;
