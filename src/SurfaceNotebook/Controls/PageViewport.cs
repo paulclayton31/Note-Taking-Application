@@ -39,10 +39,11 @@ public sealed class PageViewport : Canvas
     }
     public void CancelCalculationPointer()
     {
+        var active=calculationPointer is not null;
         var pen=calculationPen; calculationPen=null;
         if (calculationPointer is not null) { calculationPointer=null; CalculationCanceled?.Invoke(); }
         calculationTouchId=null;
-        if (IsMouseCaptured) ReleaseMouseCapture();
+        if (active && IsMouseCaptured) ReleaseMouseCapture();
         if (pen?.Captured == this) pen.Capture(null);
     }
 
