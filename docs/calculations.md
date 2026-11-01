@@ -1,39 +1,34 @@
-# Handwritten calculations (v0.4 preview)
+# Calculate with Gemini
 
-Choose **Calculate** on the writing toolbar, or press **C**. Circle handwritten variables and expressions, then choose **Review selection**. Calculate has its own workflow; the ordinary Lasso tool and Surface Pen barrel shortcut keep their selection actions.
+Calculate now sends a reviewed image or typed question to Gemini instead of relying on Windows handwriting recognition.
 
-Windows reads the selected handwriting locally. Review and correct the text before adding a result: handwriting recognition can confuse names, digits, and mathematical operators. No recognition runs while you write. If Windows' handwriting component is unavailable, install **Handwriting** in your language's Windows Settings, or use **Type calculation**. The calculator itself works without handwriting recognition or a network connection.
+1. Choose **Calculate** (C).
+2. Circle handwriting/objects, then choose **Solve selection**. For a printed PDF question, diagram, or image region, choose **Select area** and drag a rectangle with your pen or mouse. Press Esc to cancel area selection. You can also choose **Type question**.
+3. Review the exact image that will be sent. Add a question such as “Find V3” or corrections to an ambiguous symbol.
+4. Expand **Gemini API key**, choose **Get a key**, and create a key for your own project in Google AI Studio. Paste it into the masked key field. **Keep billing disabled in Google AI Studio to use the free tier.** The app cannot determine your project's billing tier. A billing-enabled project can incur charges, even for a free-tier-eligible model.
+5. Optionally choose **Remember on this Windows account**. The key is encrypted using Windows user protection in `%LOCALAPPDATA%/SurfaceNotebook/Credentials/gemini-key.bin`, outside notebook data. **Forget saved key** deletes it. No shared developer credential is distributed with the app.
+6. Choose **Solve with Gemini**. Opening a preview or selecting content never uploads it automatically.
+7. Check **What I read**, **Answer**, and **Solution / clarification**. If Gemini cannot read a symbol or lacks necessary information, correct the question and solve again. Changing the question invalidates the old result.
+8. Choose **Add to note** to save the reviewed solution. Your handwriting is preserved. Undo/redo, duplication, portable pages, and PDF export retain the cached answer. Tap an AI card with Calculate to review its saved image and explanation offline, or explicitly request another solution.
 
-For a first example, write these on separate lines:
+## Free-tier behavior and privacy
 
-```text
-F = m * a
-m = 2
-a = 3
-```
+This prototype uses `gemini-3.5-flash-lite` through Google's Gemini Developer API. It sends the preview PNG and question directly from the desktop app to Google over HTTPS, using your key in an authentication header. The key is never stored in a page, portable export, PDF, or request URL.
 
-Review the interpretation. The result preview shows **F → 6**. Choose **Add to page** to insert a calculation card. Your handwritten strokes remain untouched. With Calculate selected, tap the card to reopen it, change `m` to `4`, and choose **Update calculation**: the result becomes **12**. Draft edits and recognition do not change the notebook until you choose Add or Update. Cancel discards the draft.
+Quota errors show a message; the app does not automatically retry or fall back to another model. Free availability and limits depend on Google, your project, and region. The app does not enable billing. It does not provide a shared backend or quota pool.
 
-## Supported math
+Google's free tier can use submitted content to improve its products. Only send notes you are comfortable submitting. Area previews include all visible content inside the rectangle, including nearby writing and PDF backgrounds. The exact image is shown before submission. No whole notebook or hidden page content is sent.
 
-- Variable assignments and numerical expressions, one per line or separated by semicolons. Formulas can appear above their inputs. Each card has its own variables.
-- `+`, `-`, `*`, `/`, right-associative `^`, parentheses, unary signs, and postfix percent (`50% * 80` gives `40`). `-2^2` gives `-4`; use `(-2)^2` for `4`.
-- Decimal points and scientific notation (`.5`, `1e-3`). Use dots for decimals; commas separate function arguments.
-- Constants `pi` / `π` and `e`.
-- `sqrt`, `abs`, `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `ln`, `log` / `log10`, `exp`, `floor`, `ceil`, `round`, and two-argument `min` / `max`. Trigonometry uses radians; `round` rounds midpoint values away from zero.
-- Common handwriting symbols `×`, `÷`, `−`, `²`, and `³`. Numeric coefficients such as `2x` work, but use `m * a` between named variables: `ma` is a single name.
-- Names are case-sensitive (`m` and `M` differ). Duplicate definitions, missing inputs, circular dependencies, division by zero, invalid real-number domains, and non-finite results show an error and prevent insertion.
+Responses are AI-generated and can misread handwriting or solve incorrectly. This first version does not execute model-generated code or independently verify every answer. It asks for plain-text, checkable equations; math typesetting and calculator-tool verification are future improvements.
 
-Results use numerical floating-point arithmetic and display up to 12 significant digits. This preview does not solve symbolic equations or support units, stacked fractions, matrices, graphs, or automatic links to later handwriting edits. Enter fractions with `/`; use plain numeric values for variables. Correct the reviewed source to update a card.
+## Limits and errors
 
-## Saving and recovery
+Images render independently of the viewport zoom, at up to 2× page resolution with a 2048-pixel longest side. Requests accept up to 8 MB of PNG data and 12,000 question characters. Requests time out after 90 seconds; Stop and Close cancel pending work and prevent late results from being added. Saved source images share the page's 32 MB image budget.
 
-Adding or updating a card is one undoable edit. Ordinary lasso actions move, copy, resize, duplicate, and delete cards. Calculation source and results survive restarting, page/notebook duplication, portable-page export/import, and copying. PDF export includes the visible calculation and result; PDF backgrounds remain fixed.
+Invalid keys, unavailable models, network errors, incomplete responses, and free-tier quota errors leave the original page unchanged. The legacy offline expression editor remains available when opening a calculation card created before this version.
 
-The Text tool does not overwrite a calculation's generated result, and word-level scribble erasing skips calculation cards. Use Calculate to edit a card or Lasso / its context menu to delete it.
+## Validation
 
-Schema **4** and portable-page version **3** are unchanged. Calculations add optional metadata to text objects. Older versions can display the saved result text but may discard the editable formula metadata when resaving it. Keep an existing library backup when trying a preview and use the preview to edit calculation cards.
+Windows regression checks use a simulated HTTP handler: no real keys, notebook uploads, or paid API requests occur in CI. Checks cover the endpoint/header/body, exact preview bytes, structured responses, clarification, quota and credential errors, cancellation, encrypted key storage, persistence, undo/redo, and export. Release screenshots contain a labeled example, not a live Gemini result. Real handwriting accuracy still needs validation with the user's own free-tier key.
 
-## Preview validation
-
-The portable calculation checks run on Linux and Windows. The Windows harness exercises calculation review, insertion/edit/Undo/Redo, source-ink preservation, copy isolation, durable metadata, PDF export, touch filtering, and barrel-tool restoration. It also reports whether Windows handwriting recognition is available; availability on a CI image does not establish recognition quality on a Surface. Physical testing is still needed for handwriting variety, language packs, palm behavior, and ARM64 execution.
+References: [Gemini image input](https://ai.google.dev/gemini-api/docs/image-understanding), [API reference](https://ai.google.dev/api/generate-content), [pricing](https://ai.google.dev/gemini-api/docs/pricing).

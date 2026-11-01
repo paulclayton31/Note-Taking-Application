@@ -73,6 +73,7 @@ public partial class MainWindow
     {
         if (InkSurface is null || ColorPicker is null || sender is not RadioButton button || !IsInitialized) return;
         CommitTextEditor();
+        CancelCalculationArea();
         CancelHeldShape();
         barrelSelection = false;
         toolName = (string)button.Tag;
@@ -101,7 +102,7 @@ public partial class MainWindow
             "Shape" => "Drag from one corner to the opposite corner",
             "Text" => "Tap the paper with a pen or click to add text",
             "Hand" => "Drag with pen or mouse · fingers always navigate",
-            "Calculate" => "Circle handwriting · review variables and expressions · tap a calculation card to edit",
+            "Calculate" => "Circle a problem or select an area · solve with Gemini",
             _ => "Pressure-sensitive ink, tuned for Surface Pen"
         };
         ColorControls.Visibility = toolName is "Pen" or "Highlighter" or "Shape" or "Text" ? Visibility.Visible : Visibility.Collapsed;

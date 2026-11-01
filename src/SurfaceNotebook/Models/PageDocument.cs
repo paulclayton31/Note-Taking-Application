@@ -40,13 +40,18 @@ public sealed record PageDocument(int Version, double Width, double Height,
         if (Texts is not null)
         {
             if (Texts.Count > 2000) throw new InvalidDataException("Too many text objects.");
+            if (Texts.Sum(t => (long)(t?.AiCalculation?.ImagePng?.Length ?? 0)) + (Images?.Sum(i => (long)i.Png.Length) ?? 0) > 32_000_000)
+                throw new InvalidDataException("Page images exceed the 32 MB limit.");
             var textIds = new HashSet<Guid>();
             foreach (var text in Texts)
+            {
+                text?.AiCalculation?.Validate();
                 if (text is null || text.Id == Guid.Empty || !textIds.Add(text.Id) || !double.IsFinite(text.X) || !double.IsFinite(text.Y) ||
                     Math.Abs(text.X) > 100000 || Math.Abs(text.Y) > 100000 || !double.IsFinite(text.Width) || text.Width < 40 || text.Width > 3456 ||
                     !double.IsFinite(text.FontSize) || text.FontSize < 8 || text.FontSize > 96 || !PaperSettings.IsColor(text.Color) ||
                     text.Text is null || text.Text.Length > 100000 || text.CalculationSource is { Length: > 12000 })
                     throw new InvalidDataException("Invalid text object.");
+            }
         }
         if (Strokes is null || (enforceSizeLimits && Strokes.Count > 20_000))
             throw new InvalidDataException("Invalid stroke collection.");

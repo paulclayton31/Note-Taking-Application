@@ -140,6 +140,7 @@ public partial class MainWindow : Window
     }
     private void SetBusy(bool value)
     {
+        if (value) CancelCalculationArea();
         busy = value;
         Toolbar.IsEnabled = !value;
         SavedColorBar.IsEnabled = !value;
@@ -447,7 +448,8 @@ public partial class MainWindow : Window
         if (e.Key == Key.F11) { ToggleFocus(); e.Handled = true; return; }
         if (e.Key == Key.Escape)
         {
-            if (selectionMenu.IsOpen) selectionMenu.IsOpen = false;
+            if (CalculationAreaOverlay.Visibility == Visibility.Visible) CancelCalculationArea();
+            else if (selectionMenu.IsOpen) selectionMenu.IsOpen = false;
             else if (ZoomPopup.IsOpen) ZoomPopup.IsOpen = false;
             else if (IsToolInspectorOpen) CloseToolInspector();
             else if (textEditor is not null) CommitTextEditor();

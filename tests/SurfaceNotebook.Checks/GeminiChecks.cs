@@ -1,0 +1,107 @@
+using System.IO;
+using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Ink;
+using SurfaceNotebook;
+using SurfaceNotebook.Controls;
+using SurfaceNotebook.Models;
+using SurfaceNotebook.Services;
+
+internal static partial class Program
+{
+    private sealed class GeminiHandler : HttpMessageHandler
+    {
+        public int Requests;
+        public HttpStatusCode Status = HttpStatusCode.OK;
+        public bool Clarify, Block, Malformed;
+        public string? Body, Key, Url;
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
+        {
+            Requests++; Url = request.RequestUri!.AbsoluteUri;
+            Key = request.Headers.GetValues("x-goog-api-key").Single();
+            Body = await request.Content!.ReadAsStringAsync(cancellation);
+            if (Block) await Task.Delay(Timeout.Infinite, cancellation);
+            var result = new { problem = "x = 2; x + 3", answer = Clarify ? "" : "5", explanation = Clarify ? "Is the handwritten value 2 or 7?" : "Substitute x: 2 + 3 = 5.", needsClarification = Clarify };
+            var envelope = new { candidates = new[] { new { finishReason = "STOP", content = new { parts = new[] { new { text = JsonSerializer.Serialize(result) } } } } } };
+            return new HttpResponseMessage(Status) { Content = new StringContent(Malformed ? "{}" : JsonSerializer.Serialize(envelope), Encoding.UTF8, "application/json") };
+        }
+    }
+    private static void CheckGemini(string root)
+    {
+        Directory.CreateDirectory(root);
+        var original = InkMapper.Capture(new StrokeCollection { SampleStroke() });
+        var png = CalculationCapture.Create(original, new Rect(60, 70, 160, 100));
+        var image = PageImageSource.Decode(png);
+        Require(image.PixelWidth == 320 && image.PixelHeight == 200, "Calculation crop lost page-space resolution.");
+        var handler = new GeminiHandler(); using var client = new HttpClient(handler); var service = new GeminiCalculator(client);
+        var keys = new GeminiKeyStore(Path.Combine(root, "keys")); const string testKey = "test-key-never-sent-to-google";
+        keys.Save(testKey); Require(keys.Load() == testKey, "Encrypted API-key storage did not round-trip.");
+        Require(!Encoding.UTF8.GetString(File.ReadAllBytes(Path.Combine(root, "keys", "gemini-key.bin"))).Contains(testKey), "API key was stored as plain text.");
+        var editor = new GeminiCalculationEditor(); editor.Prepare(png, "Find x + 3", keys, service: service);
+        Require(handler.Requests == 0 && editor.Result is null, "Opening a calculation uploaded notes automatically.");
+        Await(editor.SolveAsync());
+        Require(editor.Result?.Answer == "5" && ((Button)editor.FindName("AcceptButton")).IsEnabled, "Gemini solution could not be reviewed or added.");
+        Require(handler.Key == testKey && !handler.Url!.Contains(testKey) && handler.Url.Contains(GeminiCalculator.Model), "Request exposed a key in its URL or used an unexpected model.");
+        using (var body = JsonDocument.Parse(handler.Body!))
+        {
+            var part = body.RootElement.GetProperty("contents")[0].GetProperty("parts")[0];
+            Require(Convert.FromBase64String(part.GetProperty("inlineData").GetProperty("data").GetString()!).SequenceEqual(png), "The sent image differed from the preview.");
+            Require(!handler.Body!.Contains(testKey), "API key leaked into model input.");
+        }
+        var saved = editor.Result!;
+        ((TextBox)editor.FindName("QuestionBox")).Text = "Actually x = 7";
+        Require(editor.Result is null && !((Button)editor.FindName("AcceptButton")).IsEnabled, "Changing the question left an outdated result addable.");
+        handler.Clarify = true; Await(editor.SolveAsync());
+        Require(editor.Result is null && ((TextBox)editor.FindName("ExplanationText")).Text.Contains("2 or 7"), "Ambiguous handwriting was silently accepted.");
+        handler.Clarify = false; handler.Status = HttpStatusCode.TooManyRequests;
+        var calls = handler.Requests; Await(editor.SolveAsync());
+        Require(handler.Requests == calls + 1 && editor.Result is null && ((TextBlock)editor.FindName("ErrorText")).Text.Contains("usage limit"), "Quota errors retried, switched models, or left a stale result.");
+        handler.Status = HttpStatusCode.Forbidden; Await(editor.SolveAsync());
+        Require(((TextBlock)editor.FindName("ErrorText")).Text.Contains("key"), "Invalid credentials were not explained.");
+        handler.Status = HttpStatusCode.OK; handler.Malformed = true; Await(editor.SolveAsync());
+        Require(editor.Result is null && !((Button)editor.FindName("AcceptButton")).IsEnabled, "Malformed Gemini output became a solution.");
+        handler.Malformed = false; handler.Block = true;
+        using (var canceled = new CancellationTokenSource())
+        {
+            canceled.Cancel();
+            try { Await(service.SolveAsync(testKey, png, "Solve", canceled.Token)); throw new Exception("Canceled Gemini request succeeded."); }
+            catch (OperationCanceledException) { }
+        }
+        var pending = editor.SolveAsync(); editor.Stop(); Await(pending);
+        Require(editor.Result is null, "Closing a review accepted a late response.");
+        keys.Delete(); Require(keys.Load() == "", "Forget key did not remove the credential.");
+
+        var window = new MainWindow(Path.Combine(root, "library")); Await(window.InitializeLibraryAsync()); window.ShowWorkspace(); ArrangeWorkspace(window);
+        var ink = (PenCanvas)window.FindName("InkSurface"); var page = window.CurrentPageId!.Value;
+        try
+        {
+            ((RadioButton)window.FindName("CalculateButton")).IsChecked = true;
+            Click((Button)window.FindName("SelectCalculationAreaButton"));
+            Require(((FrameworkElement)window.FindName("CalculationAreaOverlay")).Visibility == Visibility.Visible, "Calculate could not select a PDF/image area.");
+            ((RadioButton)window.FindName("PenButton")).IsChecked = true;
+            Require(((FrameworkElement)window.FindName("CalculationAreaOverlay")).Visibility == Visibility.Collapsed && ink.EditingMode == InkCanvasEditingMode.Ink,
+                "Switching tools left the area selection overlay active.");
+            Collect(ink, SampleStroke()); var originalId = InkMapper.Identity(ink.Strokes.Single());
+            window.SaveAiCalculation(saved, new Point(80, 250));
+            Require(ink.Children.OfType<TextBox>().Single().Text.Contains("Answer") && ink.Children.OfType<TextBox>().Single().Text.Contains("5") && InkMapper.Identity(ink.Strokes.Single()) == originalId, "Adding an AI solution changed handwriting or lost the result.");
+            Click((Button)window.FindName("UndoButton")); Require(ink.Children.Count == 0 && ink.Strokes.Count == 1, "AI result did not undo independently.");
+            Click((Button)window.FindName("RedoButton"));
+            ((RadioButton)window.FindName("LassoButton")).IsChecked = true;
+            ink.Select(new StrokeCollection(), ink.Children.Cast<UIElement>()); window.DuplicateSelectedObjects();
+            Require(ink.Children.Count == 2, "AI card could not be duplicated.");
+            Click((Button)window.FindName("UndoButton"));
+            Require(Await(window.FlushAsync()) && Await(window.ShutdownLibraryAsync()), "AI result failed to save.");
+            using var db = new NotebookDatabase(Path.Combine(root, "library"));
+            var document = db.LoadPage(page); var result = document.Texts!.Single().AiCalculation!;
+            Require(result.Answer == "5" && result.ImagePng!.SequenceEqual(png), "Saved result lost its source image or answer.");
+            var portable = Path.Combine(root, "ai.stempage"); Await(PageStore.SaveAsync(portable, document));
+            Require(Await(PageStore.LoadAsync(portable)).Texts!.Single().AiCalculation!.Explanation == saved.Explanation, "Portable export lost the AI explanation.");
+            Await(PdfService.ExportAsync(Path.Combine(root, "ai.pdf"), [document], "AI solution")); db.MarkClean();
+        }
+        finally { Await(window.ShutdownLibraryAsync()); }
+    }
+}
