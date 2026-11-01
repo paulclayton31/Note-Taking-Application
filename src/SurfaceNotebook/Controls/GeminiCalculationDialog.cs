@@ -12,7 +12,7 @@ public sealed class GeminiCalculationDialog : Window
     public AiCalculation? Result => accepted;
     public GeminiCalculationDialog(byte[]? png, string question, GeminiKeyStore keys, AiCalculation? saved = null)
     {
-        Title = "Calculate with Gemini"; Width = Math.Min(650, SystemParameters.WorkArea.Width);
+        Title = "Calculate with Gemini · " + (typeof(GeminiCalculationDialog).Assembly.GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false).OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion.Split('+')[0] ?? ""); Width = Math.Min(650, SystemParameters.WorkArea.Width);
         Height = Math.Min(850, SystemParameters.WorkArea.Height);
         MinWidth = Math.Min(360, Width); MinHeight = Math.Min(480, Height);
         WindowStartupLocation = WindowStartupLocation.CenterOwner; ShowInTaskbar = false; Content = editor;

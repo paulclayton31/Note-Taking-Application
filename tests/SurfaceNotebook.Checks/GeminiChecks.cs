@@ -18,7 +18,7 @@ internal static partial class Program
         public int Requests;
         public HttpStatusCode Status = HttpStatusCode.OK;
         public bool Clarify, Block, Malformed, InvalidSteps, Circuit;
-        public string? Body, Key, Url;
+        public string? Body, Key, Url, ErrorBody;
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
         {
             Requests++; Url = request.RequestUri!.AbsoluteUri;
@@ -27,7 +27,7 @@ internal static partial class Program
             if (Block) await Task.Delay(Timeout.Infinite, cancellation);
             var result = new { problem = "x = 2; x + 3", answer = Clarify ? "" : Circuit ? "18 V" : "5", explanation = Clarify ? "Is the handwritten value 2 or 7?" : "Substitute x: 2 + 3 = 5.", circuit = Circuit ? new DcCircuit([new("s","a",2),new("a","0",4),new("a","b",2),new("b","0",6)], [new("s","0",8)], [new("0","a",6)], "b","0") : null, needsClarification = Clarify, steps = Clarify ? Array.Empty<object>() : new object[] { new { title = InvalidSteps ? "" : "Substitute the known value", detail = "Use x = 2 in the expression.", equations = new[] { "x + 3 = 2 + 3", "2 + 3 = 5" } } } };
             var envelope = new { candidates = new[] { new { finishReason = "STOP", content = new { parts = new[] { new { text = JsonSerializer.Serialize(result) } } } } } };
-            return new HttpResponseMessage(Status) { Content = new StringContent(Malformed ? "{}" : JsonSerializer.Serialize(envelope), Encoding.UTF8, "application/json") };
+            return new HttpResponseMessage(Status) { Content = new StringContent(ErrorBody ?? (Malformed ? "{}" : JsonSerializer.Serialize(envelope)), Encoding.UTF8, "application/json") };
         }
     }
     private static void CheckGemini(string root)
@@ -71,6 +71,11 @@ internal static partial class Program
         Require(handler.Key == testKey && !handler.Url!.Contains(testKey) && handler.Url.Contains(GeminiCalculator.Model), "Request exposed a key in its URL or used an unexpected model.");
         using (var body = JsonDocument.Parse(handler.Body!))
         {
+            var config = body.RootElement.GetProperty("generationConfig");
+            var format = config.GetProperty("responseFormat").GetProperty("text");
+            Require(format.GetProperty("mimeType").GetString() == "APPLICATION_JSON" && !config.TryGetProperty("responseSchema", out _), "Request mixed incompatible response schema formats.");
+            var schema = format.GetProperty("schema");
+            Require(!schema.GetProperty("required").EnumerateArray().Any(p => p.GetString() == "circuit") && !schema.GetProperty("properties").GetProperty("circuit").TryGetProperty("nullable", out _), "Circuit schema still required a nullable graph.");
             var part = body.RootElement.GetProperty("contents")[0].GetProperty("parts")[0];
             Require(Convert.FromBase64String(part.GetProperty("inlineData").GetProperty("data").GetString()!).SequenceEqual(png), "The sent image differed from the preview.");
             Require(!handler.Body!.Contains(testKey), "API key leaked into model input.");
@@ -97,6 +102,19 @@ internal static partial class Program
         Require(handler.Requests == calls + 1 && editor.Result is null && ((TextBlock)editor.FindName("ErrorText")).Text.Contains("usage limit"), "Quota errors retried, switched models, or left a stale result.");
         handler.Status = HttpStatusCode.Forbidden; Await(editor.SolveAsync());
         Require(((TextBlock)editor.FindName("ErrorText")).Text.Contains("key"), "Invalid credentials were not explained.");
+        handler.Status = HttpStatusCode.BadRequest;
+        handler.ErrorBody = JsonSerializer.Serialize(new { error = new { status = "INVALID_ARGUMENT", message = "response format schema is invalid " + testKey } });
+        calls = handler.Requests; Await(editor.SolveAsync());
+        var schemaError = ((TextBlock)editor.FindName("ErrorText")).Text;
+        Require(schemaError.Contains("HTTP 400") && schemaError.Contains("request format") && schemaError.Contains("INVALID_ARGUMENT") && !schemaError.Contains(testKey) && handler.Requests == calls+1 && editor.Result is null, "Request schema rejection was hidden, retried, or exposed the key.");
+        handler.ErrorBody = JsonSerializer.Serialize(new { error = new { status = "INVALID_ARGUMENT", message = "API key not valid.", details = new[] { new { reason = "API_KEY_INVALID" } } } });
+        Await(editor.SolveAsync());
+        Require(((TextBlock)editor.FindName("ErrorText")).Text.Contains("rejected the API key"), "Invalid key delivered as HTTP 400 was misclassified as a schema error.");
+        handler.ErrorBody = "not JSON"; Await(editor.SolveAsync());
+        Require(((TextBlock)editor.FindName("ErrorText")).Text.Contains("HTTP 400"), "Malformed error body hid the HTTP diagnosis.");
+        handler.Status = HttpStatusCode.Forbidden; handler.ErrorBody = ""; Await(editor.SolveAsync());
+        Require(((TextBlock)editor.FindName("ErrorText")).Text.Contains("HTTP 403"), "Empty permission response was unreadable.");
+        handler.ErrorBody = null;
         handler.Status = HttpStatusCode.OK; handler.Malformed = true; Await(editor.SolveAsync());
         Require(editor.Result is null && !((Button)editor.FindName("AcceptButton")).IsEnabled, "Malformed Gemini output became a solution.");
         handler.Malformed = false; handler.InvalidSteps = true; Await(editor.SolveAsync());
