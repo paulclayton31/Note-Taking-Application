@@ -192,6 +192,7 @@ public sealed class PageViewport : Canvas
     }
     public void SetView(PageView view)
     {
+        CancelTouchHold();
         View = view.Constrain(ActualWidth > 0 ? ActualWidth : 1000, ActualHeight > 0 ? ActualHeight : 700, PaperWidth, PaperHeight);
         if (Children.Count > 0)
             Children[0].RenderTransform = new MatrixTransform(View.Zoom, 0, 0, View.Zoom, View.X, View.Y);
