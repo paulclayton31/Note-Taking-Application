@@ -12,6 +12,11 @@ public sealed record DcCircuit(CircuitPart[] Resistors, CircuitPart[] VoltageSou
 public static class DcCircuitSolver
 {
     private static string F(double x) => x.ToString("G6", CultureInfo.InvariantCulture);
+    private static string Exact(double value)
+    {
+        for (int d=1;d<=1000;d++) { var n=Math.Round(value*d); if(Math.Abs(n/d-value)<1e-10*(1+Math.Abs(value))) return d==1 ? F(value) : $"\\frac{{{F(n)}}}{{{d}}}"; }
+        return F(value);
+    }
     public static (string Answer, SolutionStep[] Steps) Solve(DcCircuit c)
     {
         if (c.Resistors is null || c.VoltageSources is null || c.CurrentSources is null || c.VoltageSources.Length+c.CurrentSources.Length>6) throw new InvalidDataException("Unsupported or incomplete circuit graph.");
@@ -49,11 +54,11 @@ public static class DcCircuitSolver
             double incoming=c.CurrentSources.Sum(i=>(i.To==node?i.Value:0)-(i.From==node?i.Value:0));
             steps.Add(new($"Node method: node {node}", "Sum the resistor currents leaving this node and equate them to the net source current entering it.", [string.Join(" + ",terms)+" = "+F(incoming)]));
         }
-        steps.Add(new("Solve the node equations", "The app solves the circuit equations and checks their residuals. Output voltage is measured from the positive output node to the negative output node.", nodes.Select((node,i)=>$"V_{{{node}}} = {F(solved[i])}\\,\\mathrm{{V}}").Append($"V_0 = {F(output)}\\,\\mathrm{{V}}").ToArray()));
+        steps.Add(new("Solve the node equations", "The app solves the circuit equations and checks their residuals. Output voltage is measured from the positive output node to the negative output node.", nodes.Select((node,i)=>$"V_{{{node}}} = {F(solved[i])}\\,\\mathrm{{V}}").Append($"V_{{out}} = {Exact(output)} \\approx {F(output)}\\,\\mathrm{{V}}").ToArray()));
         var contributions=new List<double>();
         for(int k=0;k<c.VoltageSources.Length+c.CurrentSources.Length;k++) { var values=Run(k); double contribution=V(values,c.Positive)-V(values,c.Negative); contributions.Add(contribution); steps.Add(new($"Superposition: source {k+1} alone", "Keep this source active. Short all other independent voltage sources and open all other independent current sources.", [$"V_{{0,{k+1}}} = {F(contribution)}\\,\\mathrm{{V}}"])); }
         if(Math.Abs(contributions.Sum()-output)>1e-7*(1+Math.Abs(output))) throw new InvalidDataException("Node and superposition results disagree.");
-        steps.Add(new("Combine and check", "The source contributions agree with the full node solution. This checks the calculation for the interpreted circuit, not the image transcription.", [$"V_0 = {string.Join(" + ",contributions.Select(x=>"("+F(x)+")"))} = {F(output)}\\,\\mathrm{{V}}"]));
-        return ($"V_0 = {F(output)}\\,\\mathrm{{V}}",steps.ToArray());
+        steps.Add(new("Combine and check", "The source contributions agree with the full node solution. This checks the calculation for the interpreted circuit, not the image transcription.", [$"V_{{out}} = {string.Join(" + ",contributions.Select(x=>"("+F(x)+")"))} = {F(output)}\\,\\mathrm{{V}}"]));
+        return ($"V_{{out}} = {Exact(output)} \\approx {F(output)}\\,\\mathrm{{V}}",steps.ToArray());
     }
 }
