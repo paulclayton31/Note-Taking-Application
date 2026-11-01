@@ -10,6 +10,8 @@
   </StackPanel>
   <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
    <StackPanel>
+    <Expander x:Name="SourcePanel" Header="Problem, corrections and Gemini settings" IsExpanded="True" Margin="0,0,0,16">
+     <StackPanel Margin="0,12,0,0">
     <Border Background="White" BorderBrush="{DynamicResource Stroke}" BorderThickness="1" CornerRadius="6" Padding="8" Margin="0,0,0,12">
      <StackPanel><Image x:Name="SelectionImage" MaxHeight="220" Stretch="Uniform" AutomationProperties.Name="Image sent to Gemini"/><TextBlock x:Name="NoImage" Text="No image selected. Type your problem below." Foreground="#FF334155" TextWrapping="Wrap"/></StackPanel>
     </Border>
@@ -26,14 +28,31 @@
     <WrapPanel><Button x:Name="SolveButton" Content="Solve with Gemini" Click="Solve_Click" Style="{StaticResource PrimaryButton}" Padding="12,8" Margin="0,0,8,8"/><Button x:Name="StopButton" Content="Stop" Click="Stop_Click" Visibility="Collapsed" Padding="12,8" Margin="0,0,0,8"/></WrapPanel>
     <TextBlock x:Name="StatusText" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,0,0,8" AutomationProperties.Name="Gemini status"/>
     <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="{DynamicResource Danger}" Margin="0,0,0,8" AutomationProperties.Name="Gemini error"/>
-    <Border Background="{DynamicResource Workspace}" CornerRadius="8" Padding="12" Margin="0,0,0,8">
+     </StackPanel>
+    </Expander>
+    <Border x:Name="ResultPanel" Visibility="Collapsed" Background="{DynamicResource Workspace}" CornerRadius="8" Padding="16" Margin="0,0,0,8">
      <StackPanel>
-      <TextBlock Text="WHAT I READ" FontSize="10" Foreground="{DynamicResource Muted}" FontWeight="SemiBold"/>
-      <TextBox x:Name="ProblemText" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Margin="0,4,0,12" AutomationProperties.Name="Interpreted problem"/>
-      <TextBlock Text="ANSWER" FontSize="10" Foreground="{DynamicResource Muted}" FontWeight="SemiBold"/>
-      <TextBox x:Name="AnswerText" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Margin="0,4,0,12" AutomationProperties.Name="AI answer"/>
-      <TextBlock Text="SOLUTION / CLARIFICATION" FontSize="10" Foreground="{DynamicResource Muted}" FontWeight="SemiBold"/>
-      <TextBox x:Name="ExplanationText" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Margin="0,4,0,0" AutomationProperties.Name="AI solution"/>
+      <TextBlock Text="ANSWER" FontSize="11" Foreground="{DynamicResource Muted}" FontWeight="SemiBold"/>
+      <TextBox x:Name="AnswerText" FontSize="24" FontWeight="SemiBold" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Margin="0,8,0,16" AutomationProperties.Name="AI answer"/>
+      <Expander Header="What Gemini read — check the interpretation" Margin="0,0,0,16">
+       <TextBox x:Name="ProblemText" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Margin="0,8,0,4" AutomationProperties.Name="Interpreted problem"/>
+      </Expander>
+      <TextBlock Text="WORKED SOLUTION" FontSize="11" Foreground="{DynamicResource Muted}" FontWeight="SemiBold"/>
+      <TextBox x:Name="ExplanationText" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Margin="0,8,0,16" AutomationProperties.Name="Solution overview or clarification"/>
+      <ItemsControl x:Name="StepsList">
+       <ItemsControl.ItemTemplate>
+        <DataTemplate>
+         <Border BorderBrush="{DynamicResource Stroke}" BorderThickness="0,0,0,1" Padding="0,0,0,16" Margin="0,0,0,16">
+          <StackPanel>
+           <TextBlock Text="{Binding Heading}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+           <TextBox Text="{Binding Detail}" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="Transparent" Margin="0,0,0,8"/>
+           <TextBox Text="{Binding EquationText}" FontFamily="Cambria Math" FontSize="18" IsReadOnly="True" TextWrapping="Wrap" BorderThickness="0" Background="{DynamicResource Surface}" Padding="10" Visibility="{Binding EquationVisibility}"/>
+          </StackPanel>
+         </Border>
+        </DataTemplate>
+       </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Button x:Name="CopySolutionButton" Content="Copy solution" Click="CopySolution_Click" HorizontalAlignment="Left" Padding="12,8"/>
      </StackPanel>
     </Border>
     <TextBlock Text="Check the interpreted symbols and answer. AI results can be incorrect." Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap"/>

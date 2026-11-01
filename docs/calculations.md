@@ -8,7 +8,7 @@ Calculate now sends a reviewed image or typed question to Gemini instead of rely
 4. Expand **Gemini API key**, choose **Get a key**, and create a key for your own project in Google AI Studio. Paste it into the masked key field. **Keep billing disabled in Google AI Studio to use the free tier.** The app cannot determine your project's billing tier. A billing-enabled project can incur charges, even for a free-tier-eligible model.
 5. Optionally choose **Remember on this Windows account**. The key is encrypted using Windows user protection in `%LOCALAPPDATA%/SurfaceNotebook/Credentials/gemini-key.bin`, outside notebook data. **Forget saved key** deletes it. No shared developer credential is distributed with the app.
 6. Choose **Solve with Gemini**. Opening a preview or selecting content never uploads it automatically.
-7. Check **What I read**, **Answer**, and **Solution / clarification**. If Gemini cannot read a symbol or lacks necessary information, correct the question and solve again. Changing the question invalidates the old result.
+7. Review the prominent **Answer**, expand **What Gemini read** to check the interpretation, and follow the numbered **Worked solution** steps. Equations appear on separate lines. **Copy solution** retains headings and spacing. The problem and settings fold away after a successful solve; expand them to correct the question or solve again. If Gemini cannot read a symbol or lacks necessary information, correct the question and solve again. Changing the question invalidates the old result.
 8. Choose **Add to note** to save the reviewed solution. Your handwriting is preserved. Undo/redo, duplication, portable pages, and PDF export retain the cached answer. Tap an AI card with Calculate to review its saved image and explanation offline, or explicitly request another solution.
 
 ## Free-tier behavior and privacy
@@ -19,7 +19,7 @@ Quota errors show a message; the app does not automatically retry or fall back t
 
 Google's free tier can use submitted content to improve its products. Only send notes you are comfortable submitting. Area previews include all visible content inside the rectangle, including nearby writing and PDF backgrounds. The exact image is shown before submission. No whole notebook or hidden page content is sent.
 
-Responses are AI-generated and can misread handwriting or solve incorrectly. This first version does not execute model-generated code or independently verify every answer. It asks for plain-text, checkable equations; math typesetting and calculator-tool verification are future improvements.
+Responses are AI-generated and can misread handwriting or solve incorrectly. This first version does not execute model-generated code or independently verify every answer. It requests bounded structured steps with titles, explanations and separate Unicode equations; math typesetting and calculator-tool verification are future improvements.
 
 ## Limits and errors
 

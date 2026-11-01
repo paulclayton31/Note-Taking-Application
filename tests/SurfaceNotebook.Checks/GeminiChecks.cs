@@ -17,7 +17,7 @@ internal static partial class Program
     {
         public int Requests;
         public HttpStatusCode Status = HttpStatusCode.OK;
-        public bool Clarify, Block, Malformed;
+        public bool Clarify, Block, Malformed, InvalidSteps;
         public string? Body, Key, Url;
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellation)
         {
@@ -25,7 +25,7 @@ internal static partial class Program
             Key = request.Headers.GetValues("x-goog-api-key").Single();
             Body = await request.Content!.ReadAsStringAsync(cancellation);
             if (Block) await Task.Delay(Timeout.Infinite, cancellation);
-            var result = new { problem = "x = 2; x + 3", answer = Clarify ? "" : "5", explanation = Clarify ? "Is the handwritten value 2 or 7?" : "Substitute x: 2 + 3 = 5.", needsClarification = Clarify };
+            var result = new { problem = "x = 2; x + 3", answer = Clarify ? "" : "5", explanation = Clarify ? "Is the handwritten value 2 or 7?" : "Substitute x: 2 + 3 = 5.", needsClarification = Clarify, steps = Clarify ? Array.Empty<object>() : new object[] { new { title = InvalidSteps ? "" : "Substitute the known value", detail = "Use x = 2 in the expression.", equations = new[] { "x + 3 = 2 + 3", "2 + 3 = 5" } } } };
             var envelope = new { candidates = new[] { new { finishReason = "STOP", content = new { parts = new[] { new { text = JsonSerializer.Serialize(result) } } } } } };
             return new HttpResponseMessage(Status) { Content = new StringContent(Malformed ? "{}" : JsonSerializer.Serialize(envelope), Encoding.UTF8, "application/json") };
         }
@@ -53,6 +53,14 @@ internal static partial class Program
             Require(!handler.Body!.Contains(testKey), "API key leaked into model input.");
         }
         var saved = editor.Result!;
+        Require(saved.Steps?.Length == 1 && ((ItemsControl)editor.FindName("StepsList")).Items.Count == 1 &&
+            saved.DisplayText.Contains("1. Substitute the known value\n") && saved.DisplayText.Contains("x + 3 = 2 + 3\n2 + 3 = 5"),
+            "Worked solution lost step boundaries or separate equations.");
+        var reopened = new GeminiCalculationEditor(); reopened.Prepare(png, saved.Instruction, keys, saved, service);
+        Require(((ItemsControl)reopened.FindName("StepsList")).Items.Count == 1 && handler.Requests == 1, "Saved steps did not reopen offline.");
+        var legacy = saved with { Steps = null };
+        reopened.Prepare(png, legacy.Instruction, keys, legacy, service);
+        Require(((TextBox)reopened.FindName("ExplanationText")).Text == legacy.Explanation, "Older saved explanations became unreadable.");
         ((TextBox)editor.FindName("QuestionBox")).Text = "Actually x = 7";
         Require(editor.Result is null && !((Button)editor.FindName("AcceptButton")).IsEnabled, "Changing the question left an outdated result addable.");
         handler.Clarify = true; Await(editor.SolveAsync());
@@ -64,7 +72,10 @@ internal static partial class Program
         Require(((TextBlock)editor.FindName("ErrorText")).Text.Contains("key"), "Invalid credentials were not explained.");
         handler.Status = HttpStatusCode.OK; handler.Malformed = true; Await(editor.SolveAsync());
         Require(editor.Result is null && !((Button)editor.FindName("AcceptButton")).IsEnabled, "Malformed Gemini output became a solution.");
-        handler.Malformed = false; handler.Block = true;
+        handler.Malformed = false; handler.InvalidSteps = true; Await(editor.SolveAsync());
+        Require(editor.Result is null && ((FrameworkElement)editor.FindName("ResultPanel")).Visibility == Visibility.Collapsed,
+            "Invalid structured steps were displayed as a completed solution.");
+        handler.InvalidSteps = false; handler.Block = true;
         using (var canceled = new CancellationTokenSource())
         {
             canceled.Cancel();
@@ -97,6 +108,7 @@ internal static partial class Program
             Require(Await(window.FlushAsync()) && Await(window.ShutdownLibraryAsync()), "AI result failed to save.");
             using var db = new NotebookDatabase(Path.Combine(root, "library"));
             var document = db.LoadPage(page); var result = document.Texts!.Single().AiCalculation!;
+            Require(result.Steps?.Single().Equations.Length == 2, "Saving lost structured solution steps.");
             Require(result.Answer == "5" && result.ImagePng!.SequenceEqual(png), "Saved result lost its source image or answer.");
             var portable = Path.Combine(root, "ai.stempage"); Await(PageStore.SaveAsync(portable, document));
             Require(Await(PageStore.LoadAsync(portable)).Texts!.Single().AiCalculation!.Explanation == saved.Explanation, "Portable export lost the AI explanation.");
