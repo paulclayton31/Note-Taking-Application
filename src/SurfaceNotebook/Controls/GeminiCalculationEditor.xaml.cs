@@ -71,7 +71,7 @@ public partial class GeminiCalculationEditor : UserControl
         }
         catch (OperationCanceledException) { if (!closed) StatusText.Text = current.IsCancellationRequested ? "Stopped. No result was added." : "The request timed out. Try a smaller problem."; }
         catch (HttpRequestException) { if (!closed) { StatusText.Text = ""; ErrorText.Text = "Could not connect to Gemini. Check your internet connection and try again."; } }
-        catch (Exception ex) when (ex is IOException or InvalidOperationException or CryptographicException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or CryptographicException or UnauthorizedAccessException)
         { if (!closed) { StatusText.Text = ""; ErrorText.Text = ex.Message; } }
         finally { request = null; current.Dispose(); if (!closed) RefreshButtons(); }
     }

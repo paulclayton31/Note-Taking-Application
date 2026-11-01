@@ -67,7 +67,7 @@ public partial class MainWindow
             if (dialog.ShowDialog() == true && originalPage == currentPageId && dialog.Result is { } result)
                 SaveAiCalculation(result, position, existing?.Id);
         }
-        catch (Exception ex) when (ex is IOException or InvalidOperationException or NotSupportedException) { ShowError(ex); }
+        catch (Exception ex) when (ex is IOException or InvalidDataException or InvalidOperationException or NotSupportedException) { ShowError(ex); }
     }
     public Guid SaveAiCalculation(AiCalculation result, Point position, Guid? existingId = null)
     {
