@@ -80,6 +80,15 @@ internal static partial class Program
             Require(ink.GetSelectedElements().Count == 1 && StrokeHasSelectionHighlight(ink.Strokes[0]),
                 "The history fix prevented a new manual selection.");
             ink.Select(new StrokeCollection(), Array.Empty<UIElement>());
+            foreach (var tool in new[] { "Pen", "Highlighter", "Eraser", "Hand", "Shape", "Text", "Lasso", "Calculate" })
+            {
+                ((RadioButton)window.FindName(tool + "Button")).IsChecked = true;
+                var mode = ink.EditingMode;
+                Click((Button)window.FindName("RedoButton")); RequireDeselected();
+                Require(ink.EditingMode == mode, "Redo changed the active tool while clearing selection.");
+                Click((Button)window.FindName("UndoButton")); RequireDeselected();
+                Require(ink.EditingMode == mode, "Undo changed the active tool while clearing selection.");
+            }
             Require(Await(window.FlushAsync()), "Selection history edits failed to save.");
         }
         finally { Await(window.ShutdownLibraryAsync()); }

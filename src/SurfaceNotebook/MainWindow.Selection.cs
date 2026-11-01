@@ -82,7 +82,14 @@ public partial class MainWindow
     {
         selectionPointerDown = null; selectionPointerPage = null;
         selectionMenu.IsOpen = false;
-        InkSurface.Select(new StrokeCollection(), Array.Empty<UIElement>());
+        // InkCanvas.Select switches EditingMode to Select even for an empty
+        // selection. Clearing transient state must not change the active tool.
+        if (HasSelection)
+        {
+            var mode = InkSurface.EditingMode;
+            try { InkSurface.Select(new StrokeCollection(), Array.Empty<UIElement>()); }
+            finally { InkSurface.EditingMode = mode; }
+        }
         foreach (var box in InkSurface.Children.OfType<TextBox>()) box.Select(0, 0);
     }
 
