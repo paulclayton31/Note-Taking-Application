@@ -6,13 +6,13 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Download and run
 
-**New prerelease: [v0.4.0](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.4.0)** introduces **Calculate with Gemini**: select handwriting or a PDF/image region, preview the crop, and explicitly request an AI solution using your own Gemini key. Keep billing disabled on your Google project for free-tier use. Results save locally for offline review. Includes image paste and the undo-selection fix. [Setup and privacy details](docs/calculations.md). AI accuracy is experimental; v0.3.6 remains stable.
+**Stable release: [Surface Notebook v0.4.0](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.4.0)** adds a calculation sidebar alongside your notes. Close it and choose **Solution** to reopen the latest answer; a new problem replaces it. Select handwriting or a PDF/image region, preview the crop, and explicitly solve with your own Gemini key. Keep billing disabled on your Google project for free-tier usage. Includes typeset math, local calculation for supported DC circuits, image paste, finger-hold Paste, and the undo-selection fix. [Calculation setup](docs/calculations.md) · [Release notes](docs/releases/v0.4.0.md).
 
-**[Surface Notebook v0.3.6](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.3.6)** is the stable release: a Home library with folders, a compact writing toolbar, thin vertical tool rail, pens that save edits automatically, color-wheel selection, lasso actions, easier undoable scribble erasing, notebook copy/paste and deletion, fully closable tabs, smoother page navigation, PDF import/export, easier rounded/vertical scratch-outs, draw-and-hold shapes, and Surface Pen side-button lasso. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md) · [PDF import/export guide](docs/pdf-workflows.md).
+The writing workspace includes a Home library with folders, customizable pens and toolbar, lasso actions, undoable scribble erasing, notebook copy/paste and deletion, closable tabs, PDF import/export, draw-and-hold shapes, and Surface Pen side-button lasso. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md) · [PDF guide](docs/pdf-workflows.md).
 
-![Your notebook library](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.6/home-light.png)
+![Your notebook library](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.4.0/home-light.png)
 
-[See the writing workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.6/workspace-light.png) · [Tool customization sidebar](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.3.6/tool-inspector.png)
+[See the writing workspace](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.4.0/workspace-light.png) · [Tool customization sidebar](https://github.com/paulclayton31/Note-Taking-Application/releases/download/v0.4.0/tool-inspector.png)
 
 **[Download the latest Windows app](https://github.com/paulclayton31/Note-Taking-Application/releases/latest)** from the repository's **Releases** section.
 
