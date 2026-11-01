@@ -26,10 +26,10 @@
     </Expander>
     <TextBlock Text="Solve sends only the image above and your question to Google. Free-tier content may be used to improve Google's products. Uses Gemini 3.5 Flash-Lite; no automatic model upgrades or retries." Foreground="{DynamicResource Muted}" TextWrapping="Wrap" FontSize="11" Margin="0,0,0,10"/>
     <WrapPanel><Button x:Name="SolveButton" Content="Solve with Gemini" Click="Solve_Click" Style="{StaticResource PrimaryButton}" Padding="12,8" Margin="0,0,8,8"/><Button x:Name="StopButton" Content="Stop" Click="Stop_Click" Visibility="Collapsed" Padding="12,8" Margin="0,0,0,8"/></WrapPanel>
-    <TextBlock x:Name="StatusText" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,0,0,8" AutomationProperties.Name="Gemini status"/>
-    <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="{DynamicResource Danger}" Margin="0,0,0,8" AutomationProperties.Name="Gemini error"/>
      </StackPanel>
     </Expander>
+    <TextBlock x:Name="StatusText" TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,0,0,8" AutomationProperties.Name="Gemini status"/>
+    <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="{DynamicResource Danger}" Margin="0,0,0,8" AutomationProperties.Name="Gemini error"/>
     <Border x:Name="ResultPanel" Visibility="Collapsed" Background="{DynamicResource Workspace}" CornerRadius="8" Padding="16" Margin="0,0,0,8">
      <StackPanel>
       <TextBlock Text="ANSWER" FontSize="11" Foreground="{DynamicResource Muted}" FontWeight="SemiBold"/>
