@@ -53,15 +53,18 @@ public static class PreviewCapture
             window.SaveCalculation(calculation, new Point(70, 160));
             ((System.Windows.Controls.RadioButton)window.FindName("CalculateButton")).IsChecked = true;
             await CaptureAsync(window, Path.Combine(outputDirectory, "calculations.png"), 1440, 1000);
-            var editor = new Controls.CalculationEditor { Width = 500, Height = 640 };
-            editor.Prepare([], calculation, false);
-            await CaptureElementAsync(editor, Path.Combine(outputDirectory, "calculation-review.png"), 500, 640);
+            var example = new AiCalculation(GeminiCalculator.Model, "F = m × a; m = 2 kg; a = 3 m/s²", "F = 6 N", "Substitute the known values: F = 2 × 3 = 6 N.", calculation);
+            var editor = new Controls.GeminiCalculationEditor { Width = 600, Height = 820 };
+            editor.Prepare(null, calculation, new GeminiKeyStore(Path.Combine(temporary, "preview-credentials")), example);
+            ((System.Windows.Controls.TextBlock)editor.FindName("StatusText")).Text = "Example result preview · no API request sent";
+            await CaptureElementAsync(editor, Path.Combine(outputDirectory, "calculation-review.png"), 600, 820);
             editor.Stop(); window.SetDarkTheme(true);
             // Detached controls do not receive logical-tree theme invalidation.
             // Create the dark review after applying the theme, just as a dialog opens.
-            var darkEditor = new Controls.CalculationEditor { Width = 500, Height = 640 };
-            darkEditor.Prepare([], calculation, false);
-            await CaptureElementAsync(darkEditor, Path.Combine(outputDirectory, "calculation-review-dark.png"), 500, 640);
+            var darkEditor = new Controls.GeminiCalculationEditor { Width = 600, Height = 820 };
+            darkEditor.Prepare(null, calculation, new GeminiKeyStore(Path.Combine(temporary, "preview-credentials")), example);
+            ((System.Windows.Controls.TextBlock)darkEditor.FindName("StatusText")).Text = "Example result preview · no API request sent";
+            await CaptureElementAsync(darkEditor, Path.Combine(outputDirectory, "calculation-review-dark.png"), 600, 820);
             darkEditor.Stop(); window.SetDarkTheme(false);
             if (!await window.ShutdownLibraryAsync()) throw new IOException("Preview library did not flush.");
             window = null;
