@@ -29,7 +29,7 @@ public partial class GeminiCalculationEditor : UserControl
         SelectionImage.Source = png is null ? null : PageImageSource.Decode(png);
         NoImage.Visibility = png is null ? Visibility.Visible : Visibility.Collapsed;
         Result = saved;
-        if (saved is not null) ShowResult(new GeminiCalculator.Result(saved.Problem, saved.Answer, saved.Explanation, false));
+        if (saved is not null) ShowResult(new GeminiCalculator.Result(saved.Problem, saved.Answer, saved.Explanation, false, saved.Steps));
         loading = false; RefreshButtons();
     }
     private void RefreshButtons()
@@ -43,7 +43,7 @@ public partial class GeminiCalculationEditor : UserControl
     private void InvalidateResult()
     {
         if (loading || SolveButton is null) return;
-        Result = null; ProblemText.Text = AnswerText.Text = ExplanationText.Text = "";
+        ClearSolution(); Result = null; ProblemText.Text = AnswerText.Text = ExplanationText.Text = "";
         StatusText.Text = ""; ErrorText.Text = ""; RefreshButtons();
     }
     private void Question_Changed(object sender, TextChangedEventArgs e) => InvalidateResult();
@@ -51,7 +51,7 @@ public partial class GeminiCalculationEditor : UserControl
     public async Task SolveAsync()
     {
         if (closed || request is not null) return;
-        Result = null; ErrorText.Text = ""; ProblemText.Text = AnswerText.Text = ExplanationText.Text = "";
+        ClearSolution(); Result = null; ErrorText.Text = ""; ProblemText.Text = AnswerText.Text = ExplanationText.Text = "";
         var current = new CancellationTokenSource(); request = current; RefreshButtons();
         StatusText.Text = "Reading the problem and calculating…";
         try
@@ -64,7 +64,7 @@ public partial class GeminiCalculationEditor : UserControl
             ShowResult(solved);
             if (!solved.NeedsClarification)
             {
-                Result = new AiCalculation(GeminiCalculator.Model, solved.Problem, solved.Answer, solved.Explanation, instruction, image);
+                Result = new AiCalculation(GeminiCalculator.Model, solved.Problem, solved.Answer, solved.Explanation, instruction, image, solved.Steps);
                 Result.Validate(); StatusText.Text = "Review what Gemini read and the answer before adding it to your note.";
             }
             else StatusText.Text = "Gemini needs clarification. Correct the question above, then solve again.";
@@ -76,7 +76,27 @@ public partial class GeminiCalculationEditor : UserControl
         finally { request = null; current.Dispose(); if (!closed) RefreshButtons(); }
     }
     private void ShowResult(GeminiCalculator.Result result)
-    { ProblemText.Text = result.Problem; AnswerText.Text = result.Answer; ExplanationText.Text = result.Explanation; }
+    {
+        ProblemText.Text = result.Problem; AnswerText.Text = result.Answer; ExplanationText.Text = result.Explanation;
+        StepsList.ItemsSource = result.Steps?.Select((step, i) => new {
+            Heading = $"{i + 1}. {step.Title}", step.Detail, step.EquationText,
+            EquationVisibility = step.Equations.Length > 0 ? Visibility.Visible : Visibility.Collapsed
+        }).ToArray();
+        ResultPanel.Visibility = Visibility.Visible;
+        SourcePanel.IsExpanded = result.NeedsClarification;
+        CopySolutionButton.Visibility = result.NeedsClarification ? Visibility.Collapsed : Visibility.Visible;
+        if (!loading) Dispatcher.BeginInvoke(() => AnswerText.BringIntoView());
+    }
+    private void ClearSolution()
+    {
+        StepsList.ItemsSource = null; ResultPanel.Visibility = Visibility.Collapsed;
+    }
+    private void CopySolution_Click(object sender, RoutedEventArgs e)
+    {
+        if (Result is null) return;
+        try { Clipboard.SetText(Result.DisplayText); StatusText.Text = "Solution copied."; }
+        catch (System.Runtime.InteropServices.COMException) { ErrorText.Text = "Clipboard is busy. Try copying again."; }
+    }
     public void Stop() { closed = true; request?.Cancel(); Result = null; }
     private async void Solve_Click(object sender, RoutedEventArgs e) => await SolveAsync();
     private void Stop_Click(object sender, RoutedEventArgs e) => request?.Cancel();

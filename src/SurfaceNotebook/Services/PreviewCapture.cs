@@ -53,7 +53,11 @@ public static class PreviewCapture
             window.SaveCalculation(calculation, new Point(70, 160));
             ((System.Windows.Controls.RadioButton)window.FindName("CalculateButton")).IsChecked = true;
             await CaptureAsync(window, Path.Combine(outputDirectory, "calculations.png"), 1440, 1000);
-            var example = new AiCalculation(GeminiCalculator.Model, "F = m × a; m = 2 kg; a = 3 m/s²", "F = 6 N", "Substitute the known values: F = 2 × 3 = 6 N.", calculation);
+            var example = new AiCalculation(GeminiCalculator.Model, "F = m × a; m = 2 kg; a = 3 m/s²", "F = 6 N", "Use Newton's second law.", calculation, Steps: [
+                new SolutionStep("Identify the known values", "Mass and acceleration are given in SI units.", ["m = 2 kg", "a = 3 m/s²"]),
+                new SolutionStep("Apply Newton's second law", "Substitute the mass and acceleration.", ["F = ma", "F = 2 × 3 = 6 N"]),
+                new SolutionStep("Check units", "The result has the units of force.", ["kg × m/s² = N"])
+            ]);
             var editor = new Controls.GeminiCalculationEditor { Width = 600, Height = 820 };
             editor.Prepare(null, calculation, new GeminiKeyStore(Path.Combine(temporary, "preview-credentials")), example);
             ((System.Windows.Controls.TextBlock)editor.FindName("StatusText")).Text = "Example result preview · no API request sent";
