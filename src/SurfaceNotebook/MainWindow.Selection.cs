@@ -57,6 +57,13 @@ public partial class MainWindow
         Viewport.ViewChanged += () => { selectionMenu.IsOpen = false; UpdateSelectionActions(); };
         MainStage.SizeChanged += (_, _) => UpdateSelectionActions();
         Viewport.IsSelectionTapTarget = point => IsSelectionInterior(Viewport.TranslatePoint(point, InkSurface));
+        Viewport.TouchHeld += point =>
+        {
+            if (!ready || busy || homeVisible) return;
+            var pagePoint = Viewport.TranslatePoint(point, InkSurface);
+            if (pagePoint.X >= 0 && pagePoint.Y >= 0 && pagePoint.X <= InkSurface.Width && pagePoint.Y <= InkSurface.Height)
+                OpenSelectionMenu(pagePoint);
+        };
         Viewport.SelectionTapped += point => OpenSelectionMenu(Viewport.TranslatePoint(point, InkSurface));
         Viewport.AddHandler(PreviewMouseDownEvent, new MouseButtonEventHandler((_, e) =>
         {

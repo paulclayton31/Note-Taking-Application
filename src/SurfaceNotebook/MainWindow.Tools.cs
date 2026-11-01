@@ -233,6 +233,14 @@ public partial class MainWindow
             box.ToolTip = "Calculation · select Calculate, then tap to edit its variables and formulas";
             box.PreviewMouseLeftButtonDown += CalculationCard_Down;
         }
+        if (text.AiCalculation is { Steps: not null } ai)
+        {
+            var rendered = SolutionCardRenderer.Render(ai, text.Width);
+            box.Background = new ImageBrush(rendered) { Stretch = Stretch.Fill };
+            box.Foreground = Brushes.Transparent;
+            box.Height = rendered.Height;
+            box.ToolTip = "AI solution · tap with Calculate to review the formatted steps";
+        }
         InkCanvas.SetLeft(box, text.X); InkCanvas.SetTop(box, text.Y);
         box.GotKeyboardFocus += (_, _) =>
         {
