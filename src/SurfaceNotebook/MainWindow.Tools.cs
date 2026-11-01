@@ -60,6 +60,13 @@ public partial class MainWindow
                 if (index >= 0) session.Texts[index] = session.Texts[index] with
                 { X = InkCanvas.GetLeft(element), Y = InkCanvas.GetTop(element), Width = Math.Max(40, element.Width) };
             }
+        if (session is not null)
+            foreach (var element in InkSurface.GetSelectedElements().OfType<Image>())
+            {
+                var index = session.Images.FindIndex(i => i.Id == (Guid)element.Tag);
+                if (index >= 0) session.Images[index] = session.Images[index] with
+                { X = InkCanvas.GetLeft(element), Y = InkCanvas.GetTop(element), Width = Math.Max(1, element.Width), Height = Math.Max(1, element.Height) };
+            }
         SaveFullPage();
     }
     private void Tool_Changed(object sender, RoutedEventArgs e)
@@ -175,7 +182,7 @@ public partial class MainWindow
         var index = session.Texts.FindIndex(t => t.Id == id); if (index < 0) return;
         var updated = session.Texts[index] with { FontSize = box.FontSize, Color = ((SolidColorBrush)box.Foreground).Color.ToString() };
         if (updated == session.Texts[index]) return;
-        session.Texts[index] = updated; session.History.Record(InkSurface.Strokes, session.Texts);
+        session.Texts[index] = updated; session.History.Record(InkSurface.Strokes, session.Texts, session.Images);
         SaveTextDraft(); RefreshHistory();
     }
     private void ToolProperties_Click(object sender, RoutedEventArgs e)
@@ -245,6 +252,13 @@ public partial class MainWindow
         box.LostKeyboardFocus += (_, _) => { if (textEditor == box) CommitTextEditor(); };
         box.TextChanged += (_, _) => { if (textEditor == box) UpdateTextDraft(); };
         var menu = new ContextMenu();
+        var paste = new MenuItem { Header = "Paste", InputGestureText = "Ctrl+V" };
+        menu.Items.Add(paste);
+        paste.Click += (_, _) =>
+        {
+            if (HasClipboardImage()) RunSelectionAction(() => PasteSelectedObjects(new Point(InkCanvas.GetLeft(box), InkCanvas.GetTop(box))));
+            else box.Paste();
+        };
         var delete = new MenuItem { Header = "Delete text" }; menu.Items.Add(delete);
         delete.Click += (_, _) =>
         {
@@ -260,6 +274,7 @@ public partial class MainWindow
         textEditor = null; textBeforeEdit = null; selectedTextId = null;
         InkSurface.Children.Clear();
         if (session is null) return;
+        foreach (var image in session.Images) InkSurface.Children.Add(CreateImage(image));
         foreach (var text in session.Texts) InkSurface.Children.Add(CreateTextBox(text));
     }
     private void UpdateTextDraft()
@@ -285,7 +300,7 @@ public partial class MainWindow
         box.BorderThickness = new Thickness(0); box.BorderBrush = Brushes.Transparent;
         if (current is not null && string.IsNullOrWhiteSpace(current.Text)) { session.Texts.Remove(current); InkSurface.Children.Remove(box); current = null; selectedTextId = null; }
         if (current == before) return;
-        session.History.Record(InkSurface.Strokes, session.Texts);
+        session.History.Record(InkSurface.Strokes, session.Texts, session.Images);
         SaveTextDraft(); RefreshHistory();
     }
 }

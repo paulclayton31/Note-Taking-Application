@@ -8,18 +8,30 @@ public sealed record InkStroke(Guid Id, string Color, double Width, bool FitToCu
     List<InkPoint> Points, double? Height = null, bool IsHighlighter = false, bool IgnorePressure = false, bool RectangleTip = false);
 
 public sealed record PageDocument(int Version, double Width, double Height,
-    List<InkStroke> Strokes, PaperSettings? Paper = null, List<PageText>? Texts = null, PdfBackground? Background = null)
+    List<InkStroke> Strokes, PaperSettings? Paper = null, List<PageText>? Texts = null, PdfBackground? Background = null, List<PageImage>? Images = null)
 {
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 4;
     public const double DefaultWidth = 816;
     public const double DefaultHeight = 1056;
 
     public void Validate(bool enforceSizeLimits = true)
     {
-        if (Version is not 1 and not 2 and not CurrentVersion)
+        if (Version is not 1 and not 2 and not 3 and not CurrentVersion)
             throw new InvalidDataException($"Unsupported page version: {Version}.");
         if (!double.IsFinite(Width) || !double.IsFinite(Height) || Width < 288 || Height < 288 || Width > 3456 || Height > 3456)
             throw new InvalidDataException("Invalid page dimensions.");
+        if (Images is { Count: > 0 })
+        {
+            if (Version < 4 || Images.Count > 200) throw new InvalidDataException("Invalid image collection.");
+            var imageIds = new HashSet<Guid>();
+            long bytes = 0;
+            foreach (var image in Images)
+            {
+                if (image is null || !imageIds.Add(image.Id)) throw new InvalidDataException("Invalid image identity.");
+                image.Validate(); bytes += image.Png.Length;
+            }
+            if (bytes > 32_000_000) throw new InvalidDataException("Page images exceed the 32 MB limit.");
+        }
         Background?.Validate();
         if (Background is not null && Version < 3) throw new InvalidDataException("PDF backgrounds require page version 3.");
         Paper?.Validate();

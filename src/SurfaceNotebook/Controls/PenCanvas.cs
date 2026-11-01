@@ -65,6 +65,8 @@ public sealed class PenCanvas : InkCanvas
 
     protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
     {
+        if (e.ChangedButton == MouseButton.Right && e.StylusDevice is null)
+        { base.OnPreviewMouseDown(e); return; }
         if (e.StylusDevice is null && EditingMode is InkCanvasEditingMode.Select or InkCanvasEditingMode.None)
         { base.OnPreviewMouseDown(e); return; }
         if (!AcceptsInk(e.StylusDevice?.TabletDevice.Type)) e.Handled = true;

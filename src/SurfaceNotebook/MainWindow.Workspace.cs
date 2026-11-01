@@ -404,6 +404,7 @@ public partial class MainWindow
             dc.PushClip(new RectangleGeometry(new Rect(0, 0, paper.Width, paper.Height)));
             if (document.Background is { } background) dc.DrawImage(PdfService.LoadPreview(background, 200), new Rect(0, 0, paper.Width, paper.Height));
             else PaperSurface.Draw(dc, paper, new Size(paper.Width, paper.Height));
+            foreach (var image in document.Images ?? []) dc.DrawImage(PageImageSource.Decode(image.Png), new Rect(image.X, image.Y, image.Width, image.Height));
             InkMapper.Restore(document).Draw(dc);
             foreach (var text in document.Texts ?? [])
             {

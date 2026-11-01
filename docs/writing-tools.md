@@ -77,3 +77,9 @@ Press **C** or choose **Calculate**, circle handwritten variables and expression
 ## Saved color bar
 
 The floating bottom bar replaces the three saved-pen shortcuts on the main toolbar. Tap a color to resume Pen with the current thickness and Fountain/Ball style. Use + to add a color with the color wheel; canceling leaves the palette unchanged. Right-click or hold a swatch to remove it. Up to 24 colors save across restarts, including an intentionally empty palette. Existing saved-pen colors seed the palette on upgrade; saved pens remain available in the customization rail. Swipe the bar when colors overflow. The bar moves above a bottom-docked toolbar and follows Hide writing tools.
+
+## Paste images
+
+In your browser, right-click an image and choose **Copy image**. Return to a note and press **Ctrl+V**, or right-click the paper and choose **Paste**. This works with any writing tool active. Screenshots copied to the Windows clipboard work too. Use Copy image, not Copy image address.
+
+The pasted image is selected automatically. Drag it or use the selection handles to resize it. The lasso menu supports copying, duplicating, and deleting images, including selections mixed with ink and text. Undo and redo include image edits. Images save with the page and appear in PDF exports.

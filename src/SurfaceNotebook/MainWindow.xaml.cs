@@ -23,14 +23,15 @@ public partial class MainWindow : Window
         public InkHistory History { get; } = new();
         public PaperSettings Paper { get; set; }
         public List<PageText> Texts { get; set; }
+        public List<PageImage> Images { get; set; }
         public PdfBackground? Background { get; }
         public HashSet<Guid> StrokeIds { get; } = [];
         public long Visited { get; set; }
-        public PageSession(StrokeCollection strokes, PaperSettings? paper = null, List<PageText>? texts = null, PdfBackground? background = null)
+        public PageSession(StrokeCollection strokes, PaperSettings? paper = null, List<PageText>? texts = null, PdfBackground? background = null, List<PageImage>? images = null)
         {
-            Strokes = strokes; Paper = paper ?? PaperSettings.Default; Texts = texts ?? []; Background = background;
+            Strokes = strokes; Paper = paper ?? PaperSettings.Default; Texts = texts ?? []; Background = background; Images = images ?? [];
             StrokeIds.UnionWith(strokes.Select(InkMapper.Identity));
-            History.Reset(strokes, Texts);
+            History.Reset(strokes, Texts, Images);
         }
     }
     private readonly PenViewModel model = new();
@@ -175,13 +176,13 @@ public partial class MainWindow : Window
         var added = InkMapper.Capture(e.Added).Strokes.Select((s, i) => new StoredStroke(s, i)).ToArray();
         var removed = removedIds.ToArray();
         writer.Write(db => db.ApplyDelta(page, added, removed));
-        session.History.Record(InkSurface.Strokes, session.Texts);
+        session.History.Record(InkSurface.Strokes, session.Texts, session.Images);
         RefreshHistory(); UpdateSaveStatus(); ScheduleThumbnail();
     }
     private PageDocument CaptureCurrent()
     {
         var paper = session?.Paper ?? PaperSettings.Default;
-        return InkMapper.Capture(InkSurface.Strokes) with { Width = paper.Width, Height = paper.Height, Paper = paper, Texts = session?.Texts.ToList() ?? [], Background = session?.Background };
+        return InkMapper.Capture(InkSurface.Strokes) with { Width = paper.Width, Height = paper.Height, Paper = paper, Texts = session?.Texts.ToList() ?? [], Background = session?.Background, Images = session?.Images.ToList() ?? [] };
     }
     private void SaveFullPage(bool history = true)
     {
@@ -192,7 +193,7 @@ public partial class MainWindow : Window
             pages[index] = pages[index] with { IsPdf = document.Background is not null, Paper = document.Paper };
         session.StrokeIds.Clear(); session.StrokeIds.UnionWith(InkSurface.Strokes.Select(InkMapper.Identity));
         writer.Write(db => db.ReplacePage(id, document));
-        if (history) session.History.Record(InkSurface.Strokes, session.Texts);
+        if (history) session.History.Record(InkSurface.Strokes, session.Texts, session.Images);
         RefreshHistory(); UpdateSaveStatus(); ScheduleThumbnail();
     }
     private void RefreshHistory()
@@ -216,7 +217,7 @@ public partial class MainWindow : Window
             (undo ? !session.History.CanUndo : !session.History.CanRedo)) return;
         var strokes = undo ? session.History.Undo() : session.History.Redo();
         restoring = true;
-        try { InkSurface.Strokes.Clear(); InkSurface.Strokes.Add(strokes); session.Texts = session.History.Texts; }
+        try { InkSurface.Strokes.Clear(); InkSurface.Strokes.Add(strokes); session.Texts = session.History.Texts; session.Images = session.History.Images; }
         finally { restoring = false; }
         RenderTexts();
         SaveFullPage(history: false);
@@ -236,7 +237,7 @@ public partial class MainWindow : Window
             if (!sessions.TryGetValue(id, out var next))
             {
                 var document = await writer.ReadAsync(db => db.LoadPage(id)).WaitAsync(TimeSpan.FromSeconds(10));
-                next = new PageSession(InkMapper.Restore(document), document.Paper, document.Texts, document.Background);
+                next = new PageSession(InkMapper.Restore(document), document.Paper, document.Texts, document.Background, document.Images);
                 sessions[id] = next;
             }
             var page = pages.First(p => p.Id == id);
@@ -377,7 +378,7 @@ public partial class MainWindow : Window
             var imported = new PageSession(strokes, document.Paper ?? PaperSettings.Default with
             {
                 Format = PaperFormat.Custom, CustomWidth = document.Width / 96, CustomHeight = document.Height / 96
-            }, document.Texts, document.Background);
+            }, document.Texts, document.Background, document.Images);
             sessions[id] = imported; session = imported; SetStrokes(strokes);
             ConfigurePaper(); RenderTexts(); Viewport.FitPage(); BindNavigation();
             SaveFullPage(history: false);
@@ -451,6 +452,9 @@ public partial class MainWindow : Window
         }
         if (busy) return;
         var editingText = Keyboard.FocusedElement is TextBox { IsReadOnly: false };
+        if (!homeVisible && session is not null && Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.V &&
+            (!editingText || HasClipboardImage()))
+        { RunSelectionAction(() => PasteSelectedObjects()); e.Handled = true; return; }
         if (!editingText && EffectiveLasso)
         {
             Action? action = Keyboard.Modifiers == ModifierKeys.Control ? e.Key switch
