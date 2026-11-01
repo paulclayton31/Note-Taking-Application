@@ -217,9 +217,14 @@ public partial class MainWindow : Window
             (undo ? !session.History.CanUndo : !session.History.CanRedo)) return;
         var strokes = undo ? session.History.Undo() : session.History.Redo();
         restoring = true;
-        try { InkSurface.Strokes.Clear(); InkSurface.Strokes.Add(strokes); session.Texts = session.History.Texts; session.Images = session.History.Images; }
+        try
+        {
+            ClearPageSelection();
+            InkSurface.Strokes.Clear(); InkSurface.Strokes.Add(strokes);
+            session.Texts = session.History.Texts; session.Images = session.History.Images;
+            RenderTexts();
+        }
         finally { restoring = false; }
-        RenderTexts();
         SaveFullPage(history: false);
         UpdateSelectionActions();
     }

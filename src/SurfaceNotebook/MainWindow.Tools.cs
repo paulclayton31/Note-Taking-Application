@@ -272,6 +272,7 @@ public partial class MainWindow
     private void RenderTexts()
     {
         textEditor = null; textBeforeEdit = null; selectedTextId = null;
+        ClearPageSelection();
         InkSurface.Children.Clear(); PageImages.Children.Clear();
         if (session is null) return;
         foreach (var image in session.Images)
