@@ -38,13 +38,23 @@ public sealed class InkHistory
         position = 0;
     }
 
+    private static Stroke CopyContent(Stroke stroke)
+    {
+        // WPF Stroke.Clone() also copies its internal IsSelected flag. A history
+        // snapshot must contain document content only, never lasso rendering state.
+        var clone = stroke.Clone();
+        var copy = new Stroke(clone.StylusPoints, clone.DrawingAttributes);
+        foreach (var id in clone.GetPropertyDataIds()) copy.AddPropertyData(id, clone.GetPropertyData(id));
+        return copy;
+    }
+
     private StrokeCollection Snapshot(StrokeCollection strokes)
     {
         var snapshot = new StrokeCollection();
         foreach (var stroke in strokes)
         {
             var id = InkMapper.Identity(stroke);
-            if (!copies.TryGetValue(id, out var copy)) copies[id] = copy = stroke.Clone();
+            if (!copies.TryGetValue(id, out var copy)) copies[id] = copy = CopyContent(stroke);
             snapshot.Add(copy);
         }
         return snapshot;

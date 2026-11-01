@@ -78,6 +78,21 @@ public partial class MainWindow
             Dispatcher.BeginInvoke(() => { if (page == currentPageId && IsSelectionInterior(point)) OpenSelectionMenu(point); }, DispatcherPriority.Input);
         }), true);
     }
+    private void ClearPageSelection()
+    {
+        selectionPointerDown = null; selectionPointerPage = null;
+        selectionMenu.IsOpen = false;
+        // InkCanvas.Select switches EditingMode to Select even for an empty
+        // selection. Clearing transient state must not change the active tool.
+        if (HasSelection)
+        {
+            var mode = InkSurface.EditingMode;
+            try { InkSurface.Select(new StrokeCollection(), Array.Empty<UIElement>()); }
+            finally { InkSurface.EditingMode = mode; }
+        }
+        foreach (var box in InkSurface.Children.OfType<TextBox>()) box.Select(0, 0);
+    }
+
     private bool IsSelectionInterior(Point point) => !busy && EffectiveLasso && HasSelection &&
         InkSurface.HitTestSelection(point) == InkCanvasSelectionHitResult.Selection;
 

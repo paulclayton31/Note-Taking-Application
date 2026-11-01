@@ -40,6 +40,7 @@ internal static partial class Program
             ExecuteCheck("CheckWindow", () => CheckWindow(Path.Combine(root, "ui"), args.FirstOrDefault()));
             ExecuteCheck("CheckNotebookTabsAndToolbar", () => CheckNotebookTabsAndToolbar(Path.Combine(root, "workspace-navigation")));
             ExecuteCheck("CheckHomePensZoomAndPages", () => CheckHomePensZoomAndPages(Path.Combine(root, "library-workflows")));
+            ExecuteCheck("CheckSelectionHistory", () => CheckSelectionHistory(Path.Combine(root, "selection-history")));
             ExecuteCheck("CheckImagePaste", () => CheckImagePaste(Path.Combine(root, "image-paste")));
             ExecuteCheck("CheckEditingTools", () => CheckEditingTools(Path.Combine(root, "editing-tools")));
             ExecuteCheck("CheckScribbleEditing", () => CheckScribbleEditing(Path.Combine(root, "scribble-editing")));
