@@ -9,7 +9,7 @@ Calculate now sends a reviewed image or typed question to Gemini instead of rely
 5. Optionally choose **Remember on this Windows account**. The key is encrypted using Windows user protection in `%LOCALAPPDATA%/SurfaceNotebook/Credentials/gemini-key.bin`, outside notebook data. **Forget saved key** deletes it. No shared developer credential is distributed with the app.
 6. Choose **Solve with Gemini**. Opening a preview or selecting content never uploads it automatically.
 7. Check **What I read**, **Answer**, and **Solution / clarification**. If Gemini cannot read a symbol or lacks necessary information, correct the question and solve again. Changing the question invalidates the old result.
-8. Choose **Add to note** to save the reviewed solution. Your handwriting is preserved. Undo/redo, duplication, portable pages, and PDF export retain the cached answer. Tap an AI card with Calculate to review its saved image and explanation offline, or explicitly request another solution.
+8. Keep the solution open in the right sidebar while you write on the page. Choose **Close** or press Esc to hide it, then use **Solution** beside the zoom controls to reopen the same answer without another upload. Starting a new selection, area or typed question replaces the old calculation. Only the latest calculation is kept in memory for the current app session. New solutions are not automatically added to notebook data or saved as history. Existing cards explicitly saved in earlier versions remain part of those notes.
 
 ## Free-tier behavior and privacy
 

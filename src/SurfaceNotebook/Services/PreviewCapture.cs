@@ -56,6 +56,10 @@ public static class PreviewCapture
             var circuit = new DcCircuit([new("s","a",2),new("a","0",4),new("a","b",2),new("b","0",6)], [new("s","0",8)], [new("0","a",6)], "b","0");
             var checkedCircuit = DcCircuitSolver.Solve(circuit);
             var example = new AiCalculation(GeminiCalculator.Model, "8 V source; 6 A enters node a; output across 6 ohms.", checkedCircuit.Answer, "Calculated locally from the interpreted circuit.", calculation, Steps: checkedCircuit.Steps);
+            window.ShowCalculation(null, calculation, example);
+            await CaptureAsync(window, Path.Combine(outputDirectory, "calculation-docked.png"), 1440, 1000);
+            await CaptureAsync(window, Path.Combine(outputDirectory, "calculation-docked-compact.png"), 720, 900);
+            window.CloseCalculation();
             var editor = new Controls.GeminiCalculationEditor { Width = 600, Height = 820 };
             editor.Prepare(null, calculation, new GeminiKeyStore(Path.Combine(temporary, "preview-credentials")), example);
             ((System.Windows.Controls.TextBlock)editor.FindName("StatusText")).Text = "Example result preview · no API request sent";

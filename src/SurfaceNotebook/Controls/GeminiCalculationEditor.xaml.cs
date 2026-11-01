@@ -97,6 +97,13 @@ public partial class GeminiCalculationEditor : UserControl
         try { Clipboard.SetText(Result.DisplayText); StatusText.Text = "Solution copied."; }
         catch (System.Runtime.InteropServices.COMException) { ErrorText.Text = "Clipboard is busy. Try copying again."; }
     }
+    public void UseAsSidePanel()
+    {
+        AcceptButton.Visibility = Visibility.Collapsed;
+        HeadingText.Text = "Calculation";
+        IntroText.Text = "Keep writing while you review the solution. Close and reopen it with Solution. A new calculation replaces this one.";
+    }
+    public void CancelPending() => request?.Cancel();
     public void Stop() { closed = true; request?.Cancel(); Result = null; }
     private async void Solve_Click(object sender, RoutedEventArgs e) => await SolveAsync();
     private void Stop_Click(object sender, RoutedEventArgs e) => request?.Cancel();

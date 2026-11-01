@@ -265,6 +265,7 @@ public partial class MainWindow
     }
     internal void UpdateResponsiveLayout(double width)
     {
+        UpdateCalculationPanelWidth(width);
         var nowCompact = width < 1020;
         if (nowCompact && !compact && !focusMode) NavigationPanel.Visibility = Visibility.Collapsed;
         compact = nowCompact;
@@ -288,6 +289,7 @@ public partial class MainWindow
     {
         if (ContextPanel.Visibility == Visibility.Visible && PaperSettingsEditor.Visibility == Visibility.Visible) { CloseContextPanel(); return; }
         CommitTextEditor(); CloseToolInspector(); selectionMenu.IsOpen = false;
+        CloseCalculation();
         PaperSettingsEditor.Load(session?.Paper ?? PaperSettings.Default);
         ToolInspector.Visibility = Visibility.Collapsed; PaperSettingsEditor.Visibility = Visibility.Visible;
         ContextPanel.Width = 312; Grid.SetColumn(ContextPanel, 2);
@@ -296,8 +298,10 @@ public partial class MainWindow
     }
     internal void ShowPaperPreview()
     {
+        CloseCalculation();
         ToolInspector.Visibility = Visibility.Collapsed; PaperSettingsEditor.Visibility = Visibility.Visible;
         ContextPanel.Width = 312; Grid.SetColumn(ContextPanel, 2);
+        CloseCalculation();
         PaperSettingsEditor.Load(session?.Paper ?? PaperSettings.Default);
         ContextPanel.Visibility = Visibility.Visible;
     }

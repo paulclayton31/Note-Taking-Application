@@ -370,6 +370,7 @@
                         <Button x:Name="NextPageButton" Click="NextPage_Click" ToolTip="Next page · Alt+Down" Padding="10,5"><local:WorkspaceIcon Kind="Chevron" Foreground="{DynamicResource Muted}" Width="12" Height="12"/></Button>
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal">
+                        <Button x:Name="ReopenCalculationButton" Visibility="Collapsed" Content="Solution" Click="ReopenCalculation_Click" ToolTip="Reopen the latest calculation" Padding="10,5" Margin="0,0,8,0"/>
                         <Button Click="ZoomOut_Click" ToolTip="Zoom out" Padding="7"><local:WorkspaceIcon Kind="Minus" Foreground="{DynamicResource Muted}" Width="14" Height="14"/></Button>
                         <Button x:Name="ZoomButton" Click="ZoomMenu_Click" ToolTip="Zoom · fit width, whole page, or choose a scale" Padding="8,4">
                             <Button.ContextMenu><ContextMenu><MenuItem Header="Fit whole page" Click="Fit_Click"/><MenuItem Header="Fit page width" Click="FitWidth_Click"/><MenuItem Header="Actual size · 100%" Click="ActualSize_Click"/></ContextMenu></Button.ContextMenu>
@@ -379,6 +380,9 @@
                     </StackPanel>
                 </Grid>
             </Grid>
+            <Border x:Name="CalculationDock" Grid.Column="2" Width="440" Visibility="Collapsed" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1,0,0,0">
+                <ContentControl x:Name="CalculationDockContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
+            </Border>
             <Border x:Name="ContextPanel" Grid.Column="2" Width="312" Visibility="Collapsed" Background="{DynamicResource Surface}" BorderBrush="{DynamicResource Stroke}" BorderThickness="1,0,0,0">
                 <local:PaperSettingsPanel x:Name="PaperSettingsEditor"/>
             </Border>
