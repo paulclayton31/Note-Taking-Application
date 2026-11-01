@@ -14,8 +14,11 @@ internal static partial class Program
     private static void CheckImagePaste(string root)
     {
         var previous = Clipboard.GetDataObject();
+        var shutdownMode = Application.Current.ShutdownMode; Application.Current.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         var window = new MainWindow(root);
         Await(window.InitializeLibraryAsync()); window.ShowWorkspace(); ArrangeWorkspace(window);
+        window.ShowActivated = false; window.ShowInTaskbar = false; window.Left = -30000; window.Top = -30000;
+        window.Show(); ArrangeWorkspace(window);
         var ink = (PenCanvas)window.FindName("InkSurface");
         var bitmap = BitmapSource.Create(2, 2, 96, 96, PixelFormats.Bgra32, null,
             new byte[] {0, 0, 255, 255, 0, 255, 0, 255, 255, 0, 0, 255, 0, 0, 0, 0}, 8);
@@ -71,7 +74,8 @@ internal static partial class Program
         }
         finally
         {
-            Await(window.ShutdownLibraryAsync());
+            Await(window.ShutdownLibraryAsync()); window.Close();
+            Application.Current.ShutdownMode = shutdownMode;
             if (previous is null) Clipboard.Clear(); else Clipboard.SetDataObject(previous, true);
         }
     }

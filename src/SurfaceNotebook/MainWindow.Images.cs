@@ -24,14 +24,18 @@ public partial class MainWindow
         BitmapSource? bitmap = null;
         // Browsers commonly supply both PNG and a device-independent bitmap.
         // Prefer PNG to retain transparency.
-        if (Clipboard.GetData("PNG") is MemoryStream png)
+        var pngData = Clipboard.GetData("PNG");
+        if (pngData is MemoryStream png)
         {
             if (png.Length > 16_000_000) throw new InvalidDataException("This image is too large to paste.");
-            bitmap = PageImageSource.Decode(png.ToArray());
+            var pngBytes = png.ToArray();
+            new PageImage(Guid.NewGuid(), 0, 0, 1, 1, pngBytes).Validate();
+            bitmap = PageImageSource.Decode(pngBytes);
         }
-        else if (Clipboard.GetData("PNG") is byte[] bytes)
+        else if (pngData is byte[] bytes)
         {
             if (bytes.Length > 16_000_000) throw new InvalidDataException("This image is too large to paste.");
+            new PageImage(Guid.NewGuid(), 0, 0, 1, 1, bytes).Validate();
             bitmap = PageImageSource.Decode(bytes);
         }
         bitmap ??= Clipboard.GetImage();
