@@ -20,7 +20,7 @@ public partial class MainWindow
     }
     private void ToggleToolInspector()
     {
-        if (CalculationMode) { if (HasSelection) OpenCalculationEditor(useSelection: true); else ReopenCalculation(); return; }
+        if (CalculationMode) { ReopenCalculation(); return; }
         if (IsToolInspectorOpen) CloseToolInspector(); else ShowToolInspector();
     }
     public void ShowToolInspector()

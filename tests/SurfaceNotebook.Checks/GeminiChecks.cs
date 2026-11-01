@@ -84,6 +84,9 @@ internal static partial class Program
         handler.Circuit = true; Await(editor.SolveAsync());
         Require(editor.Result!.Answer.Contains("8.57143") && !editor.Result.Answer.Contains("18"), "AI's contradictory 18 V overrode the local circuit result.");
         handler.Circuit = false; Await(editor.SolveAsync());
+        var close = (Button)editor.FindName("CloseCalculationButton");
+        var closePosition=close.TranslatePoint(new Point(),editor);
+        Require(closePosition.Y<70 && closePosition.X>editor.ActualWidth-100,"Close button was not at the top right.");
         var saved = editor.Result!;
         Require(saved.Steps?.Length == 1 && ((ItemsControl)editor.FindName("StepsList")).Items.Count == 1 &&
             saved.DisplayText.Contains("1. Substitute the known value\n") && saved.DisplayText.Contains("x + 3 = 2 + 3\n2 + 3 = 5"),
@@ -142,7 +145,7 @@ internal static partial class Program
             Require(((FrameworkElement)window.FindName("Viewport")).ActualWidth > 200, "Calculation panel covered the writing workspace.");
             var firstEditor = (GeminiCalculationEditor)((ContentControl)window.FindName("CalculationDockContent")).Content;
             Require(((FrameworkElement)firstEditor.FindName("AcceptButton")).Visibility == Visibility.Collapsed, "Temporary solution still offered to create permanent history.");
-            window.CloseCalculation();
+            Click((Button)firstEditor.FindName("CloseCalculationButton"));
             Require(!window.IsCalculationPanelOpen && window.LatestCalculation == saved, "Closing the dock discarded the latest answer.");
             Click((Button)window.FindName("ReopenCalculationButton"));
             Require(window.IsCalculationPanelOpen && ReferenceEquals(firstEditor, ((ContentControl)window.FindName("CalculationDockContent")).Content), "Reopening replaced or uploaded the cached calculation.");
@@ -165,11 +168,24 @@ internal static partial class Program
             Require(window.LatestCalculation is null && pendingEditor.Result is null, "A replaced request resurrected the old answer.");
             handler.Block = false; window.CloseCalculation();
             ((RadioButton)window.FindName("CalculateButton")).IsChecked = true;
-            Click((Button)window.FindName("SelectCalculationAreaButton"));
+            var viewport = (PageViewport)window.FindName("Viewport");
+            var from = ink.TranslatePoint(new Point(60,70),viewport);
+            var to = ink.TranslatePoint(new Point(220,170),viewport);
+            viewport.SetPenPresence(false); viewport.BeginContact(51,from); viewport.MoveContact(51,to);
             Require(((FrameworkElement)window.FindName("CalculationAreaOverlay")).Visibility == Visibility.Visible, "Calculate could not select a PDF/image area.");
-            ((RadioButton)window.FindName("PenButton")).IsChecked = true;
+            ((RadioButton)window.FindName("PenButton")).IsChecked = true; viewport.EndContact(51);
             Require(((FrameworkElement)window.FindName("CalculationAreaOverlay")).Visibility == Visibility.Collapsed && ink.EditingMode == InkCanvasEditingMode.Ink,
                 "Switching tools left the area selection overlay active.");
+            ((RadioButton)window.FindName("CalculateButton")).IsChecked = true;
+            from = ink.TranslatePoint(new Point(60,70),viewport); to = ink.TranslatePoint(new Point(220,170),viewport);
+            var requestsBeforeGesture = handler.Requests;
+            viewport.BeginContact(52,from); viewport.MoveContact(52,to); viewport.EndContact(52);
+            Await(window.Dispatcher.InvokeAsync(() => {},System.Windows.Threading.DispatcherPriority.ApplicationIdle).Task);
+            Require(window.IsCalculationPanelOpen && window.LatestCalculation is null && handler.Requests==requestsBeforeGesture,
+                "Completing a finger box failed to prepare a new preview or uploaded automatically.");
+            Require(((Image)((GeminiCalculationEditor)((ContentControl)window.FindName("CalculationDockContent")).Content).FindName("SelectionImage")).Source is not null,
+                "Direct selection lost the captured problem image.");
+            window.CloseCalculation(); ((RadioButton)window.FindName("PenButton")).IsChecked = true;
             Collect(ink, SampleStroke()); var originalId = InkMapper.Identity(ink.Strokes.Single());
             window.SaveAiCalculation(saved, new Point(80, 250));
             Require(ink.Children.OfType<TextBox>().Single().Text.Contains("Answer") && ink.Children.OfType<TextBox>().Single().Text.Contains("5") && InkMapper.Identity(ink.Strokes.Single()) == originalId, "Adding an AI solution changed handwriting or lost the result.");

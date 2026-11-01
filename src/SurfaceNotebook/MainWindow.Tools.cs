@@ -26,6 +26,7 @@ public partial class MainWindow
     {
         InitializeToolbarMovement();
         InitializeSelectionActions();
+        InitializeCalculationGestures();
         InitializePenEditor();
         InitializePenGestures();
         Viewport.AddHandler(PreviewStylusDownEvent, new StylusDownEventHandler((_, e) =>
@@ -102,7 +103,7 @@ public partial class MainWindow
             "Shape" => "Drag from one corner to the opposite corner",
             "Text" => "Tap the paper with a pen or click to add text",
             "Hand" => "Drag with pen or mouse · fingers always navigate",
-            "Calculate" => "Circle a problem or select an area · solve with Gemini",
+            "Calculate" => "Pen: circle a problem · finger or mouse: drag a rectangle · two fingers: navigate",
             _ => "Pressure-sensitive ink, tuned for Surface Pen"
         };
         ColorControls.Visibility = toolName is "Pen" or "Highlighter" or "Shape" or "Text" ? Visibility.Visible : Visibility.Collapsed;
@@ -137,10 +138,12 @@ public partial class MainWindow
         InkSurface.EditingMode = barrelSelection ? InkCanvasEditingMode.Select : toolName switch
         {
             "Eraser" => EraserModePicker?.SelectedIndex == 1 ? InkCanvasEditingMode.EraseByPoint : InkCanvasEditingMode.EraseByStroke,
-            "Lasso" or "Calculate" => InkCanvasEditingMode.Select,
+            "Lasso" => InkCanvasEditingMode.Select,
+            "Calculate" => InkCanvasEditingMode.None,
             "Hand" or "Text" => InkCanvasEditingMode.None,
             _ => InkCanvasEditingMode.Ink
         };
+        Viewport.CalculationSelectionEnabled = CalculationMode;
         Viewport.HandMode = !barrelSelection && toolName == "Hand";
         InkSurface.Cursor = barrelSelection ? Cursors.Pen : toolName == "Hand" ? Cursors.Hand : toolName == "Text" ? Cursors.IBeam : Cursors.Pen;
         if (CurrentColor is not null) CurrentColor.Fill = new SolidColorBrush(color);

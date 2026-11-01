@@ -18,6 +18,8 @@ public partial class GeminiCalculationEditor : UserControl
     private CancellationTokenSource? request;
     private bool closed, loading;
     public AiCalculation? Result { get; private set; }
+    public event Action? NewQuestionRequested;
+    private void NewQuestion_Click(object sender, RoutedEventArgs e) => NewQuestionRequested?.Invoke();
     public event Action? Accepted;
     public event Action? Canceled;
     public GeminiCalculationEditor() { InitializeComponent(); }
@@ -100,6 +102,7 @@ public partial class GeminiCalculationEditor : UserControl
     public void UseAsSidePanel()
     {
         AcceptButton.Visibility = Visibility.Collapsed;
+        NewQuestionButton.Visibility = Visibility.Visible;
         HeadingText.Text = "Calculation";
         IntroText.Text = "Keep writing while you review the solution. Close and reopen it with Solution. A new calculation replaces this one.";
     }

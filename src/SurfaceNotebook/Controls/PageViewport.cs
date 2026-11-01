@@ -10,6 +10,42 @@ public sealed class PageViewport : Canvas
 {
     private readonly Dictionary<int, Point> contacts = [];
     private bool penInRange;
+    private bool calculationSelectionEnabled;
+    private (Point Origin, bool Lasso)? calculationPointer;
+    private int? calculationTouchId;
+    private StylusDevice? calculationPen;
+    public Func<Point, bool>? CanStartCalculation { get; set; }
+    public event Action<Point, bool>? CalculationStarted;
+    public event Action<Point>? CalculationMoved;
+    public event Action<Point>? CalculationCompleted;
+    public event Action? CalculationCanceled;
+    public bool CalculationSelectionEnabled
+    {
+        get => calculationSelectionEnabled;
+        set { if (calculationSelectionEnabled == value) return; calculationSelectionEnabled=value; CancelCalculationPointer(); contacts.Clear(); }
+    }
+    public bool BeginCalculationPointer(Point point, bool lasso)
+    {
+        if (!CalculationSelectionEnabled || CanStartCalculation?.Invoke(point) != true) return false;
+        CancelCalculationPointer(); CancelTouchHold(); selectionTap=null;
+        calculationPointer=(point,lasso); CalculationStarted?.Invoke(point,lasso); return true;
+    }
+    public void MoveCalculationPointer(Point point) { if (calculationPointer is not null) CalculationMoved?.Invoke(point); }
+    public void EndCalculationPointer(Point point, bool canceled=false)
+    {
+        if (calculationPointer is null) return;
+        calculationPointer=null; calculationTouchId=null; calculationPen=null;
+        if (canceled) CalculationCanceled?.Invoke(); else CalculationCompleted?.Invoke(point);
+    }
+    public void CancelCalculationPointer()
+    {
+        var pen=calculationPen; calculationPen=null;
+        if (calculationPointer is not null) { calculationPointer=null; CalculationCanceled?.Invoke(); }
+        calculationTouchId=null;
+        if (IsMouseCaptured) ReleaseMouseCapture();
+        if (pen?.Captured == this) pen.Capture(null);
+    }
+
     private readonly System.Windows.Threading.DispatcherTimer holdTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     private (int Id, Point Origin, long Started)? touchHold;
     private bool holdOpened;
@@ -40,7 +76,7 @@ public sealed class PageViewport : Canvas
     public PageViewport()
     {
         holdTimer.Tick += (_, _) => CheckTouchHold(Environment.TickCount64);
-        Unloaded += (_, _) => { CancelTouchHold(); contacts.Clear(); };
+        Unloaded += (_, _) => { CancelCalculationPointer(); CancelTouchHold(); contacts.Clear(); };
         ClipToBounds = true;
         Background = new SolidColorBrush(Color.FromRgb(238, 241, 245));
         // Handle at the ancestor preview stage, before InkCanvas's device handlers.
@@ -59,23 +95,29 @@ public sealed class PageViewport : Canvas
         PreviewTouchMove += (_, e) => { MoveContact(e.TouchDevice.Id, e.GetTouchPoint(this).Position); e.Handled = true; };
         PreviewTouchUp += (_, e) => { EndContact(e.TouchDevice.Id); e.Handled = true; if (e.TouchDevice.IsActive) e.TouchDevice.Capture(null); };
         LostTouchCapture += (_, e) => EndContact(e.TouchDevice.Id, canceled: true);
-        LostStylusCapture += (_, e) => { if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Touch) EndContact(e.StylusDevice.Id, canceled: true); };
+        LostStylusCapture += (_, e) => { if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Stylus) CancelCalculationPointer(); if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Touch) EndContact(e.StylusDevice.Id, canceled: true); };
         PreviewMouseDown += (_, e) =>
         {
+            if (e.StylusDevice is null && e.ChangedButton == MouseButton.Left && BeginCalculationPointer(e.GetPosition(this), false))
+            { CaptureMouse(); e.Handled=true; return; }
             if (!HandMode || e.StylusDevice is not null || e.ChangedButton != MouseButton.Left) return;
             dragPoint = e.GetPosition(this); CaptureMouse(); e.Handled = true;
         };
         PreviewMouseMove += (_, e) =>
         {
+            if (e.StylusDevice is null && calculationPointer is not null && IsMouseCaptured)
+            { if (e.LeftButton == MouseButtonState.Pressed) MoveCalculationPointer(e.GetPosition(this)); else CancelCalculationPointer(); e.Handled=true; return; }
             if (!HandMode || e.StylusDevice is not null || dragPoint is not Point old || e.LeftButton != MouseButtonState.Pressed) return;
             var point = e.GetPosition(this); SetView(View.Pan(point.X - old.X, point.Y - old.Y)); dragPoint = point; e.Handled = true;
         };
         PreviewMouseUp += (_, e) =>
         {
+            if (e.StylusDevice is null && calculationPointer is not null && IsMouseCaptured)
+            { EndCalculationPointer(e.GetPosition(this)); ReleaseMouseCapture(); e.Handled=true; return; }
             if (e.StylusDevice is not null || dragPoint is null) return;
             dragPoint = null; ReleaseMouseCapture(); CompleteGesture(); e.Handled = true;
         };
-        LostMouseCapture += (_, _) => dragPoint = null;
+        LostMouseCapture += (_, _) => { dragPoint = null; CancelCalculationPointer(); };
         PreviewMouseWheel += (_, e) =>
         {
             if (penInRange) { e.Handled = true; return; }
@@ -94,6 +136,7 @@ public sealed class PageViewport : Canvas
 
     public void SetPenPresence(bool present)
     {
+        CancelCalculationPointer();
         CancelTouchHold(); holdOpened = false;
         penInRange = present;
         contacts.Clear();
@@ -105,6 +148,7 @@ public sealed class PageViewport : Canvas
         if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Stylus)
         {
             SetPenPresence(true);
+            if (BeginCalculationPointer(e.GetPosition(this),true)) { calculationPen=e.StylusDevice; e.StylusDevice.Capture(this); e.Handled=true; return; }
             if (HandMode) { dragPoint = e.GetPosition(this); e.StylusDevice.Capture(this); e.Handled = true; }
             return;
         }
@@ -114,6 +158,8 @@ public sealed class PageViewport : Canvas
     }
     private void HandleStylusMove(object sender, StylusEventArgs e)
     {
+        if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Stylus && calculationPointer is not null)
+        { MoveCalculationPointer(e.GetPosition(this)); e.Handled=true; return; }
         if (HandMode && e.StylusDevice.TabletDevice.Type == TabletDeviceType.Stylus && dragPoint is Point old)
         {
             var point = e.GetPosition(this); SetView(View.Pan(point.X - old.X, point.Y - old.Y)); dragPoint = point; e.Handled = true; return;
@@ -124,6 +170,8 @@ public sealed class PageViewport : Canvas
     }
     private void HandleStylusUp(object sender, StylusEventArgs e)
     {
+        if (e.StylusDevice.TabletDevice.Type == TabletDeviceType.Stylus && calculationPointer is not null)
+        { EndCalculationPointer(e.GetPosition(this)); e.StylusDevice.Capture(null); e.Handled=true; return; }
         if (HandMode && e.StylusDevice.TabletDevice.Type == TabletDeviceType.Stylus && dragPoint is not null)
         { dragPoint = null; e.StylusDevice.Capture(null); CompleteGesture(); e.Handled = true; return; }
         if (e.StylusDevice.TabletDevice.Type != TabletDeviceType.Touch) return;
@@ -139,16 +187,19 @@ public sealed class PageViewport : Canvas
             if (contacts.Count == 0)
             {
                 pinching = false; scrollBeyondEdge = 0; holdOpened = false;
-                touchHold = (id, position, Environment.TickCount64); holdTimer.Start();
-                selectionTap = IsSelectionTapTarget?.Invoke(position) == true ? (id, position, Environment.TickCount64) : null;
+                if (BeginCalculationPointer(position,false)) calculationTouchId=id;
+                else { touchHold = (id, position, Environment.TickCount64); holdTimer.Start(); }
+                selectionTap = calculationTouchId is null && IsSelectionTapTarget?.Invoke(position) == true ? (id, position, Environment.TickCount64) : null;
             }
             contacts[id] = position;
-            if (contacts.Count > 1) { CancelTouchHold(); pinching = true; scrollBeyondEdge = 0; selectionTap = null; }
+            if (contacts.Count > 1) { CancelCalculationPointer(); CancelTouchHold(); pinching = true; scrollBeyondEdge = 0; selectionTap = null; }
         }
     }
     public void MoveContact(int id, Point position)
     {
         if (penInRange || !contacts.ContainsKey(id)) return;
+        if (calculationTouchId == id && contacts.Count == 1)
+        { contacts[id]=position; MoveCalculationPointer(position); return; }
         if (holdOpened) return;
         if (touchHold is { } hold)
         {
@@ -181,7 +232,9 @@ public sealed class PageViewport : Canvas
     }
     public void EndContact(int id, bool canceled = false)
     {
-        if (!contacts.Remove(id)) return;
+        if (!contacts.TryGetValue(id,out var last)) return;
+        contacts.Remove(id);
+        if (calculationTouchId == id) { EndCalculationPointer(last,canceled); CancelTouchHold(); return; }
         CancelTouchHold();
         if (holdOpened) { if (contacts.Count == 0) holdOpened = false; return; }
         var tap = selectionTap; selectionTap = null;
@@ -192,7 +245,7 @@ public sealed class PageViewport : Canvas
     }
     public void SetView(PageView view)
     {
-        CancelTouchHold();
+        CancelCalculationPointer(); CancelTouchHold();
         View = view.Constrain(ActualWidth > 0 ? ActualWidth : 1000, ActualHeight > 0 ? ActualHeight : 700, PaperWidth, PaperHeight);
         if (Children.Count > 0)
             Children[0].RenderTransform = new MatrixTransform(View.Zoom, 0, 0, View.Zoom, View.X, View.Y);

@@ -6,7 +6,9 @@
  <Grid Margin="20">
   <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
   <StackPanel Margin="0,0,0,12">
-   <TextBlock x:Name="HeadingText" Text="Calculate with Gemini" FontSize="23" FontWeight="SemiBold"/>
+   <DockPanel LastChildFill="True"><Button x:Name="CloseCalculationButton" DockPanel.Dock="Right" Content="✕" Click="Close_Click" ToolTip="Close calculation" AutomationProperties.Name="Close calculation" Width="40" Height="40" Padding="6" VerticalAlignment="Top"/><TextBlock x:Name="HeadingText" Text="Calculate with Gemini" FontSize="23" FontWeight="SemiBold" TextWrapping="Wrap" VerticalAlignment="Center"/></DockPanel>
+
+   <Button x:Name="NewQuestionButton" Content="New typed question" Click="NewQuestion_Click" HorizontalAlignment="Left" Padding="8,5" Visibility="Collapsed" Margin="0,8,0,0"/>
    <TextBlock x:Name="IntroText" Text="Review the selected image, then choose Solve. Your original notes stay unchanged." TextWrapping="Wrap" Foreground="{DynamicResource Muted}" Margin="0,6,0,0"/>
   </StackPanel>
   <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -59,7 +61,7 @@
     <TextBlock Text="Check the interpreted symbols and answer. AI results can be incorrect." Foreground="{DynamicResource Muted}" FontSize="11" TextWrapping="Wrap"/>
    </StackPanel>
   </ScrollViewer>
-  <DockPanel Grid.Row="2" LastChildFill="False" Margin="0,14,0,0"><Button x:Name="AcceptButton" DockPanel.Dock="Right" Content="Add to note" IsEnabled="False" Click="Accept_Click" Style="{StaticResource PrimaryButton}" Padding="14,8"/><Button DockPanel.Dock="Right" Content="Close" Click="Close_Click" Padding="14,8" Margin="0,0,8,0"/></DockPanel>
+  <DockPanel Grid.Row="2" LastChildFill="False" Margin="0,14,0,0"><Button x:Name="AcceptButton" DockPanel.Dock="Right" Content="Add to note" IsEnabled="False" Click="Accept_Click" Style="{StaticResource PrimaryButton}" Padding="14,8"/></DockPanel>
  </Grid>
 </UserControl>
 

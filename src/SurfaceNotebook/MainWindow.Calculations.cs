@@ -26,6 +26,7 @@ public partial class MainWindow
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SurfaceNotebook", "Credentials")), saved, service);
         editor.UseAsSidePanel();
         editor.Canceled += CloseCalculation;
+        editor.NewQuestionRequested += () => ShowCalculation(null, "");
         ReopenCalculationButton.Visibility = Visibility.Visible;
         ReopenCalculation();
     }
@@ -53,9 +54,7 @@ public partial class MainWindow
     private bool CalculationMode => toolName == "Calculate" && !barrelSelection;
     private void UpdateCalculationActions()
     {
-        if (CalculationActionsPanel is null) return;
-        CalculationActionsPanel.Visibility = ready && !busy && !homeVisible && CalculationMode ? Visibility.Visible : Visibility.Collapsed;
-        ReviewCalculationButton.IsEnabled = HasSelection;
+        if (Viewport is not null) Viewport.CalculationSelectionEnabled = ready && !busy && !homeVisible && CalculationMode;
     }
     private void NewCalculation_Click(object sender, RoutedEventArgs e) => OpenCalculationEditor(useSelection: false);
     private void ReviewCalculation_Click(object sender, RoutedEventArgs e) => OpenCalculationEditor(useSelection: true);
