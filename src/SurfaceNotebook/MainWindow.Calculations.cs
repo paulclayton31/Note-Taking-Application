@@ -40,6 +40,7 @@ public partial class MainWindow
     public void CloseCalculation()
     {
         calculationEditor?.CancelPending();
+        if (calculationEditor?.IsKeyboardFocusWithin == true) Keyboard.Focus(InkSurface);
         CalculationDock.Visibility = Visibility.Collapsed;
     }
     private void ReopenCalculation_Click(object sender, RoutedEventArgs e) => ReopenCalculation();

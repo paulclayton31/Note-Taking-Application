@@ -460,6 +460,7 @@ public partial class MainWindow : Window
             e.Handled = true; return;
         }
         if (busy) return;
+        if (calculationEditor?.IsKeyboardFocusWithin == true) return;
         var editingText = Keyboard.FocusedElement is TextBox { IsReadOnly: false };
         if (!homeVisible && session is not null && Keyboard.Modifiers == ModifierKeys.Control && e.Key == Key.V &&
             (!editingText || HasClipboardImage()))
