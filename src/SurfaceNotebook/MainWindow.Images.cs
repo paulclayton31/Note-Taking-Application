@@ -13,7 +13,7 @@ public partial class MainWindow
 {
     private static bool HasClipboardImage()
     {
-        try { return Clipboard.ContainsImage() || Clipboard.ContainsData("PNG"); }
+        try { return Clipboard.ContainsImage() || Clipboard.ContainsData("PNG") || HasClipboardFiles(); }
         catch (ExternalException) { return false; }
     }
     private static bool CanPastePageContent() => Clipboard.ContainsData(SelectionClipboardFormat) || HasClipboardImage();
@@ -21,6 +21,7 @@ public partial class MainWindow
     private void PasteClipboardImage(Point? position)
     {
         if (session is null) return;
+        if (HasClipboardFiles()) { PasteClipboardFiles(position); return; }
         BitmapSource? bitmap = null;
         // Browsers commonly supply both PNG and a device-independent bitmap.
         // Prefer PNG to retain transparency.
