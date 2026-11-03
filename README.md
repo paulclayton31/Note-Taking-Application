@@ -6,7 +6,7 @@ Inspired by the natural handwriting and document organization experience of Good
 
 ## Download and run
 
-**Stable release: [Surface Notebook v0.4.1](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.4.1)** adds a calculation sidebar alongside your notes. Close it and choose **Solution** to reopen the latest answer; a new problem replaces it. Select handwriting or a PDF/image region, preview the crop, and explicitly solve with your own Gemini key. Keep billing disabled on your Google project for free-tier usage. Includes typeset math, local calculation for supported DC circuits, image paste, finger-hold Paste, and the undo-selection fix. [Calculation setup](docs/calculations.md) · [Release notes](docs/releases/v0.4.1.md).
+**Stable release: [Surface Notebook v0.4.2](https://github.com/paulclayton31/Note-Taking-Application/releases/tag/v0.4.2)** adds a calculation sidebar alongside your notes. Close it and choose **Solution** to reopen the latest answer; a new problem replaces it. Select handwriting or a PDF/image region, preview the crop, and explicitly solve with your own Gemini key. Keep billing disabled on your Google project for free-tier usage. Includes typeset math, local calculation for supported DC circuits, image paste, finger-hold Paste, and the undo-selection fix. [Calculation setup](docs/calculations.md) · [Release notes](docs/releases/v0.4.2.md).
 
 The writing workspace includes a Home library with folders, customizable pens and toolbar, lasso actions, undoable scribble erasing, notebook copy/paste and deletion, closable tabs, PDF import/export, draw-and-hold shapes, and Surface Pen side-button lasso. [Workspace guide](docs/v0.3-workspace.md) · [Writing tools and shortcuts](docs/writing-tools.md) · [PDF guide](docs/pdf-workflows.md).
 
@@ -104,3 +104,5 @@ Calculation opens in the right sidebar while the page stays usable. Close it whe
 In Calculate mode, lasso with the pen or drag a rectangle with one finger/mouse; lifting opens the selection preview. Use two fingers to navigate. Close the sidebar with its top-right ✕.
 
 The app restores its last closed window position, size and maximized state on the next launch. Saved window placement is local to this Windows library folder.
+
+Drop image files onto a page or copy image files in Explorer and paste. PDF drops insert the first page as a picture; Import PDF imports complete documents. Supported editable .stempage files can also be dropped. Other file formats are rejected.

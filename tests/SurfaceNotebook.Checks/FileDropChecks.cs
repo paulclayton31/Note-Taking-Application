@@ -26,6 +26,15 @@ internal static partial class Program
             Require(ink.Children.OfType<Image>().Count()==1,"Copied Explorer image file did not paste.");
             try { Await(window.ImportPageFilesAsync([Path.Combine(root,"bad.exe")]));throw new Exception("Unsupported file accepted."); } catch(InvalidDataException) {}
             Require(ink.Children.OfType<Image>().Count()==1,"Rejected import changed existing content.");
+            var document=InkMapper.Capture(new System.Windows.Ink.StrokeCollection { SampleStroke() });
+            var pdf=Path.Combine(root,"sample.pdf");Await(PdfService.ExportAsync(pdf,[document],"Drop test"));
+            Await(window.ImportPageFilesAsync([pdf],new Point(20,20)));
+            Require(ink.Children.OfType<Image>().Count()==2,"Dropped PDF first page did not render as an image.");
+            Click((Button)window.FindName("UndoButton"));
+            var portable=Path.Combine(root,"sample.stempage");Await(PageStore.SaveAsync(portable,document));
+            Await(window.ImportPageFilesAsync([portable],new Point(20,20)));
+            Require(ink.Strokes.Count==1,"Portable page drop lost editable handwriting.");
+            Click((Button)window.FindName("UndoButton"));Require(ink.Strokes.Count==0 && ink.Children.OfType<Image>().Count()==1,"Portable page drop did not undo independently.");
             var corrupt=Path.Combine(root,"bad.png");File.WriteAllText(corrupt,"not an image");
             try { Await(window.ImportPageFilesAsync([path,corrupt]));throw new Exception("Corrupt image accepted."); } catch(Exception ex) when(ex is FileFormatException or NotSupportedException or InvalidDataException) {}
             Require(ink.Children.OfType<Image>().Count()==1,"Failed batch import partially changed the page.");
