@@ -26,6 +26,7 @@ public partial class MainWindow
     {
         InitializeToolbarMovement();
         InitializeSelectionActions();
+        InitializeFileDrops();
         InitializeCalculationGestures();
         InitializePenEditor();
         InitializePenGestures();

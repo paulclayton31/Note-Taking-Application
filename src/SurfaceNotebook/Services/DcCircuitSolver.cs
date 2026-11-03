@@ -9,6 +9,8 @@ public sealed record DcCircuit(CircuitPart[] Resistors, CircuitPart[] VoltageSou
 
 // Modified nodal analysis for finite, connected DC networks with independent sources.
 // Current source direction is From -> To; voltage source value is V(From)-V(To).
+public sealed class CircuitTopologyException(string message) : Exception(message);
+
 public static class DcCircuitSolver
 {
     private static string F(double x) => x.ToString("G6", CultureInfo.InvariantCulture);
@@ -24,6 +26,17 @@ public static class DcCircuitSolver
         if (all.Length == 0 || all.Length > 8 || all.Any(p => p is null || string.IsNullOrWhiteSpace(p.From) || string.IsNullOrWhiteSpace(p.To) || p.From.Length > 8 || p.To.Length > 8 || !p.From.All(char.IsLetterOrDigit) || !p.To.All(char.IsLetterOrDigit) || p.From == p.To || !double.IsFinite(p.Value)) || c.Resistors.Any(p => p.Value <= 0)) throw new InvalidDataException("Invalid DC circuit. Check the component values and connections.");
         var nodes = all.SelectMany(p => new[] { p.From, p.To }).Distinct().Where(n => n != "0").ToArray();
         if (nodes.Length > 6 || !all.Any(p => p.From == "0" || p.To == "0") || !nodes.Append("0").Contains(c.Positive) || !nodes.Append("0").Contains(c.Negative)) throw new InvalidDataException("The circuit needs a reference node and valid output nodes.");
+        var unseen=nodes.ToHashSet(); var groups=new List<string[]>();
+        while(unseen.Count>0) {
+            var found=new HashSet<string>(); var pending=new Queue<string>(); pending.Enqueue(unseen.First());
+            while(pending.TryDequeue(out var node)) {
+                if(!found.Add(node)) continue; unseen.Remove(node);
+                foreach(var part in all.Where(p=>p.From==node || p.To==node)) { var other=part.From==node?part.To:part.From; if(other!="0" && !found.Contains(other)) pending.Enqueue(other); }
+            }
+            groups.Add(found.OrderBy(n=>n).ToArray());
+        }
+        if(groups.Count>1) throw new CircuitTopologyException("Check the wiring before solving: the interpreted circuit separates into branches connected only through ground: " +
+            string.Join("; ",groups.Select(g=>string.Join(", ",g))) + ". This can be legitimate, but may mean Gemini split a continuous wire into separate nodes. Check whether any nodes in different groups are joined by an unbroken wire and describe that connection in Question or corrections. No numeric answer is shown for this uncertain interpretation.");
         int N(string name) => Array.IndexOf(nodes, name);
         double[] Run(int active = -1)
         {
@@ -59,6 +72,6 @@ public static class DcCircuitSolver
         for(int k=0;k<c.VoltageSources.Length+c.CurrentSources.Length;k++) { var values=Run(k); double contribution=V(values,c.Positive)-V(values,c.Negative); contributions.Add(contribution); steps.Add(new($"Superposition: source {k+1} alone", "Keep this source active. Short all other independent voltage sources and open all other independent current sources.", [$"V_{{0,{k+1}}} = {F(contribution)}\\,\\mathrm{{V}}"])); }
         if(Math.Abs(contributions.Sum()-output)>1e-7*(1+Math.Abs(output))) throw new InvalidDataException("Node and superposition results disagree.");
         steps.Add(new("Combine and check", "The source contributions agree with the full node solution. This checks the calculation for the interpreted circuit, not the image transcription.", [$"V_{{out}} = {string.Join(" + ",contributions.Select(x=>"("+F(x)+")"))} = {F(output)}\\,\\mathrm{{V}}"]));
-        return ($"V_{{out}} = {Exact(output)} \\approx {F(output)}\\,\\mathrm{{V}}",steps.ToArray());
+        return ($"V_{{out}} = {Exact(output)}" + (Exact(output)==F(output) ? "" : $" \\approx {F(output)}") + "\\,\\mathrm{V}",steps.ToArray());
     }
 }

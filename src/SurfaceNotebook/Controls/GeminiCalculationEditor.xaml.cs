@@ -67,7 +67,7 @@ public partial class GeminiCalculationEditor : UserControl
             if (!solved.NeedsClarification)
             {
                 Result = new AiCalculation(GeminiCalculator.Model, solved.Problem, solved.Answer, solved.Explanation, instruction, image, solved.Steps);
-                Result.Validate(); StatusText.Text = "Review what Gemini read and the answer before adding it to your note.";
+                Result.Validate(); StatusText.Text = "Review the interpreted problem and connections before using this answer.";
             }
             else StatusText.Text = "Gemini needs clarification. Correct the question above, then solve again.";
         }
