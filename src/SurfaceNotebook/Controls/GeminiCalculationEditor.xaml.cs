@@ -39,12 +39,14 @@ public partial class GeminiCalculationEditor : UserControl
         if (SolveButton is null) return;
         SolveButton.IsEnabled = !closed && request is null && KeyBox.Password.Trim().Length > 0 && (image is not null || !string.IsNullOrWhiteSpace(QuestionBox.Text));
         AcceptButton.IsEnabled = !closed && request is null && Result is not null;
+        IndependentBranchesConfirmed.IsEnabled = request is null;
         QuestionBox.IsReadOnly = request is not null; KeyBox.IsEnabled = request is null;
         StopButton.Visibility = request is null ? Visibility.Collapsed : Visibility.Visible;
     }
     private void InvalidateResult()
     {
         if (loading || SolveButton is null) return;
+        IndependentBranchesConfirmed.IsChecked=false; IndependentBranchesConfirmed.Visibility=Visibility.Collapsed;
         ClearSolution(); Result = null; ProblemText.Text = ExplanationText.Text = ""; AnswerText.Formula = "";
         StatusText.Text = ""; ErrorText.Text = ""; RefreshButtons();
     }
@@ -61,7 +63,7 @@ public partial class GeminiCalculationEditor : UserControl
             var key = KeyBox.Password.Trim();
             if (RememberKey.IsChecked == true) keys?.Save(key); else keys?.Delete();
             var instruction = QuestionBox.Text;
-            var solved = await calculator.SolveAsync(key, image, instruction, current.Token);
+            var solved = await calculator.SolveAsync(key, image, instruction, current.Token, IndependentBranchesConfirmed.IsChecked==true);
             if (closed || current.IsCancellationRequested) return;
             ShowResult(solved);
             if (!solved.NeedsClarification)
@@ -79,6 +81,7 @@ public partial class GeminiCalculationEditor : UserControl
     }
     private void ShowResult(GeminiCalculator.Result result)
     {
+        IndependentBranchesConfirmed.Visibility = result.RequiresConnectionConfirmation ? Visibility.Visible : Visibility.Collapsed;
         ProblemText.Text = result.Problem; AnswerText.Formula = result.Answer; ExplanationText.Text = result.Explanation;
         StepsList.ItemsSource = result.Steps?.Select((step, i) => new {
             Heading = $"{i + 1}. {step.Title}", step.Detail, step.Equations,

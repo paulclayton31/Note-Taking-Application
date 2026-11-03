@@ -85,6 +85,10 @@ internal static partial class Program
         Require(editor.Result!.Answer.Contains("8.57143") && !editor.Result.Answer.Contains("18"), "AI's contradictory 18 V overrode the local circuit result.");
         handler.SplitWire = true; Await(editor.SolveAsync());
         Require(editor.Result is null && ((TextBox)editor.FindName("ExplanationText")).Text.Contains("continuous wire"), "Split-wire circuit was presented as a checked numerical answer.");
+        Require(((CheckBox)editor.FindName("IndependentBranchesConfirmed")).Visibility==Visibility.Visible,"Uncertain wiring offered no correction/confirmation path.");
+        ((CheckBox)editor.FindName("IndependentBranchesConfirmed")).IsChecked=true; Await(editor.SolveAsync());
+        Require(editor.Result is not null,"Explicit confirmation could not solve legitimate independent branches.");
+        ((CheckBox)editor.FindName("IndependentBranchesConfirmed")).IsChecked=false;
         handler.SplitWire = false; handler.Circuit = false; Await(editor.SolveAsync());
         var close = (Button)editor.FindName("CloseCalculationButton");
         var closePosition=close.TranslatePoint(new Point(),editor);
@@ -94,7 +98,7 @@ internal static partial class Program
             saved.DisplayText.Contains("1. Substitute the known value\n") && saved.DisplayText.Contains("x + 3 = 2 + 3\n2 + 3 = 5"),
             "Worked solution lost step boundaries or separate equations.");
         var reopened = new GeminiCalculationEditor(); reopened.Prepare(png, saved.Instruction, keys, saved, service);
-        Require(((ItemsControl)reopened.FindName("StepsList")).Items.Count == 1 && handler.Requests == 4, "Saved steps did not reopen offline.");
+        Require(((ItemsControl)reopened.FindName("StepsList")).Items.Count == 1 && handler.Requests == 5, "Saved steps did not reopen offline.");
         var legacy = saved with { Steps = null };
         reopened.Prepare(png, legacy.Instruction, keys, legacy, service);
         Require(((TextBox)reopened.FindName("ExplanationText")).Text == legacy.Explanation, "Older saved explanations became unreadable.");

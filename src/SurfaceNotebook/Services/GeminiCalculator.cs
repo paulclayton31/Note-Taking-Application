@@ -10,9 +10,9 @@ namespace SurfaceNotebook.Services;
 public sealed class GeminiCalculator(HttpClient client)
 {
     public const string Model = "gemini-3.5-flash-lite";
-    public sealed record Result(string Problem, string Answer, string Explanation, bool NeedsClarification, SolutionStep[]? Steps = null);
+    public sealed record Result(string Problem, string Answer, string Explanation, bool NeedsClarification, SolutionStep[]? Steps = null, bool RequiresConnectionConfirmation = false);
     private const int MaxResponseBytes = 256 * 1024;
-    public async Task<Result> SolveAsync(string key, byte[]? png, string instruction, CancellationToken cancellation = default)
+    public async Task<Result> SolveAsync(string key, byte[]? png, string instruction, CancellationToken cancellation = default, bool independentBranchesConfirmed = false)
     {
         if (string.IsNullOrWhiteSpace(key) || key.Length > 512 || key.Any(char.IsControl))
             throw new InvalidOperationException("Enter a valid Gemini API key in the settings below.");
@@ -61,7 +61,7 @@ public sealed class GeminiCalculator(HttpClient client)
             output.Write(buffer, 0, count);
         }
         if (!response.IsSuccessStatusCode) throw new InvalidOperationException(ApiError(response.StatusCode, output.ToArray(), key.Trim()));
-        return Parse(output.ToArray());
+        return Parse(output.ToArray(), independentBranchesConfirmed);
     }
     private static string ApiError(HttpStatusCode code, byte[] bytes, string key)
     {
@@ -101,7 +101,7 @@ public sealed class GeminiCalculator(HttpClient client)
     private static object PartsSchema() => new { type = "array", items = new { type = "object", properties = new {
         from = new { type = "string" }, to = new { type = "string" }, value = new { type = "number" }
     }, required = new[] { "from", "to", "value" } } };
-    private static Result Parse(byte[] bytes)
+    private static Result Parse(byte[] bytes, bool independentBranchesConfirmed)
     {
         try
         {
@@ -129,8 +129,8 @@ public sealed class GeminiCalculator(HttpClient client)
                 var graph = circuit.Deserialize<DcCircuit>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
                     ?? throw new InvalidDataException("Invalid circuit graph.");
                 (string Answer, SolutionStep[] Steps) checkedResult;
-                try { checkedResult = DcCircuitSolver.Solve(graph); }
-                catch(CircuitTopologyException ex) { return new Result(problem,"",ex.Message,true,[]); }
+                try { checkedResult = DcCircuitSolver.Solve(graph,independentBranchesConfirmed); }
+                catch(CircuitTopologyException ex) { return new Result(problem,"",ex.Message,true,[],true); }
                 answer = checkedResult.Answer; steps = checkedResult.Steps;
                 explanation = "Calculated locally from Gemini’s interpreted connections. The equations are checked; image transcription is not independently verified. Compare the connections below with your diagram.";
             }

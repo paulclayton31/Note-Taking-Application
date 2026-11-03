@@ -19,7 +19,7 @@ public static class DcCircuitSolver
         for (int d=1;d<=1000;d++) { var n=Math.Round(value*d); if(Math.Abs(n/d-value)<1e-10*(1+Math.Abs(value))) return d==1 ? F(value) : $"\\frac{{{F(n)}}}{{{d}}}"; }
         return F(value);
     }
-    public static (string Answer, SolutionStep[] Steps) Solve(DcCircuit c)
+    public static (string Answer, SolutionStep[] Steps) Solve(DcCircuit c, bool independentBranchesConfirmed = false)
     {
         if (c.Resistors is null || c.VoltageSources is null || c.CurrentSources is null || c.VoltageSources.Length+c.CurrentSources.Length>6) throw new InvalidDataException("Unsupported or incomplete circuit graph.");
         var all = c.Resistors.Concat(c.VoltageSources).Concat(c.CurrentSources).ToArray();
@@ -35,7 +35,7 @@ public static class DcCircuitSolver
             }
             groups.Add(found.OrderBy(n=>n).ToArray());
         }
-        if(groups.Count>1) throw new CircuitTopologyException("Check the wiring before solving: the interpreted circuit separates into branches connected only through ground: " +
+        if(groups.Count>1 && !independentBranchesConfirmed) throw new CircuitTopologyException("Check the wiring before solving: the interpreted circuit separates into branches connected only through ground: " +
             string.Join("; ",groups.Select(g=>string.Join(", ",g))) + ". This can be legitimate, but may mean Gemini split a continuous wire into separate nodes. Check whether any nodes in different groups are joined by an unbroken wire and describe that connection in Question or corrections. No numeric answer is shown for this uncertain interpretation.");
         int N(string name) => Array.IndexOf(nodes, name);
         double[] Run(int active = -1)
